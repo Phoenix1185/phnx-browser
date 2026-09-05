@@ -56,6 +56,7 @@ import com.phoenix.phnx.identity.DevicePresets
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.network.NetworkApplyStatus
+import com.phoenix.phnx.network.NetworkActivity
 import com.phoenix.phnx.chromium.network.ChromiumProxyAdapter
 import com.phoenix.phnx.permissions.SitePermissionDecision
 import com.phoenix.phnx.permissions.SitePermission
@@ -397,6 +398,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.isLoading = true
                 tab.url = url
                 tab.title = tabTitleForUrl(url)
+                applyPageIdentity(view, tab.profileId)
                 updateTabChrome(tab, view)
             }
 
@@ -405,6 +407,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 if (url != START_PAGE_BASE) tab.url = url
                 tab.title = view.title?.takeIf { it.isNotBlank() } ?: tabTitleForUrl(url)
                 privacyManager.applyTo(view, tab.profileId)
+                applyPageIdentity(view, tab.profileId)
                 app.historyManager.recordVisit(tab.profileId, url, tab.title, tab.isPrivate)
                 updateTabChrome(tab, view)
                 hideError()
@@ -661,6 +664,27 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 currentBrowserView()?.reload()
             }
         })
+        if (message.contains("connection", ignoreCase = true) || message.contains("closed", ignoreCase = true)) {
+            content.addView(Button(this).apply {
+                text = getString(R.string.network_settings)
+                setOnClickListener { startActivity(Intent(this@MainActivity, NetworkActivity::class.java)) }
+            })
+        }
+        val failedSearch = tabManager.currentTab()?.url
+            ?.takeIf { it.startsWith("https://www.google.com/search") }
+        if (failedSearch != null) {
+            content.addView(Button(this).apply {
+                text = getString(R.string.try_alternate_search)
+                setOnClickListener {
+                    val query = Uri.parse(failedSearch).getQueryParameter("q").orEmpty()
+                    val tab = tabManager.currentTab() ?: return@setOnClickListener
+                    val destination = NavigationController.resolveInput(query, "https://duckduckgo.com/?q=")
+                    tab.url = destination
+                    hideError()
+                    currentBrowserView()?.loadUrl(destination)
+                }
+            })
+        }
         errorView = content
         browserContainer.addView(content, FrameLayout.LayoutParams(-1, -1))
     }
@@ -1054,12 +1078,18 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun applyProfileIdentity(view: WebView, profileId: String) {
-        val config = if (desktopSiteEnabled) {
-            DevicePresets.get(DevicePresets.DESKTOP)?.forProfile(profileId)
-                ?: deviceProfileManager.getProfileConfiguration(profileId)
-        } else {
-            deviceProfileManager.getProfileConfiguration(profileId)
-        }
+        val config = identityConfig(profileId)
         identityAdapter.apply(view, config)
+    }
+
+    private fun applyPageIdentity(view: WebView, profileId: String) {
+        identityAdapter.applyPageIdentity(view, identityConfig(profileId))
+    }
+
+    private fun identityConfig(profileId: String) = if (desktopSiteEnabled) {
+        DevicePresets.get(DevicePresets.DESKTOP)?.forProfile(profileId)
+            ?: deviceProfileManager.getProfileConfiguration(profileId)
+    } else {
+        deviceProfileManager.getProfileConfiguration(profileId)
     }
 }

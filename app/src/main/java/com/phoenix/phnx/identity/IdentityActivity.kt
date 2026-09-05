@@ -143,7 +143,7 @@ class IdentityActivity : AppCompatActivity() {
             "Timezone: ${config.timezone}",
             "Touch: ${config.touchSupport}; mobile mode: ${config.mobileMode}",
             "Client hints: ${config.clientHints.platform}, mobile=${config.clientHints.mobile}",
-            "WebView support: User-Agent and viewport mode supported; page scale is approximated. Locale, timezone, and client hints are not overrideable by Android WebView.",
+            "WebView support: User-Agent, viewport mode, and page-visible screen metrics are applied where supported. Locale, timezone, and client hints remain limited by Android WebView.",
         ).joinToString("\n")
     }
 

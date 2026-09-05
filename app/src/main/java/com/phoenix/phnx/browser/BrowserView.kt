@@ -8,10 +8,13 @@ class BrowserView(context: Context) : WebView(context) {
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         settings.loadsImagesAutomatically = true
-        settings.builtInZoomControls = false
+        settings.setSupportZoom(true)
+        settings.builtInZoomControls = true
         settings.displayZoomControls = false
         settings.allowFileAccess = false
         settings.allowContentAccess = true
+        isLongClickable = true
+        isHapticFeedbackEnabled = true
         isVerticalScrollBarEnabled = true
     }
 }

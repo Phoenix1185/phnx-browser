@@ -21,6 +21,7 @@ enum class TrackingProtectionLevel {
 
 data class PrivacySettings(
     val profileId: String,
+    val cookiesAllowed: Boolean = true,
     val thirdPartyCookiesAllowed: Boolean = false,
     val trackingProtection: TrackingProtectionLevel = TrackingProtectionLevel.STANDARD,
     val doNotTrack: Boolean = false,
@@ -37,6 +38,7 @@ data class PrivacyApplyResult(
 @Entity(tableName = "privacy_settings")
 data class PrivacySettingsEntity(
     @PrimaryKey val profileId: String,
+    val cookiesAllowed: Boolean,
     val thirdPartyCookiesAllowed: Boolean,
     val trackingProtection: String,
     val doNotTrack: Boolean,
@@ -46,6 +48,7 @@ data class PrivacySettingsEntity(
 ) {
     fun toDomain(): PrivacySettings = PrivacySettings(
         profileId = profileId,
+        cookiesAllowed = cookiesAllowed,
         thirdPartyCookiesAllowed = thirdPartyCookiesAllowed,
         trackingProtection = runCatching { TrackingProtectionLevel.valueOf(trackingProtection) }
             .getOrDefault(TrackingProtectionLevel.STANDARD),
@@ -58,6 +61,7 @@ data class PrivacySettingsEntity(
 
 private fun PrivacySettings.toEntity() = PrivacySettingsEntity(
     profileId = profileId,
+    cookiesAllowed = cookiesAllowed,
     thirdPartyCookiesAllowed = thirdPartyCookiesAllowed,
     trackingProtection = trackingProtection.name,
     doNotTrack = doNotTrack,
@@ -78,9 +82,17 @@ interface PrivacyDao {
     fun delete(profileId: String)
 }
 
-@Database(entities = [PrivacySettingsEntity::class], version = 1, exportSchema = false)
+@Database(entities = [PrivacySettingsEntity::class], version = 2, exportSchema = false)
 abstract class PrivacyDatabase : RoomDatabase() {
     abstract fun privacyDao(): PrivacyDao
+
+    companion object {
+        val MIGRATION_1_2 = object : androidx.room.migration.Migration(1, 2) {
+            override fun migrate(database: androidx.sqlite.db.SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE privacy_settings ADD COLUMN cookiesAllowed INTEGER NOT NULL DEFAULT 1")
+            }
+        }
+    }
 }
 
 class PrivacyManager(context: android.content.Context) {
@@ -88,7 +100,7 @@ class PrivacyManager(context: android.content.Context) {
         context.applicationContext,
         PrivacyDatabase::class.java,
         "privacy_settings.db",
-    ).allowMainThreadQueries().build()
+    ).addMigrations(PrivacyDatabase.MIGRATION_1_2).allowMainThreadQueries().build()
     private val dao = database.privacyDao()
 
     fun getSettings(profileId: String): PrivacySettings =
@@ -108,7 +120,11 @@ class PrivacyManager(context: android.content.Context) {
                 safeBrowsingEnabled = settings.safeBrowsingEnabled
             }
         }
-        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, settings.thirdPartyCookiesAllowed)
+        CookieManager.getInstance().setAcceptCookie(settings.cookiesAllowed)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(
+            webView,
+            settings.cookiesAllowed && settings.thirdPartyCookiesAllowed,
+        )
         webView.evaluateJavascript(if (settings.doNotTrack) DNT_ENABLED_SCRIPT else DNT_DISABLED_SCRIPT, null)
 
         val unsupported = buildList {

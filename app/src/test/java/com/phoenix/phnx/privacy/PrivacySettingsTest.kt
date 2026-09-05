@@ -11,6 +11,7 @@ class PrivacySettingsTest {
 
         assertTrue(settings.javascriptEnabled)
         assertTrue(settings.safeBrowsingEnabled)
+        assertTrue(settings.cookiesAllowed)
         assertEquals(false, settings.thirdPartyCookiesAllowed)
         assertEquals(TrackingProtectionLevel.STANDARD, settings.trackingProtection)
     }
@@ -19,6 +20,7 @@ class PrivacySettingsTest {
     fun invalidPersistedTrackingLevelFallsBackToStandard() {
         val restored = PrivacySettingsEntity(
             profileId = "profile_a",
+            cookiesAllowed = false,
             thirdPartyCookiesAllowed = true,
             trackingProtection = "removed_value",
             doNotTrack = true,
@@ -28,6 +30,7 @@ class PrivacySettingsTest {
         ).toDomain()
 
         assertEquals(TrackingProtectionLevel.STANDARD, restored.trackingProtection)
+        assertEquals(false, restored.cookiesAllowed)
         assertTrue(restored.doNotTrack)
         assertTrue(restored.popupsAllowed)
     }

@@ -39,6 +39,10 @@ class PrivacyActivity : AppCompatActivity() {
             settings = settings.copy(javascriptEnabled = it)
             save()
         }
+        addSwitch(content, getString(R.string.privacy_cookies), getString(R.string.privacy_cookies_summary), settings.cookiesAllowed) {
+            settings = settings.copy(cookiesAllowed = it)
+            save()
+        }
         addSwitch(content, getString(R.string.privacy_third_party_cookies), getString(R.string.privacy_third_party_cookies_summary), settings.thirdPartyCookiesAllowed) {
             settings = settings.copy(thirdPartyCookiesAllowed = it)
             save()

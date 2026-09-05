@@ -67,6 +67,7 @@
     <string name="retry">Retry</string>
     <string name="network">Network</string>
     <string name="network_summary">Configure and test the active profile connection.</string>
+    <string name="network_settings">Network settings</string>
     <string name="network_direct">Direct connection</string>
     <string name="network_proxy">Proxy connection</string>
     <string name="network_my_proxy">My proxy</string>
@@ -107,6 +108,8 @@
     <string name="privacy_profile_summary">Settings for profile %1$s. These preferences are stored with the profile.</string>
     <string name="privacy_javascript">JavaScript</string>
     <string name="privacy_javascript_summary">Allow modern websites to run JavaScript. Disabling it can break pages.</string>
+    <string name="privacy_cookies">Cookies</string>
+    <string name="privacy_cookies_summary">Allow websites to save and read first-party cookies.</string>
     <string name="privacy_third_party_cookies">Third-party cookies</string>
     <string name="privacy_third_party_cookies_summary">Allow cookies from embedded third-party content.</string>
     <string name="privacy_popups">Pop-ups</string>
@@ -152,6 +155,7 @@
     <string name="search_engine">Search engine</string>
     <string name="search_engine_summary">Choose where address-bar searches are sent.</string>
     <string name="search_engine_selected">Selected: %1$s</string>
+    <string name="try_alternate_search">Try DuckDuckGo instead</string>
     <string name="performance">Performance</string>
     <string name="performance_summary">View resource pressure and profile lifecycle state.</string>
     <string name="refresh">Refresh</string>
