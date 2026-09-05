@@ -1,0 +1,17 @@
+stateDiagram-v2
+    [*] --> ACTIVE: open or resume
+    ACTIVE --> IDLE: inactivity
+    IDLE --> FROZEN: prolonged inactivity
+    FROZEN --> SUSPENDED: resource pressure
+    SUSPENDED --> ACTIVE: user selects profile
+    FROZEN --> ACTIVE: user selects profile
+    IDLE --> ACTIVE: user interaction
+    ACTIVE --> CLOSED: close profile
+    IDLE --> CLOSED: close profile
+    SUSPENDED --> CLOSED: close profile
+    CLOSED --> ACTIVE: reopen profile
+    ACTIVE --> [*]: explicit deletion only
+    IDLE --> [*]: explicit deletion only
+    FROZEN --> [*]: explicit deletion only
+    SUSPENDED --> [*]: explicit deletion only
+    CLOSED --> [*]: explicit deletion only

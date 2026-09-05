@@ -1,0 +1,21 @@
+flowchart TB
+    Signal[Memory, CPU, battery, or thermal signal] --> RM[ResourceManager]
+    RM --> Assess[Assess pressure and profile priority]
+    Assess --> Normal[NORMAL\nForeground active\nLimited background]
+    Assess --> Moderate[MODERATE\nReduce background work\nFreeze unnecessary tabs]
+    Assess --> High[HIGH\nSuspend inactive profiles\nReduce processing]
+    Assess --> Critical[CRITICAL\nKeep essential foreground activity\nSuspend background profiles]
+    Moderate --> Release[Release runtime resources]
+    High --> Release
+    Critical --> Release
+    Release --> Preserve[Preserve persistent profile data]
+
+    classDef signal fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef manager fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef normal fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef pressure fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Signal signal
+    class RM,Assess manager
+    class Normal normal
+    class Moderate,High,Critical,Release pressure
+    class Preserve normal

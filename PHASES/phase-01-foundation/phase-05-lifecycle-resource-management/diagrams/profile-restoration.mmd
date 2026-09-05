@@ -1,0 +1,14 @@
+flowchart TB
+    Select[User selects frozen or suspended profile] --> Persist[Load persistent profile data]
+    Persist --> Network[Load Phase 3 network configuration]
+    Network --> Identity[Load Phase 4 identity configuration]
+    Identity --> Session[Restore saved tabs and session]
+    Session --> Resume[Resume Chromium context]
+    Resume --> Active[ACTIVE]
+    Active --> Verify[Verify profile state and report status]
+
+    classDef action fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef restore fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef final fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:2px
+    class Select,Persist,Network,Identity,Session,Resume,Verify action
+    class Active final

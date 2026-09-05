@@ -1,0 +1,26 @@
+flowchart TB
+    Memory[MemoryMonitor]
+    CPU[CpuMonitor]
+    Battery[BatteryMonitor]
+    Thermal[ThermalMonitor]
+    Events[Resource events]
+    Memory --> RM[ResourceManager]
+    CPU --> RM
+    Battery --> RM
+    Thermal --> RM
+    Events --> RM
+    RM --> Policy[ResourcePolicy]
+    Policy --> Scheduler[ProfileScheduler]
+    Scheduler --> Lifecycle[ProfileLifecycleManager]
+    Lifecycle --> Adapter[ChromiumLifecycleAdapter]
+    Adapter --> Runtime[Profile runtime contexts]
+    RM --> Dashboard[Resource dashboard]
+
+    classDef monitor fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef core fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef action fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef ui fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class Memory,CPU,Battery,Thermal,Events monitor
+    class RM,Policy,Scheduler core
+    class Lifecycle,Adapter,Runtime action
+    class Dashboard ui
