@@ -44,7 +44,7 @@ object ProxyEndpointCodec {
     fun decode(value: String): List<ProxyEndpoint> = value.lineSequence()
         .map { it.split('|') }
         .mapNotNull { parts ->
-            if (parts.size != 3) return@mapNotNull null
+            if (parts.size < 3) return@mapNotNull null
             val type = runCatching { ProxyType.valueOf(parts[0]) }.getOrNull() ?: return@mapNotNull null
             val port = parts[2].toIntOrNull() ?: return@mapNotNull null
             if (parts[1].isBlank() || port !in 1..65535) {

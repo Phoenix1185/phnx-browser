@@ -1,7 +1,5 @@
 package com.phoenix.phnx.network
 
-import org.json.JSONArray
-
 object PublicProxyParser {
     fun parse(source: ProxySource, json: String, limit: Int = 8): List<ProxyEndpoint> {
         if (source.id == "hproxy") return parseHProxy(json, limit)
@@ -23,21 +21,18 @@ object PublicProxyParser {
         .toList()
 
     private fun parseHProxy(json: String, limit: Int): List<ProxyEndpoint> {
-        val rows = runCatching { JSONArray(json) }.getOrNull() ?: return emptyList()
-        return (0 until rows.length())
-            .asSequence()
-            .mapNotNull { index -> rows.optJSONObject(index)?.let(::hProxyEndpoint) }
+        return OBJECT_PATTERN.findAll(json)
+            .mapNotNull { match -> hProxyEndpoint(match.groupValues[1]) }
             .distinctBy { "${it.type}:${it.host}:${it.port}" }
             .take(limit.coerceIn(1, 30))
             .toList()
     }
 
-    private fun hProxyEndpoint(row: org.json.JSONObject): ProxyEndpoint? {
-        val host = row.optString("ip").trim()
-        val port = row.optInt("port", 0)
+    private fun hProxyEndpoint(row: String): ProxyEndpoint? {
+        val host = stringField(row, "ip")?.trim().orEmpty()
+        val port = field(row, "port")?.toIntOrNull() ?: 0
         if (host.isBlank() || port !in 1..65535) return null
-        val protocols = row.optJSONArray("protocols") ?: return null
-        val supported = (0 until protocols.length()).map { protocols.optString(it).lowercase() }
+        val supported = arrayField(row, "protocols").map(String::lowercase)
         val type = when {
             "https" in supported -> ProxyType.HTTPS
             "http" in supported -> ProxyType.HTTP
@@ -49,11 +44,28 @@ object PublicProxyParser {
             type = type,
             host = host,
             port = port,
-            countryCode = row.optString("country_code").trim().uppercase(),
-            countryName = row.optString("country").trim(),
+            countryCode = stringField(row, "country_code")?.trim()?.uppercase().orEmpty(),
+            countryName = stringField(row, "country")?.trim().orEmpty(),
             httpsSupported = "https" in supported,
-            anonymity = row.optString("anonymity").trim(),
-            reportedLatencyMs = row.optInt("latency_ms", 0).takeIf { it > 0 },
+            anonymity = stringField(row, "anonymity")?.trim().orEmpty(),
+            reportedLatencyMs = field(row, "latency_ms")?.toIntOrNull()?.takeIf { it > 0 },
         )
     }
+
+    private fun field(row: String, key: String): String? = Regex(
+        "\"${Regex.escape(key)}\"\\s*:\\s*(\"(?:\\\\.|[^\"\\\\])*\"|\\[[^]]*\\]|-?\\d+)",
+    ).find(row)?.groupValues?.getOrNull(1)
+
+    private fun stringField(row: String, key: String): String? = field(row, key)
+        ?.takeIf { it.length >= 2 && it.first() == '"' && it.last() == '"' }
+        ?.substring(1, it.length - 1)
+        ?.replace("\\\"", "\"")
+        ?.replace("\\\\", "\\")
+
+    private fun arrayField(row: String, key: String): List<String> = field(row, key)
+        ?.let { value -> STRING_PATTERN.findAll(value).map { it.groupValues[1] }.toList() }
+        .orEmpty()
+
+    private val OBJECT_PATTERN = Regex("\\{([^{}]*)}")
+    private val STRING_PATTERN = Regex("\\\"((?:\\\\.|[^\\\"\\\\])*)\\\"")
 }
