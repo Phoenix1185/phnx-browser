@@ -27,7 +27,7 @@ Phase 1 now has a buildable native Kotlin Android shell in `app/`. It includes:
 - Phase 6 privacy settings persisted per profile for JavaScript, third-party cookies, pop-ups, Safe Browsing, and stored tracking preferences; unsupported Do Not Track and full tracker blocking are reported honestly.
 - Profile/origin site permission decisions for camera, microphone, and location are persisted separately from Android OS permissions and can be reviewed or reset in Settings.
 - Active-profile clear-data controls remove selected WebView cookies, site storage, cache, and in-memory navigation data without deleting profile configuration.
-- Profile-aware history and bookmarks are persisted, private visits are excluded from history, private tabs are not restored into saved sessions, and both are available from the browser menu.
+- Profile-aware history and bookmarks are persisted, bookmark folders support create/rename/delete and moving bookmarks, private visits are excluded from history, private tabs are not restored into saved sessions, and both are available from the browser menu.
 - History retention is selectable: remember until manually cleared, or clear when PHNX closes its task.
 - Address-bar searches default to Google and can be switched to Bing, DuckDuckGo, Brave Search, Startpage, Ecosia, or Yahoo while direct URL detection remains unchanged.
 

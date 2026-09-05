@@ -18,4 +18,17 @@ class BookmarkManagerTest {
         assertEquals("profile_work", bookmark.profileId)
         assertEquals("https://example.com", bookmark.url)
     }
+
+    @Test
+    fun folderEntityKeepsProfileOwnership() {
+        val folder = BookmarkFolderEntity(
+            id = "folder_1",
+            profileId = "profile_work",
+            name = "Work",
+            createdAt = 10L,
+        ).toDomain()
+
+        assertEquals("profile_work", folder.profileId)
+        assertEquals("Work", folder.name)
+    }
 }

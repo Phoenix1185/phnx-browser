@@ -2,9 +2,12 @@ package com.phoenix.phnx.bookmarks
 
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.phoenix.phnx.PhnxApplication
 import com.phoenix.phnx.R
@@ -38,6 +41,10 @@ class BookmarksActivity : AppCompatActivity() {
                 }
             })
         }
+        content.addView(Button(this).apply {
+            text = getString(R.string.new_folder)
+            setOnClickListener { showFolderEditor(null, null) }
+        })
         list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         content.addView(list)
         setContentView(ScrollView(this).apply {
@@ -53,6 +60,27 @@ class BookmarksActivity : AppCompatActivity() {
 
     private fun refresh() {
         list.removeAllViews()
+        val folders = app.bookmarkManager.getFolders(profileId)
+        folders.forEach { folder ->
+            val row = LinearLayout(this).apply {
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, dp(12), 0, dp(4))
+            }
+            row.addView(TextView(this).apply {
+                text = folder.name
+                textSize = 17f
+                setTextColor(getColor(R.color.phnx_blue))
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+            row.addView(Button(this).apply {
+                text = getString(R.string.rename)
+                setOnClickListener { showFolderEditor(folder.id, folder.name) }
+            })
+            row.addView(Button(this).apply {
+                text = getString(R.string.delete)
+                setOnClickListener { confirmDeleteFolder(folder.id, folder.name) }
+            })
+            list.addView(row)
+        }
         val bookmarks = app.bookmarkManager.getForProfile(profileId)
         if (bookmarks.isEmpty()) {
             list.addView(TextView(this).apply {
@@ -69,10 +97,23 @@ class BookmarksActivity : AppCompatActivity() {
                 setPadding(0, dp(12), 0, dp(12))
             }
             row.addView(TextView(this).apply {
-                text = "${bookmark.title}\n${bookmark.url}"
+                val folderName = folders.firstOrNull { it.id == bookmark.folderId }?.name
+                text = buildString {
+                    append(bookmark.title)
+                    append('\n')
+                    append(bookmark.url)
+                    if (folderName != null) {
+                        append('\n')
+                        append(folderName)
+                    }
+                }
                 textSize = 15f
                 setTextColor(getColor(R.color.phnx_text))
             }, LinearLayout.LayoutParams(0, -2, 1f))
+            row.addView(Button(this).apply {
+                text = getString(R.string.move)
+                setOnClickListener { showFolderPicker(bookmark.id, bookmark.folderId, folders) }
+            })
             row.addView(Button(this).apply {
                 text = getString(R.string.delete)
                 setOnClickListener {
@@ -82,6 +123,56 @@ class BookmarksActivity : AppCompatActivity() {
             })
             list.addView(row)
         }
+    }
+
+    private fun showFolderEditor(folderId: String?, currentName: String?) {
+        val input = EditText(this).apply {
+            setText(currentName.orEmpty())
+            hint = getString(R.string.folder_name)
+            setSingleLine(true)
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+        }
+        AlertDialog.Builder(this)
+            .setTitle(if (folderId == null) R.string.new_folder else R.string.rename_folder)
+            .setView(input)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(if (folderId == null) R.string.create else R.string.rename) { _, _ ->
+                val saved = if (folderId == null) {
+                    app.bookmarkManager.createFolder(profileId, input.text.toString()) != null
+                } else {
+                    app.bookmarkManager.renameFolder(profileId, folderId, input.text.toString())
+                }
+                if (!saved) Toast.makeText(this, getString(R.string.folder_name_required), Toast.LENGTH_SHORT).show()
+                refresh()
+            }
+            .show()
+    }
+
+    private fun confirmDeleteFolder(folderId: String, name: String) {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.delete_folder)
+            .setMessage(getString(R.string.delete_folder_warning, name))
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.delete) { _, _ ->
+                app.bookmarkManager.deleteFolder(profileId, folderId)
+                refresh()
+            }
+            .show()
+    }
+
+    private fun showFolderPicker(bookmarkId: String, currentFolderId: String?, folders: List<BookmarkFolder>) {
+        val options = listOf(getString(R.string.unfiled)) + folders.map { it.name }
+        val checked = currentFolderId?.let { id -> folders.indexOfFirst { it.id == id } + 1 } ?: 0
+        AlertDialog.Builder(this)
+            .setTitle(R.string.move_to_folder)
+            .setSingleChoiceItems(options.toTypedArray(), checked) { dialog, which ->
+                val folderId = folders.getOrNull(which - 1)?.id
+                app.bookmarkManager.moveToFolder(profileId, bookmarkId, folderId)
+                dialog.dismiss()
+                refresh()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

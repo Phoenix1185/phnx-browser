@@ -135,6 +135,15 @@
     <string name="no_history">No history for this profile.</string>
     <string name="add_current_bookmark">Add current page</string>
     <string name="no_bookmarks">No bookmarks for this profile.</string>
+    <string name="new_folder">New folder</string>
+    <string name="rename_folder">Rename folder</string>
+    <string name="delete_folder">Delete folder?</string>
+    <string name="delete_folder_warning">Bookmarks in %1$s will become unfiled.</string>
+    <string name="folder_name">Folder name</string>
+    <string name="folder_name_required">Enter a folder name.</string>
+    <string name="move">Move</string>
+    <string name="move_to_folder">Move bookmark to folder</string>
+    <string name="unfiled">Unfiled</string>
     <string name="search_engine">Search engine</string>
     <string name="search_engine_summary">Choose where address-bar searches are sent.</string>
     <string name="search_engine_selected">Selected: %1$s</string>
