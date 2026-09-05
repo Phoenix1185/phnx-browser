@@ -8,6 +8,8 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Phases 1-7 have working prototypes for the browser shell, profiles, network settings, identity presets, lifecycle policy, privacy settings, tabs, history, bookmarks, downloads, search routing, and page controls.
 - Recent work added tab groups, bookmark folders, history search/date grouping, start-page bookmark/history content, full-screen WebView handling, renderer retry recovery, first-party cookie control, native zoom/text selection, find-in-page navigation/count, profile-aware shortcuts, and profile/site page controls.
 - Recent work also added basic HTTPS/HTTP/certificate/Safe Browsing state indicators, download URL/type safety checks, dangerous-download confirmation, mixed-content blocking, and persisted crash-loop recovery state.
+- Profile scheduling now exposes explicit freeze, suspend, and close selection with lifecycle-aware eligibility and unit coverage.
+- A reviewable `legal/` package now documents the current privacy behavior, terms, dependency license families, and third-party services.
 - Release R8/resource shrinking is enabled and verified by the latest debug/release APK and AAB build.
 
 ## Remaining Gaps
@@ -20,7 +22,7 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Phase 6: actual tracking protection and fully profile-scoped clear-data coverage remain incomplete; security-state indicators and baseline download safety are implemented.
 - Phase 7: download pause/resume and full settings organization remain incomplete; find-in-page controls, profile/site page controls, profile-aware shortcuts, progress, and sharing are implemented.
 - Phase 8: Room managers use main-thread queries; lazy startup, performance snapshots/configuration, startup profiling, bounded stress tests, and database optimization are not production-ready.
-- Phase 9: release signing, tagged release workflow, migration/instrumentation upgrade tests, network-security hardening, legal package generation, rollback documentation, and repository security controls remain.
+- Phase 9: release signing, tagged release workflow, migration/instrumentation upgrade tests, network-security hardening, exact generated license notices, rollback documentation, and repository security controls remain.
 
 ## Policy Notes
 
