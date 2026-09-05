@@ -11,16 +11,17 @@ object BrowserMenu {
     private const val BOOKMARKS = 3
     private const val HISTORY = 4
     private const val DOWNLOADS = 5
-    private const val SHARE = 6
-    private const val FIND = 7
-    private const val DESKTOP = 8
-    private const val HOME = 9
-    private const val SETTINGS = 10
-    private const val ABOUT = 11
-    private const val DATA_SAVER = 12
-    private const val RELOAD = 13
-    private const val PAGE_ZOOM = 14
-    private const val TEXT_SIZE = 15
+    private const val RECENT_TABS = 6
+    private const val SHARE = 7
+    private const val FIND = 8
+    private const val DESKTOP = 9
+    private const val HOME = 10
+    private const val SETTINGS = 11
+    private const val ABOUT = 12
+    private const val DATA_SAVER = 13
+    private const val RELOAD = 14
+    private const val PAGE_ZOOM = 15
+    private const val TEXT_SIZE = 16
 
     interface Callbacks {
         fun onNewTab()
@@ -28,6 +29,7 @@ object BrowserMenu {
         fun onBookmarks()
         fun onHistory()
         fun onDownloads()
+        fun onRecentTabs()
         fun onReload()
         fun onShare()
         fun onFindInPage()
@@ -50,15 +52,16 @@ object BrowserMenu {
             add(0, BOOKMARKS, 2, R.string.bookmarks)
             add(0, HISTORY, 3, R.string.history)
             add(0, DOWNLOADS, 4, R.string.downloads)
-            add(0, RELOAD, 5, R.string.reload)
-            add(0, SHARE, 6, R.string.share)
-            add(0, FIND, 7, R.string.find_in_page)
-            add(0, PAGE_ZOOM, 8, R.string.page_zoom)
-            add(0, TEXT_SIZE, 9, R.string.text_size)
+            add(0, RECENT_TABS, 5, R.string.recent_tabs)
+            add(0, RELOAD, 6, R.string.reload)
+            add(0, SHARE, 7, R.string.share)
+            add(0, FIND, 8, R.string.find_in_page)
+            add(0, PAGE_ZOOM, 9, R.string.page_zoom)
+            add(0, TEXT_SIZE, 10, R.string.text_size)
             add(
                 0,
                 DESKTOP,
-                10,
+                11,
                 if (callbacks.isDesktopSiteEnabled()) R.string.desktop_site_enabled else R.string.desktop_site,
             ).apply {
                 isCheckable = true
@@ -67,15 +70,15 @@ object BrowserMenu {
             add(
                 0,
                 DATA_SAVER,
-                11,
+                12,
                 if (callbacks.isDataSaverEnabled()) R.string.data_saver_enabled else R.string.data_saver,
             ).apply {
                 isCheckable = true
                 isChecked = callbacks.isDataSaverEnabled()
             }
-            add(0, HOME, 12, R.string.add_to_home_screen)
-            add(0, SETTINGS, 13, R.string.settings)
-            add(0, ABOUT, 14, R.string.about_phnx)
+            add(0, HOME, 13, R.string.add_to_home_screen)
+            add(0, SETTINGS, 14, R.string.settings)
+            add(0, ABOUT, 15, R.string.about_phnx)
         }
         popup.setOnMenuItemClickListener { item: MenuItem ->
             when (item.itemId) {
@@ -84,6 +87,7 @@ object BrowserMenu {
                 BOOKMARKS -> callbacks.onBookmarks()
                 HISTORY -> callbacks.onHistory()
                 DOWNLOADS -> callbacks.onDownloads()
+                RECENT_TABS -> callbacks.onRecentTabs()
                 RELOAD -> callbacks.onReload()
                 SHARE -> callbacks.onShare()
                 FIND -> callbacks.onFindInPage()

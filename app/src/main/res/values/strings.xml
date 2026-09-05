@@ -9,6 +9,8 @@
     <string name="history_remember">Remember history until manually cleared</string>
     <string name="history_clear_on_close">Clear history when PHNX closes</string>
     <string name="downloads">Downloads</string>
+    <string name="recent_tabs">Recent tabs</string>
+    <string name="no_recent_tabs">No recently closed tabs for this profile.</string>
     <string name="no_downloads">No downloads for this profile.</string>
     <string name="download_open">Open</string>
     <string name="download_remove">Remove</string>

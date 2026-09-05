@@ -64,4 +64,34 @@ class TabManagerTest {
 
         assertEquals(listOf(regular), manager.persistedTabs("profile_phoenix"))
     }
+
+    @Test
+    fun regularClosedTabsCanBeRestoredPerProfile() {
+        val manager = TabManager()
+        val closed = manager.createTab(profileId = "profile_phoenix").apply {
+            title = "Example"
+            url = "https://example.com"
+        }
+        manager.closeTab(closed.id)
+
+        val recent = manager.recentlyClosed("profile_phoenix")
+        assertEquals(1, recent.size)
+        val restored = manager.restoreRecentlyClosed("profile_phoenix", recent.single().id)
+
+        assertEquals("https://example.com", restored?.url)
+        assertEquals(1, manager.tabCount("profile_phoenix"))
+        assertTrue(manager.recentlyClosed("profile_phoenix").isEmpty())
+    }
+
+    @Test
+    fun privateTabsNeverEnterRecentlyClosed() {
+        val manager = TabManager()
+        val privateTab = manager.createTab(profileId = "profile_phoenix", isPrivate = true).apply {
+            url = "https://example.com"
+        }
+
+        manager.closeTab(privateTab.id)
+
+        assertTrue(manager.recentlyClosed("profile_phoenix").isEmpty())
+    }
 }

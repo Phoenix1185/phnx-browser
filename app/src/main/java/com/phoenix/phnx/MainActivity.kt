@@ -759,6 +759,25 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onDownloads() = startActivity(Intent(this, DownloadsActivity::class.java))
 
+    override fun onRecentTabs() {
+        val profileId = profileManager.activeProfile().id
+        val recent = tabManager.recentlyClosed(profileId)
+        if (recent.isEmpty()) {
+            Toast.makeText(this, getString(R.string.no_recent_tabs), Toast.LENGTH_SHORT).show()
+            return
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.recent_tabs)
+            .setItems(recent.map { it.title.ifBlank { it.url }.take(60) }.toTypedArray()) { dialog, which ->
+                if (tabManager.restoreRecentlyClosed(profileId, recent[which].id) != null) {
+                    dialog.dismiss()
+                    attachCurrentTab()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     override fun onReload() {
         currentBrowserView()?.reload()
     }
