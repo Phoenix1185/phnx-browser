@@ -24,6 +24,7 @@ class FreeProxyProvider(
     companion object {
         const val DEFAULT_ENDPOINT = "https://hproxy.com/api/proxy-list?format=json&protocol=http,https,socks5&recent=true&limit=30"
         const val DEFAULT_LIMIT = 8
+        const val DEFAULT_TIMEOUT_MILLIS = 10_000
 
         fun parse(json: String, limit: Int = DEFAULT_LIMIT): List<ProxyEndpoint> {
             val rows = runCatching { JSONArray(json) }.getOrNull() ?: return emptyList()
