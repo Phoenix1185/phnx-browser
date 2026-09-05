@@ -57,4 +57,19 @@
     <string name="identity_saved">Identity saved. Active profiles restart to apply the new WebView settings.</string>
     <string name="identity_save_failed">Could not save identity configuration.</string>
     <string name="reset">Reset</string>
+    <string name="privacy_security">Privacy &amp; Security</string>
+    <string name="privacy_security_summary">Profile-scoped JavaScript, cookies, pop-ups, safe browsing, and tracking preferences.</string>
+    <string name="privacy_profile_summary">Settings for profile %1$s. These preferences are stored with the profile.</string>
+    <string name="privacy_javascript">JavaScript</string>
+    <string name="privacy_javascript_summary">Allow modern websites to run JavaScript. Disabling it can break pages.</string>
+    <string name="privacy_third_party_cookies">Third-party cookies</string>
+    <string name="privacy_third_party_cookies_summary">Allow cookies from embedded third-party content.</string>
+    <string name="privacy_popups">Pop-ups</string>
+    <string name="privacy_popups_summary">Allow pages to open additional windows where Android WebView supports it.</string>
+    <string name="privacy_safe_browsing">Safe Browsing</string>
+    <string name="privacy_safe_browsing_summary">Use Android WebView Safe Browsing when available.</string>
+    <string name="privacy_do_not_track">Do Not Track</string>
+    <string name="privacy_do_not_track_summary">Not exposed by the current Android WebView integration.</string>
+    <string name="privacy_tracking_protection">Tracking protection</string>
+    <string name="privacy_support_note">Standard and Strict are stored as profile preferences. Android WebView applies the supported third-party-cookie control but does not expose a complete tracker-blocking engine or Do Not Track.</string>
 </resources>

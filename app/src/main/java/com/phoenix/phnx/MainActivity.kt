@@ -65,6 +65,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val profileManager by lazy { app.profileManager }
     private val deviceProfileManager by lazy { app.deviceProfileManager }
     private val resourceManager by lazy { app.resourceManager }
+    private val privacyManager by lazy { app.privacyManager }
     private val identityAdapter = WebViewIdentityAdapter()
 
     private lateinit var browserContainer: FrameLayout
@@ -348,11 +349,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         if (webView.tag == tab.id) {
             applyBrowserModes(webView)
             applyProfileIdentity(webView, tab.profileId)
+            privacyManager.applyTo(webView, tab.profileId)
             return
         }
         webView.tag = tab.id
         applyBrowserModes(webView)
         applyProfileIdentity(webView, tab.profileId)
+        privacyManager.applyTo(webView, tab.profileId)
         webView.setOnTouchListener { _, event ->
             swipeDetector.onTouchEvent(event)
             false

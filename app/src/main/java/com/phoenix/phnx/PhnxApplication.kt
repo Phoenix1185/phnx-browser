@@ -6,6 +6,7 @@ import com.phoenix.phnx.browser.ProfileViewPool
 import com.phoenix.phnx.identity.DeviceProfileManager
 import com.phoenix.phnx.network.NetworkManager
 import com.phoenix.phnx.profiles.ProfileManager
+import com.phoenix.phnx.privacy.PrivacyManager
 import com.phoenix.phnx.resources.AndroidResourceMonitor
 import com.phoenix.phnx.resources.ResourceManager
 
@@ -22,6 +23,8 @@ class PhnxApplication : Application() {
         private set
     lateinit var profileViewPool: ProfileViewPool
         private set
+    lateinit var privacyManager: PrivacyManager
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -30,6 +33,8 @@ class PhnxApplication : Application() {
         val activeProfile = profileManager.ensureDefaultProfile()
         networkManager = NetworkManager(this)
         networkManager.getConfig(activeProfile.id)
+        privacyManager = PrivacyManager(this)
+        privacyManager.getSettings(activeProfile.id)
         deviceProfileManager = DeviceProfileManager(this)
         deviceProfileManager.getProfileConfiguration(activeProfile.id)
         resourceMonitor = AndroidResourceMonitor(this)

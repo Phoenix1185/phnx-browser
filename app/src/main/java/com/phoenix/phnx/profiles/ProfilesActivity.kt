@@ -157,6 +157,7 @@ class ProfilesActivity : AppCompatActivity() {
                 if (profileManager.deleteProfile(profile.id)) {
                     (application as PhnxApplication).networkManager.clearConfig(profile.id)
                     (application as PhnxApplication).deviceProfileManager.clearProfileConfiguration(profile.id)
+                    (application as PhnxApplication).privacyManager.clearSettings(profile.id)
                 }
                 refreshProfiles()
             }

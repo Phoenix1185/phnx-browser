@@ -12,6 +12,7 @@ import androidx.appcompat.widget.SwitchCompat
 import com.phoenix.phnx.PhnxPreferences
 import com.phoenix.phnx.R
 import com.phoenix.phnx.network.NetworkActivity
+import com.phoenix.phnx.privacy.PrivacyActivity
 import com.phoenix.phnx.profiles.ProfilesActivity
 
 class SettingsActivity : AppCompatActivity() {
@@ -27,13 +28,13 @@ class SettingsActivity : AppCompatActivity() {
         content.addView(header("Settings"))
         addThemeSection(content)
         addDataSaverSection(content)
-        addSection(content, "Privacy & Security", "Site permissions, cookies, tracking protection, and clear-data controls are planned for a later phase.")
+        addPrivacySection(content)
         addSection(content, "Site Settings", "JavaScript is enabled by default for modern websites. Per-site controls are planned.")
         addSection(content, "Downloads", "Downloads use Android's Downloads provider.")
         addSection(content, "Language and Search", "The default search engine is Google. Search-engine selection is planned.")
         addProfileSection(content)
         addNetworkSection(content)
-        addSection(content, "Performance", "Resource management is planned for Phase 5.")
+        addSection(content, "Performance", "Automatic resource lifecycle management is active; the advanced dashboard is still planned.")
         addSection(content, "About PHNX", "Open the About screen from the browser menu for version and runtime details.")
 
         setContentView(ScrollView(this).apply {
@@ -57,6 +58,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addNetworkSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.network), getString(R.string.network_summary))
         row.setOnClickListener { startActivity(Intent(this, NetworkActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addPrivacySection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.privacy_security), getString(R.string.privacy_security_summary))
+        row.setOnClickListener { startActivity(Intent(this, PrivacyActivity::class.java)) }
         parent.addView(row)
     }
 
