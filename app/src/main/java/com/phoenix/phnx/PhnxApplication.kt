@@ -14,6 +14,7 @@ import com.phoenix.phnx.profiles.ProfileManager
 import com.phoenix.phnx.privacy.ClearDataManager
 import com.phoenix.phnx.privacy.PrivacyManager
 import com.phoenix.phnx.resources.AndroidResourceMonitor
+import com.phoenix.phnx.resources.CrashRecoveryManager
 import com.phoenix.phnx.resources.ResourceManager
 import com.phoenix.phnx.search.SearchEngineManager
 
@@ -27,6 +28,8 @@ class PhnxApplication : Application() {
     lateinit var resourceMonitor: AndroidResourceMonitor
         private set
     lateinit var resourceManager: ResourceManager
+        private set
+    lateinit var crashRecoveryManager: CrashRecoveryManager
         private set
     lateinit var profileViewPool: ProfileViewPool
         private set
@@ -48,6 +51,8 @@ class PhnxApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         PhnxPreferences.applyTheme(this)
+        crashRecoveryManager = CrashRecoveryManager(this)
+        crashRecoveryManager.beginLaunch()
         profileManager = ProfileManager(this)
         val activeProfile = profileManager.ensureDefaultProfile()
         WebView.setDataDirectorySuffix(activeProfile.id)

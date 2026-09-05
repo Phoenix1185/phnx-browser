@@ -7,6 +7,8 @@ object PhnxPreferences {
     const val STORE = "phnx_preferences"
     const val DATA_SAVER_ENABLED = "data_saver_enabled"
     const val DESKTOP_SITE_ENABLED = "desktop_site_enabled"
+    const val PAGE_ZOOM_PERCENT = "page_zoom_percent"
+    const val TEXT_SCALE_PERCENT = "text_scale_percent"
     const val THEME_MODE = "theme_mode"
     const val THEME_SYSTEM = "system"
     const val THEME_LIGHT = "light"
@@ -16,6 +18,40 @@ object PhnxPreferences {
     const val HISTORY_CLEAR_ON_CLOSE = "clear_on_close"
 
     fun store(context: Context) = context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
+
+    fun profileDesktopSiteEnabled(context: Context, profileId: String): Boolean {
+        val preferences = store(context)
+        return preferences.getBoolean(
+            profileKey(DESKTOP_SITE_ENABLED, profileId),
+            preferences.getBoolean(DESKTOP_SITE_ENABLED, false),
+        )
+    }
+
+    fun setProfileDesktopSiteEnabled(context: Context, profileId: String, enabled: Boolean) {
+        store(context).edit().putBoolean(profileKey(DESKTOP_SITE_ENABLED, profileId), enabled).apply()
+    }
+
+    fun profilePageZoomPercent(context: Context, profileId: String): Int =
+        profileInt(context, PAGE_ZOOM_PERCENT, profileId, 100, 50..200)
+
+    fun setProfilePageZoomPercent(context: Context, profileId: String, percent: Int) {
+        store(context).edit().putInt(profileKey(PAGE_ZOOM_PERCENT, profileId), percent.coerceIn(50, 200)).apply()
+    }
+
+    fun profileTextScalePercent(context: Context, profileId: String): Int =
+        profileInt(context, TEXT_SCALE_PERCENT, profileId, 100, 50..200)
+
+    fun setProfileTextScalePercent(context: Context, profileId: String, percent: Int) {
+        store(context).edit().putInt(profileKey(TEXT_SCALE_PERCENT, profileId), percent.coerceIn(50, 200)).apply()
+    }
+
+    fun clearProfilePageSettings(context: Context, profileId: String) {
+        store(context).edit()
+            .remove(profileKey(DESKTOP_SITE_ENABLED, profileId))
+            .remove(profileKey(PAGE_ZOOM_PERCENT, profileId))
+            .remove(profileKey(TEXT_SCALE_PERCENT, profileId))
+            .apply()
+    }
 
     fun themeMode(context: Context): String = store(context).getString(THEME_MODE, THEME_SYSTEM) ?: THEME_SYSTEM
 
@@ -36,4 +72,14 @@ object PhnxPreferences {
         THEME_DARK -> AppCompatDelegate.MODE_NIGHT_YES
         else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
     }
+
+    private fun profileInt(
+        context: Context,
+        setting: String,
+        profileId: String,
+        default: Int,
+        validRange: IntRange,
+    ): Int = store(context).getInt(profileKey(setting, profileId), default).takeIf { it in validRange } ?: default
+
+    private fun profileKey(setting: String, profileId: String): String = "$setting.profile.$profileId"
 }

@@ -14,6 +14,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.phoenix.phnx.PhnxApplication
+import com.phoenix.phnx.PhnxPreferences
 import com.phoenix.phnx.R
 import com.phoenix.phnx.identity.IdentityActivity
 
@@ -170,6 +171,7 @@ class ProfilesActivity : AppCompatActivity() {
                     (application as PhnxApplication).historyManager.clearProfile(profile.id)
                     (application as PhnxApplication).bookmarkManager.clearProfile(profile.id)
                     (application as PhnxApplication).downloadManager.clearProfile(profile.id)
+                    PhnxPreferences.clearProfilePageSettings(this, profile.id)
                 }
                 refreshProfiles()
             }

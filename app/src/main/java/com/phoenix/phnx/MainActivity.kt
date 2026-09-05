@@ -13,6 +13,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.os.Process
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
@@ -27,6 +30,7 @@ import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.RenderProcessGoneDetail
+import android.webkit.SafeBrowsingResponse
 import android.webkit.WebSettings
 import android.webkit.SslErrorHandler
 import android.webkit.WebView
@@ -53,12 +57,14 @@ import com.phoenix.phnx.browser.BrowserController
 import com.phoenix.phnx.browser.BrowserView
 import com.phoenix.phnx.browser.NavigationController
 import com.phoenix.phnx.downloads.DownloadsActivity
+import com.phoenix.phnx.downloads.DownloadSecurityManager
 import com.phoenix.phnx.identity.DevicePresets
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.network.NetworkApplyStatus
 import com.phoenix.phnx.network.NetworkActivity
 import com.phoenix.phnx.chromium.network.ChromiumProxyAdapter
+import com.phoenix.phnx.pages.FindInPageResult
 import com.phoenix.phnx.permissions.SitePermissionDecision
 import com.phoenix.phnx.permissions.SitePermission
 import com.phoenix.phnx.permissions.SitePermissionType
@@ -66,6 +72,8 @@ import com.phoenix.phnx.profiles.TabSessionEntity
 import com.phoenix.phnx.profiles.ProfileStatus
 import com.phoenix.phnx.resources.ProfileLifecycleState
 import com.phoenix.phnx.resources.ProfileResourceState
+import com.phoenix.phnx.security.BrowserSecurityState
+import com.phoenix.phnx.security.SecurityStateResolver
 import com.phoenix.phnx.settings.SettingsActivity
 import com.phoenix.phnx.tabs.Tab
 import com.phoenix.phnx.tabs.TabManager
@@ -85,6 +93,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private lateinit var browserContainer: FrameLayout
     private lateinit var addressBar: EditText
     private lateinit var progressBar: ProgressBar
+    private lateinit var securityIndicator: TextView
     private lateinit var tabCount: TextView
     private lateinit var bookmarkButton: TextView
     private lateinit var refreshButton: TextView
@@ -98,6 +107,11 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var appliedNetworkConfigHash: Int? = null
     private var customView: View? = null
     private var customViewCallback: CustomViewCallback? = null
+    private var securityState = BrowserSecurityState.UNKNOWN
+    private val downloadSecurityManager by lazy { DownloadSecurityManager() }
+    private var findQuery = ""
+    private var findDialogWebView: WebView? = null
+    private var findCountView: TextView? = null
 
     private val swipeDetector by lazy {
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -176,9 +190,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (restartForShortcutProfile(intent)) return
+        val activeProfileId = profileManager.activeProfile().id
         val preferences = PhnxPreferences.store(this)
         dataSaverEnabled = preferences.getBoolean(PhnxPreferences.DATA_SAVER_ENABLED, false)
-        desktopSiteEnabled = preferences.getBoolean(PhnxPreferences.DESKTOP_SITE_ENABLED, false)
+        desktopSiteEnabled = PhnxPreferences.profileDesktopSiteEnabled(this, activeProfileId)
+        pageZoomPercent = PhnxPreferences.profilePageZoomPercent(this, activeProfileId)
+        textScalePercent = PhnxPreferences.profileTextScalePercent(this, activeProfileId)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = getColor(R.color.phnx_navy)
         window.navigationBarColor = getColor(R.color.phnx_navy)
@@ -187,7 +205,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         setContentView(layout)
         applySystemBarInsets(layout)
 
-        val activeProfileId = profileManager.activeProfile().id
         appliedNetworkConfigHash = app.networkManager.getConfig(activeProfileId).hashCode()
         val savedTabs = profileManager.loadTabSessions(activeProfileId)
         if (savedTabs.isEmpty()) {
@@ -212,6 +229,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         browserController.setSessionSaver(::saveProfileSession)
         attachCurrentTab()
         openIncomingPage(intent)
+        app.crashRecoveryManager.markHealthy()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (customView != null) {
@@ -301,6 +319,14 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val forward = toolbarButton("›", "Forward")
         forward.setOnClickListener { currentBrowserView()?.goForward() }
         toolbar.addView(forward)
+
+        securityIndicator = TextView(this).apply {
+            gravity = Gravity.CENTER
+            textSize = 12f
+            setTextColor(getColor(R.color.phnx_toolbar_content))
+            contentDescription = "Security state"
+        }
+        toolbar.addView(securityIndicator, LinearLayout.LayoutParams(dp(42), dp(48)))
 
         addressBar = EditText(this).apply {
             hint = getString(R.string.address_hint)
@@ -399,6 +425,15 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun configureWebView(webView: BrowserView, tab: Tab) {
+        webView.setFindListener { activeMatchOrdinal, numberOfMatches, isDoneCounting ->
+            if (findDialogWebView === webView) {
+                findCountView?.text = FindInPageResult(
+                    activeMatchOrdinal = activeMatchOrdinal,
+                    numberOfMatches = numberOfMatches,
+                    isDoneCounting = isDoneCounting,
+                ).summary()
+            }
+        }
         if (webView.tag == tab.id) {
             applyBrowserModes(webView)
             applyProfileIdentity(webView, tab.profileId)
@@ -420,6 +455,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.isLoading = true
                 tab.url = url
                 tab.title = tabTitleForUrl(url)
+                if (tabManager.currentTab()?.id == tab.id) updateSecurityState(SecurityStateResolver.fromUrl(url))
                 updateTabChrome(tab, view)
             }
 
@@ -427,6 +463,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.isLoading = false
                 if (url != START_PAGE_BASE) tab.url = url
                 tab.title = view.title?.takeIf { it.isNotBlank() } ?: tabTitleForUrl(url)
+                if (tabManager.currentTab()?.id == tab.id) updateSecurityState(SecurityStateResolver.fromUrl(url))
                 privacyManager.applyTo(view, tab.profileId)
                 app.historyManager.recordVisit(tab.profileId, url, tab.title, tab.isPrivate)
                 updateTabChrome(tab, view)
@@ -449,18 +486,38 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
             override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: android.net.http.SslError) {
                 handler.cancel()
+                if (tabManager.currentTab()?.id == tab.id) updateSecurityState(BrowserSecurityState.CERTIFICATE_ERROR)
                 if (view.url == error.url) {
                     showError("The secure connection could not be verified.")
+                }
+            }
+
+            override fun onSafeBrowsingHit(
+                view: WebView,
+                request: WebResourceRequest,
+                threatType: Int,
+                callback: SafeBrowsingResponse,
+            ) {
+                callback.backToSafety(true)
+                if (tabManager.currentTab()?.id == tab.id) {
+                    updateSecurityState(BrowserSecurityState.SAFE_BROWSING_WARNING)
+                    showError("Android Safe Browsing blocked this page.")
                 }
             }
 
             override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
                 val isCurrentTab = tabManager.currentTab()?.id == tab.id
                 browserController.suspendProfile(tab.profileId)
+                val recovery = app.crashRecoveryManager.recordRendererCrash()
                 attachedTabId = null
                 tab.isLoading = false
                 if (isCurrentTab) {
-                    showError("The page renderer stopped unexpectedly. Retry to reopen this tab.")
+                    val message = if (recovery.recoveryMode) {
+                        "The page renderer has stopped repeatedly. Retry after closing other tabs or restarting PHNX."
+                    } else {
+                        "The page renderer stopped unexpectedly. Retry to reopen this tab."
+                    }
+                    showError(message)
                 }
                 return true
             }
@@ -625,6 +682,24 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     private fun requestDownload(url: String, userAgent: String, contentDisposition: String, mimeType: String) {
         val request = PendingDownload(url, userAgent, contentDisposition, mimeType)
+        val assessment = downloadSecurityManager.assess(url, contentDisposition, mimeType)
+        if (!assessment.allowed) {
+            Toast.makeText(this, assessment.message, Toast.LENGTH_LONG).show()
+            return
+        }
+        if (assessment.requiresConfirmation) {
+            AlertDialog.Builder(this)
+                .setTitle("Review download")
+                .setMessage(assessment.message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton("Download") { _, _ -> beginDownload(request) }
+                .show()
+            return
+        }
+        beginDownload(request)
+    }
+
+    private fun beginDownload(request: PendingDownload) {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
         ) {
@@ -697,6 +772,19 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val profileName = profileManager.getAllProfiles().firstOrNull { it.id == tab.profileId }?.name ?: "Profile"
         val groupSummary = if (profileGroupCount == 0) "" else " · $profileGroupCount group${if (profileGroupCount == 1) "" else "s"}"
         tabCount.text = "$profileName · $profileTabCount tab${if (profileTabCount == 1) "" else "s"}$groupSummary"
+    }
+
+    private fun updateSecurityState(state: BrowserSecurityState) {
+        securityState = state
+        if (!::securityIndicator.isInitialized) return
+        securityIndicator.text = when (state) {
+            BrowserSecurityState.SECURE -> "LOCK"
+            BrowserSecurityState.NOT_SECURE -> "HTTP"
+            BrowserSecurityState.CERTIFICATE_ERROR -> "CERT"
+            BrowserSecurityState.SAFE_BROWSING_WARNING -> "SAFE"
+            BrowserSecurityState.UNKNOWN -> ""
+        }
+        securityIndicator.contentDescription = "Security state: ${state.name.lowercase().replace('_', ' ')}"
     }
 
     private fun currentBrowserView(): BrowserView? = tabManager.currentTab()?.let(browserController::getOrCreate)
@@ -949,13 +1037,81 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     override fun onFindInPage() {
-        val input = EditText(this).apply { hint = "Find text on this page"; isSingleLine = true }
-        AlertDialog.Builder(this)
+        val view = currentBrowserView() ?: return
+        val input = EditText(this).apply {
+            hint = "Find text on this page"
+            isSingleLine = true
+            setText(findQuery)
+            setSelection(text.length)
+        }
+        val matchCount = TextView(this).apply {
+            text = FindInPageResult(0, 0, true).summary()
+            setTextColor(getColor(R.color.phnx_muted))
+            setPadding(0, dp(8), 0, dp(4))
+            contentDescription = "Find match count"
+        }
+        val previous = Button(this).apply { text = "Previous" }
+        val next = Button(this).apply { text = "Next" }
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(4), dp(20), 0)
+            addView(input)
+            addView(matchCount)
+            addView(LinearLayout(this@MainActivity).apply {
+                gravity = Gravity.END
+                addView(previous, LinearLayout.LayoutParams(0, dp(48), 1f))
+                addView(next, LinearLayout.LayoutParams(0, dp(48), 1f))
+            })
+        }
+        val dialog = AlertDialog.Builder(this)
             .setTitle(getString(R.string.find_in_page))
-            .setView(input)
+            .setView(content)
             .setNegativeButton("Cancel", null)
-            .setPositiveButton("Find") { _, _ -> currentBrowserView()?.findAllAsync(input.text.toString()) }
-            .show()
+            .setPositiveButton("Done", null)
+            .create()
+        val watcher = object : TextWatcher {
+            override fun beforeTextChanged(text: CharSequence?, start: Int, count: Int, after: Int) = Unit
+
+            override fun onTextChanged(text: CharSequence?, start: Int, before: Int, count: Int) {
+                findQuery = text?.toString().orEmpty()
+                val hasQuery = findQuery.isNotBlank()
+                previous.isEnabled = hasQuery
+                next.isEnabled = hasQuery
+                if (hasQuery) {
+                    matchCount.text = FindInPageResult(0, 0, false).summary()
+                    view.findAllAsync(findQuery)
+                } else {
+                    view.clearMatches()
+                    matchCount.text = FindInPageResult(0, 0, true).summary()
+                }
+            }
+
+            override fun afterTextChanged(editable: Editable?) = Unit
+        }
+        input.addTextChangedListener(watcher)
+        previous.setOnClickListener { view.findNext(false) }
+        next.setOnClickListener { view.findNext(true) }
+        dialog.setOnShowListener {
+            findDialogWebView = view
+            findCountView = matchCount
+            previous.isEnabled = findQuery.isNotBlank()
+            next.isEnabled = findQuery.isNotBlank()
+            if (findQuery.isBlank()) {
+                matchCount.text = FindInPageResult(0, 0, true).summary()
+            } else {
+                matchCount.text = FindInPageResult(0, 0, false).summary()
+                view.findAllAsync(findQuery)
+            }
+        }
+        dialog.setOnDismissListener {
+            input.removeTextChangedListener(watcher)
+            view.clearMatches()
+            if (findDialogWebView === view) {
+                findDialogWebView = null
+                findCountView = null
+            }
+        }
+        dialog.show()
     }
 
     override fun onPageZoom() {
@@ -965,6 +1121,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             .setTitle(R.string.page_zoom)
             .setSingleChoiceItems(levels.map { "$it%" }.toTypedArray(), levels.indexOf(pageZoomPercent).coerceAtLeast(0)) { dialog, which ->
                 pageZoomPercent = levels[which]
+                PhnxPreferences.setProfilePageZoomPercent(this, profileManager.activeProfile().id, pageZoomPercent)
                 applyPageControls(view)
                 view.reload()
                 dialog.dismiss()
@@ -980,6 +1137,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             .setTitle(R.string.text_size)
             .setSingleChoiceItems(levels.map { "$it%" }.toTypedArray(), levels.indexOf(textScalePercent).coerceAtLeast(0)) { dialog, which ->
                 textScalePercent = levels[which]
+                PhnxPreferences.setProfileTextScalePercent(this, profileManager.activeProfile().id, textScalePercent)
                 applyPageControls(view)
                 dialog.dismiss()
             }
@@ -989,9 +1147,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onDesktopSite() {
         desktopSiteEnabled = !desktopSiteEnabled
-        PhnxPreferences.store(this).edit()
-            .putBoolean(PhnxPreferences.DESKTOP_SITE_ENABLED, desktopSiteEnabled)
-            .apply()
+        PhnxPreferences.setProfileDesktopSiteEnabled(this, profileManager.activeProfile().id, desktopSiteEnabled)
         attachCurrentTab()
         currentBrowserView()?.reload()
         Toast.makeText(
@@ -1027,11 +1183,14 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             return
         }
         val label = tab.title.trim().ifBlank { tab.url }.take(60)
-        val shortcut = ShortcutInfo.Builder(this, "page_${tab.url.hashCode()}")
+        val shortcut = ShortcutInfo.Builder(this, "page_${tab.profileId}_${tab.url.hashCode()}")
             .setShortLabel(label.take(25))
             .setLongLabel(label)
             .setIcon(Icon.createWithResource(this, R.drawable.ic_launcher))
-            .setIntent(Intent(Intent.ACTION_VIEW, Uri.parse(tab.url)).setClass(this, MainActivity::class.java))
+            .setIntent(Intent(Intent.ACTION_VIEW, Uri.parse(tab.url)).apply {
+                setClass(this@MainActivity, MainActivity::class.java)
+                putExtra(EXTRA_PROFILE_ID, tab.profileId)
+            })
             .build()
         shortcuts.requestPinShortcut(shortcut, null)
         Toast.makeText(this, getString(R.string.shortcut_requested), Toast.LENGTH_SHORT).show()
@@ -1042,6 +1201,25 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     override fun onAbout() = startActivity(Intent(this, AboutActivity::class.java))
 
     private fun showPlanned(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+
+    private fun restartForShortcutProfile(incomingIntent: Intent?): Boolean {
+        if (incomingIntent?.action != Intent.ACTION_VIEW) return false
+        val requestedProfileId = incomingIntent.getStringExtra(EXTRA_PROFILE_ID) ?: return false
+        val activeProfileId = profileManager.activeProfile().id
+        if (requestedProfileId == activeProfileId) return false
+        if (profileManager.getAllProfiles().none { it.id == requestedProfileId }) return false
+        if (profileManager.switchProfile(requestedProfileId) == null) return false
+
+        startActivity(Intent(this, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            data = incomingIntent.data
+            putExtra(EXTRA_PROFILE_ID, requestedProfileId)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        })
+        finishAffinity()
+        Process.killProcess(Process.myPid())
+        return true
+    }
 
     private fun openIncomingPage(incomingIntent: Intent?) {
         if (incomingIntent?.action != Intent.ACTION_VIEW) return
@@ -1116,6 +1294,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     private companion object {
         const val START_PAGE_BASE = "https://phnx.local/"
+        const val EXTRA_PROFILE_ID = "profile_id"
     }
 
     private fun startPageHtml(): String {
