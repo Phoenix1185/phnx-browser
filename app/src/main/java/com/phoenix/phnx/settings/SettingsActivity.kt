@@ -1,5 +1,6 @@
 package com.phoenix.phnx.settings
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.LinearLayout
@@ -10,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import com.phoenix.phnx.PhnxPreferences
 import com.phoenix.phnx.R
+import com.phoenix.phnx.profiles.ProfilesActivity
 
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,7 +30,7 @@ class SettingsActivity : AppCompatActivity() {
         addSection(content, "Site Settings", "JavaScript is enabled by default for modern websites. Per-site controls are planned.")
         addSection(content, "Downloads", "Downloads use Android's Downloads provider.")
         addSection(content, "Language and Search", "The default search engine is Google. Search-engine selection is planned.")
-        addSection(content, "Profiles", "Multiple isolated profiles are planned for Phase 2.")
+        addProfileSection(content)
         addSection(content, "Network", "Per-profile network configuration is planned for Phase 3.")
         addSection(content, "Performance", "Resource management is planned for Phase 5.")
         addSection(content, "About PHNX", "Open the About screen from the browser menu for version and runtime details.")
@@ -42,6 +44,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addThemeSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.theme), themeLabel())
         row.setOnClickListener { showThemeDialog() }
+        parent.addView(row)
+    }
+
+    private fun addProfileSection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.profiles), getString(R.string.profiles_summary))
+        row.setOnClickListener { startActivity(Intent(this, ProfilesActivity::class.java)) }
         parent.addView(row)
     }
 

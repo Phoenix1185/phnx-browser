@@ -63,7 +63,8 @@ class ProfileManager(context: Context) {
     private fun createProfileInternal(name: String, id: String = "profile_${UUID.randomUUID()}"): ProfileEntity {
         val now = System.currentTimeMillis()
         val storage = File(appContext.filesDir, "profiles/$id").apply { mkdirs() }
-        return ProfileEntity(id, name.ifBlank { "Phoenix" }, now, now, ProfileStatus.ACTIVE, storage.absolutePath)
+        val status = if (dao.getAll().isEmpty()) ProfileStatus.ACTIVE else ProfileStatus.IDLE
+        return ProfileEntity(id, name.ifBlank { "Phoenix" }, now, now, status, storage.absolutePath)
             .also { dao.upsert(it) }
     }
 
