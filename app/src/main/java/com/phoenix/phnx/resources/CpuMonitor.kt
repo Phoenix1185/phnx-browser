@@ -1,24 +1,54 @@
 package com.phoenix.phnx.resources
 
 import java.io.File
+import android.os.Debug
+import android.os.SystemClock
 
 class CpuMonitor {
     private var previousProcessTicks: Long? = null
     private var previousTotalTicks: Long? = null
+    private var previousThreadCpuNanos: Long? = null
+    private var previousWallNanos: Long? = null
+    private var lastPercent: Double? = null
+
+    init {
+        previousProcessTicks = readProcessTicks()
+        previousTotalTicks = readTotalTicks()
+        previousThreadCpuNanos = Debug.threadCpuTimeNanos()
+        previousWallNanos = SystemClock.elapsedRealtimeNanos()
+    }
 
     @Synchronized
     fun samplePercent(): Double? {
-        val processTicks = readProcessTicks() ?: return null
-        val totalTicks = readTotalTicks() ?: return null
+        val processTicks = readProcessTicks()
+        val totalTicks = readTotalTicks()
         val previousProcess = previousProcessTicks
         val previousTotal = previousTotalTicks
-        previousProcessTicks = processTicks
-        previousTotalTicks = totalTicks
-        if (previousProcess == null || previousTotal == null) return null
-        val processDelta = processTicks - previousProcess
-        val totalDelta = totalTicks - previousTotal
-        if (processDelta < 0 || totalDelta <= 0) return null
-        return (processDelta.toDouble() / totalDelta * Runtime.getRuntime().availableProcessors() * 100.0)
+        if (processTicks != null && totalTicks != null) {
+            previousProcessTicks = processTicks
+            previousTotalTicks = totalTicks
+            if (previousProcess != null && previousTotal != null) {
+                val processDelta = processTicks - previousProcess
+                val totalDelta = totalTicks - previousTotal
+                if (processDelta >= 0 && totalDelta > 0) {
+                    lastPercent = (processDelta.toDouble() / totalDelta * Runtime.getRuntime().availableProcessors() * 100.0)
+                        .coerceIn(0.0, 100.0)
+                    return lastPercent
+                }
+            }
+        }
+        return sampleThreadFallback()?.also { lastPercent = it } ?: lastPercent
+    }
+
+    private fun sampleThreadFallback(): Double? {
+        val cpuNanos = Debug.threadCpuTimeNanos()
+        val wallNanos = SystemClock.elapsedRealtimeNanos()
+        val previousCpu = previousThreadCpuNanos
+        val previousWall = previousWallNanos
+        previousThreadCpuNanos = cpuNanos
+        previousWallNanos = wallNanos
+        if (previousCpu == null || previousWall == null || wallNanos <= previousWall) return null
+        return ((cpuNanos - previousCpu).toDouble() / (wallNanos - previousWall) * 100.0)
             .coerceIn(0.0, 100.0)
     }
 

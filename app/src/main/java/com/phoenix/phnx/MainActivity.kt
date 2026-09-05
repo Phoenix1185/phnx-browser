@@ -394,6 +394,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.isLoading = false
                 if (url != START_PAGE_BASE) tab.url = url
                 tab.title = view.title?.takeIf { it.isNotBlank() } ?: tabTitleForUrl(url)
+                privacyManager.applyTo(view, tab.profileId)
                 app.historyManager.recordVisit(tab.profileId, url, tab.title, tab.isPrivate)
                 updateTabChrome(tab, view)
                 hideError()

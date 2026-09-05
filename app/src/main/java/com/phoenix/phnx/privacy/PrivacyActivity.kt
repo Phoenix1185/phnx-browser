@@ -51,7 +51,10 @@ class PrivacyActivity : AppCompatActivity() {
             settings = settings.copy(safeBrowsingEnabled = it)
             save()
         }
-        addSwitch(content, getString(R.string.privacy_do_not_track), getString(R.string.privacy_do_not_track_summary), settings.doNotTrack, enabled = false) {}
+        addSwitch(content, getString(R.string.privacy_do_not_track), getString(R.string.privacy_do_not_track_summary), settings.doNotTrack) {
+            settings = settings.copy(doNotTrack = it)
+            save()
+        }
         content.addView(optionRow(getString(R.string.site_permissions), getString(R.string.site_permissions_summary)).apply {
             setOnClickListener { startActivity(android.content.Intent(this@PrivacyActivity, PermissionActivity::class.java)) }
         })

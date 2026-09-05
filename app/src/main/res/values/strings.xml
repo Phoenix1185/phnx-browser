@@ -105,9 +105,9 @@
     <string name="privacy_safe_browsing">Safe Browsing</string>
     <string name="privacy_safe_browsing_summary">Use Android WebView Safe Browsing when available.</string>
     <string name="privacy_do_not_track">Do Not Track</string>
-    <string name="privacy_do_not_track_summary">Not exposed by the current Android WebView integration.</string>
+    <string name="privacy_do_not_track_summary">Expose navigator.doNotTrack = 1 to pages. Websites may ignore this preference.</string>
     <string name="privacy_tracking_protection">Tracking protection</string>
-    <string name="privacy_support_note">Standard and Strict are stored as profile preferences. Android WebView applies the supported third-party-cookie control but does not expose a complete tracker-blocking engine or Do Not Track.</string>
+    <string name="privacy_support_note">Standard and Strict are stored as profile preferences. Android WebView applies the supported third-party-cookie control, while Do Not Track is exposed to pages as a best-effort page signal that websites may ignore.</string>
     <string name="site_permissions">Site permissions</string>
     <string name="site_permissions_summary">Review and reset camera, microphone, location, and other saved site decisions.</string>
     <string name="reset_all_site_permissions">Reset all site permissions</string>

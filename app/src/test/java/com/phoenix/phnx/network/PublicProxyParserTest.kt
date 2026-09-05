@@ -19,4 +19,13 @@ class PublicProxyParserTest {
         assertTrue(proxies.single().httpsSupported)
         assertEquals(142, proxies.single().reportedLatencyMs)
     }
+
+    @Test
+    fun parsesPlainProxyFeedAndSkipsInvalidRows() {
+        val source = ProxySource("proxyscrape", "ProxyScrape", "https://example.com/feed")
+        val proxies = PublicProxyParser.parse(source, "203.0.113.10:8080\ninvalid\n198.51.100.7:65536\n198.51.100.7:1080", limit = 5)
+
+        assertEquals(2, proxies.size)
+        assertTrue(proxies.all { it.type == ProxyType.HTTP })
+    }
 }

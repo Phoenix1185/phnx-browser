@@ -282,9 +282,10 @@ class NetworkActivity : AppCompatActivity() {
             loadedConfig = config
             password.text.clear()
             result.text = "Testing proxy connection..."
-            operationExecutor.execute {
-                val test = app.networkManager.testConfig(profileId)
-                runOnUiThread {
+        operationExecutor.execute {
+            val outcome = runCatching { app.networkManager.testConfig(profileId) }
+            runOnUiThread {
+                outcome.onSuccess { test ->
                     if (test.state == ConnectionTestState.SUCCESS) {
                         result.text = "My proxy: Healthy ${test.latencyMs ?: "?"} ms. ${test.message}"
                         hideFailureActions()
@@ -292,8 +293,11 @@ class NetworkActivity : AppCompatActivity() {
                         lastFailedProxy = null
                         showFailure("Proxy connection failed. ${test.message}")
                     }
+                }.onFailure { error ->
+                    showFailure("Proxy test failed. ${error.message ?: error.javaClass.simpleName}")
                 }
             }
+        }
         }.onFailure { showFailure(it.message ?: "Could not test proxy configuration.") }
     }
 
@@ -313,12 +317,24 @@ class NetworkActivity : AppCompatActivity() {
         freeProxyRadio.isChecked = true
         result.text = if (forceRefresh) "Refreshing public proxies and checking health..." else "Fetching public proxies and checking health..."
         operationExecutor.execute {
-            val proxies = app.networkManager.fetchPublicProxies(profileId, forceRefresh = forceRefresh)
+            val outcome = runCatching {
+                app.networkManager.fetchPublicProxies(profileId, forceRefresh = forceRefresh)
+            }
             runOnUiThread {
-                discoveredProxies = proxies
-                loadedConfig = app.networkManager.getConfig(profileId)
-                renderProxyList()
-                result.text = if (proxies.isEmpty()) "No public proxy endpoints were returned." else "Checked ${proxies.size} public proxy endpoint(s)."
+                outcome.onSuccess { proxies ->
+                    discoveredProxies = proxies
+                    loadedConfig = app.networkManager.getConfig(profileId)
+                    renderProxyList()
+                    loadedConfig?.let(::updateActiveStatus)
+                    hideFailureActions()
+                    result.text = if (proxies.isEmpty()) {
+                        "No public proxy endpoints were returned."
+                    } else {
+                        "Checked ${proxies.size} public proxy endpoint(s)."
+                    }
+                }.onFailure { error ->
+                    showFailure("Could not fetch public proxies. ${error.message ?: error.javaClass.simpleName}")
+                }
             }
         }
     }
@@ -350,19 +366,26 @@ class NetworkActivity : AppCompatActivity() {
         loadedConfig = config
         result.text = "Checking ${endpoint.host}:${endpoint.port} before applying..."
         operationExecutor.execute {
-            val test = app.networkManager.testProxy(profileId, endpoint)
-            val apply = if (test.state == ConnectionTestState.SUCCESS) {
-                app.networkManager.applyConfig(profileId, ChromiumProxyAdapter())
-            } else {
-                null
+            val outcome = runCatching {
+                val test = app.networkManager.testProxy(profileId, endpoint)
+                val apply = if (test.state == ConnectionTestState.SUCCESS) {
+                    app.networkManager.applyConfig(profileId, ChromiumProxyAdapter())
+                } else {
+                    null
+                }
+                test to apply
             }
             runOnUiThread {
-                if (test.state == ConnectionTestState.SUCCESS && apply?.status == NetworkApplyStatus.APPLIED) {
-                    result.text = "Free proxy active: ${endpoint.host}:${endpoint.port} (${test.latencyMs ?: "?"} ms)."
-                    hideFailureActions()
-                    updateActiveStatus(config.copy(freeProxyFallbacks = discoveredProxies))
-                } else {
-                    showFailure("Proxy connection failed. ${test.message}\n${apply?.message.orEmpty()}".trim())
+                outcome.onSuccess { (test, apply) ->
+                    if (test.state == ConnectionTestState.SUCCESS && apply?.status == NetworkApplyStatus.APPLIED) {
+                        result.text = "Free proxy active: ${endpoint.host}:${endpoint.port} (${test.latencyMs ?: "?"} ms)."
+                        hideFailureActions()
+                        updateActiveStatus(config.copy(freeProxyFallbacks = discoveredProxies))
+                    } else {
+                        showFailure("Proxy connection failed. ${test.message}\n${apply?.message.orEmpty()}".trim())
+                    }
+                }.onFailure { error ->
+                    showFailure("Proxy connection failed. ${error.message ?: error.javaClass.simpleName}")
                 }
             }
         }
@@ -373,14 +396,18 @@ class NetworkActivity : AppCompatActivity() {
         loadedConfig = config
         password.text.clear()
         operationExecutor.execute {
-            val apply = app.networkManager.applyConfig(profileId, ChromiumProxyAdapter())
+            val outcome = runCatching { app.networkManager.applyConfig(profileId, ChromiumProxyAdapter()) }
             runOnUiThread {
-                if (apply.status == NetworkApplyStatus.APPLIED) {
-                    result.text = "$successPrefix ${apply.message}"
-                    hideFailureActions()
-                    updateActiveStatus(config)
-                } else {
-                    showFailure("Proxy connection failed. ${apply.message}")
+                outcome.onSuccess { apply ->
+                    if (apply.status == NetworkApplyStatus.APPLIED) {
+                        result.text = "$successPrefix ${apply.message}"
+                        hideFailureActions()
+                        updateActiveStatus(config)
+                    } else {
+                        showFailure("Proxy connection failed. ${apply.message}")
+                    }
+                }.onFailure { error ->
+                    showFailure("Could not apply network configuration. ${error.message ?: error.javaClass.simpleName}")
                 }
             }
         }
