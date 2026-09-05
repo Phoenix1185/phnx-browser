@@ -1,0 +1,18 @@
+flowchart TB
+    Menu[BrowserMenu] --> NewTab[New tab → TabManager]
+    Menu --> Private[Private tab → PrivateBrowsingManager]
+    Menu --> Bookmarks[Bookmarks → BookmarkManager/UI]
+    Menu --> History[History → HistoryManager/UI]
+    Menu --> Downloads[Downloads → DownloadManager/UI]
+    Menu --> Recent[Recent tabs → TabRestorationManager]
+    Menu --> Share[Share → ShareManager]
+    Menu --> Find[Find in page → FindInPageManager]
+    Menu --> Desktop[Desktop site → DesktopSiteManager]
+    Menu --> Home[Home shortcut → HomeScreenShortcutManager]
+    Menu --> Settings[Settings → SettingsActivity]
+    Menu --> About[About → AboutActivity]
+
+    classDef menu fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:2px
+    classDef route fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    class Menu menu
+    class NewTab,Private,Bookmarks,History,Downloads,Recent,Share,Find,Desktop,Home,Settings,About route

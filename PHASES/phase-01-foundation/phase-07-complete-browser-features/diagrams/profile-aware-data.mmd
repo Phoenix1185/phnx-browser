@@ -1,0 +1,21 @@
+flowchart LR
+    A[Profile A] --> AT[Tabs A]
+    A --> AH[History A]
+    A --> AB[Bookmarks A]
+    A --> AD[Downloads A]
+    A --> AS[Session A]
+    B[Profile B] --> BT[Tabs B]
+    B --> BH[History B]
+    B --> BB[Bookmarks B]
+    B --> BD[Downloads B]
+    B --> BS[Session B]
+    AT -. isolated from .-> BT
+    AH -. isolated from .-> BH
+    AB -. isolated from .-> BB
+    AD -. isolated from .-> BD
+    AS -. isolated from .-> BS
+
+    classDef profile fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef data fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    class A,B profile
+    class AT,AH,AB,AD,AS,BT,BH,BB,BD,BS data

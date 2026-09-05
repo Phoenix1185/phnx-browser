@@ -1,0 +1,16 @@
+flowchart TB
+    Tabs[Profile-aware tabs] --> Save[TabRestorationManager saves URL, title, profile, privacy, order, active tab]
+    Save --> Restart[PHNX restarts]
+    Restart --> LoadProfiles[Load profiles]
+    LoadProfiles --> LoadTabs[Load saved tabs]
+    LoadTabs --> Policy[Phase 5 resource policy selects required sessions]
+    Policy --> Restore[Restore selected sessions]
+    Restore --> Active[Resume active profile and tabs]
+    Private[Private tabs] -. do not persist as normal tabs .-> Restore
+
+    classDef feature fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef flow fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef boundary fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Tabs,Save,Restart,LoadProfiles,LoadTabs,Policy feature
+    class Restore,Active flow
+    class Private boundary

@@ -1,0 +1,19 @@
+flowchart TB
+    Create[Create Profile A] --> Tabs[Open five tabs]
+    Tabs --> Visit[Visit websites]
+    Visit --> Bookmark[Bookmark pages]
+    Bookmark --> Search[Search pages]
+    Search --> Download[Download file]
+    Download --> History[Check history]
+    History --> Switch[Switch to Profile B]
+    Switch --> Other[Open different tabs]
+    Other --> Return[Return to Profile A]
+    Return --> Verify[Verify tabs, bookmarks, downloads, history, and session]
+    Verify --> Restart[Restart PHNX]
+    Restart --> Restore[Restore Profile A and B sessions]
+    Restore --> Final[Verify profile-aware state]
+
+    classDef action fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef verify fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Create,Tabs,Visit,Bookmark,Search,Download,History,Switch,Other,Return,Restart action
+    class Verify,Restore,Final verify
