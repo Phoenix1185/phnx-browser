@@ -1,0 +1,13 @@
+flowchart TB
+    Address["←  →  🔒 example.com  ⋮"]
+    Divider1["────────────────────────────────"]
+    Web["WEB PAGE\nChromium-rendered content"]
+    Divider2["────────────────────────────────"]
+    Bottom["＋     Tab count     ⋮"]
+
+    Address --> Divider1 --> Web --> Divider2 --> Bottom
+
+    classDef chrome fill:#f8fafc,stroke:#334155,color:#0f172a,stroke-width:1.5px
+    classDef page fill:#ecfeff,stroke:#0891b2,color:#164e63,stroke-width:1.5px
+    class Address,Divider1,Divider2,Bottom chrome
+    class Web page

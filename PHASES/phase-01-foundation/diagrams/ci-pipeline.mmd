@@ -1,0 +1,18 @@
+flowchart LR
+    Push[Git push] --> Checkout[Checkout repository]
+    Checkout --> JDK[Install JDK]
+    JDK --> SDK[Install Android SDK]
+    SDK --> Gradle[Configure Gradle]
+    Gradle --> Cache[Restore Gradle cache]
+    Cache --> Tests[Run tests]
+    Tests --> Debug[Build debug APK]
+    Tests --> Release[Build release APK]
+    Tests --> Bundle[Build release AAB]
+    Debug --> Upload[Upload artifacts]
+    Release --> Upload
+    Bundle --> Upload
+
+    classDef action fill:#eff6ff,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef artifact fill:#ecfdf5,stroke:#059669,color:#064e3b,stroke-width:1.5px
+    class Push,Checkout,JDK,SDK,Gradle,Cache,Tests action
+    class Debug,Release,Bundle,Upload artifact

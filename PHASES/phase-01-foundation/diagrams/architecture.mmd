@@ -1,0 +1,50 @@
+flowchart TB
+    subgraph App[PHNX Browser Android App]
+        Main[MainActivity]
+        UI[Native browser UI]
+        Address[Address bar]
+        Nav[Navigation controls]
+        Menu[Browser menu]
+        Tabs[TabManager]
+        Settings[Settings screen]
+        About[About PHNX screen]
+        Errors[PHNX error page]
+    end
+
+    subgraph Browser[Browser shell]
+        Controller[BrowserController]
+        View[BrowserView]
+        Navigation[NavigationController]
+        Chromium[Chromium-based engine]
+    end
+
+    subgraph Android[Android platform]
+        Permissions[Runtime permissions]
+        Downloads[Android Downloads]
+        Resources[Resources and branding]
+    end
+
+    Main --> UI
+    UI --> Address
+    UI --> Nav
+    UI --> Menu
+    UI --> Tabs
+    UI --> Settings
+    UI --> About
+    Address --> Controller
+    Nav --> Navigation
+    Tabs --> Controller
+    Controller --> View
+    View --> Chromium
+    Navigation --> Chromium
+    Chromium --> Errors
+    Chromium --> Permissions
+    Chromium --> Downloads
+    UI --> Resources
+
+    classDef shell fill:#fff4d6,stroke:#b7791f,color:#3d2a08,stroke-width:1.5px
+    classDef browser fill:#e6fffa,stroke:#0f766e,color:#123b38,stroke-width:1.5px
+    classDef platform fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b,stroke-width:1.5px
+    class Main,UI,Address,Nav,Menu,Tabs,Settings,About,Errors shell
+    class Controller,View,Navigation,Chromium browser
+    class Permissions,Downloads,Resources platform

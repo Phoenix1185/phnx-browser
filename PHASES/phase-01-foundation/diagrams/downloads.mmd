@@ -1,0 +1,10 @@
+flowchart LR
+    Website[Website] --> Request[Download request]
+    Request --> Manager[PHNX download manager]
+    Manager --> Android[Android Downloads]
+    Android --> Menu[Downloads menu]
+
+    classDef source fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:1.5px
+    classDef system fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b,stroke-width:1.5px
+    class Website,Request source
+    class Manager,Android,Menu system

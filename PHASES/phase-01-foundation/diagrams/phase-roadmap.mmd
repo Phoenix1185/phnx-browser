@@ -1,0 +1,14 @@
+flowchart TB
+    P1["Phase 1\nFoundation + Chromium shell"] --> P2["Phase 2\nProfiles + isolation"]
+    P2 --> P3["Phase 3\nPer-profile network layer"]
+    P3 --> P4["Phase 4\nDevice/browser configuration"]
+    P4 --> P5["Phase 5\nProfile lifecycle + resources"]
+    P5 --> P6["Phase 6\nPrivacy + security"]
+    P6 --> P7["Phase 7\nComplete browser features"]
+    P7 --> P8["Phase 8\nPerformance + polish"]
+    P8 --> P9["Phase 9\nProduction + release"]
+
+    classDef current fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:2.5px
+    classDef future fill:#f8fafc,stroke:#64748b,color:#1e293b,stroke-width:1.5px
+    class P1 current
+    class P2,P3,P4,P5,P6,P7,P8,P9 future
