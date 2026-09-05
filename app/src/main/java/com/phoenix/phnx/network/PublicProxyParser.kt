@@ -58,7 +58,7 @@ object PublicProxyParser {
 
     private fun stringField(row: String, key: String): String? = field(row, key)
         ?.takeIf { it.length >= 2 && it.first() == '"' && it.last() == '"' }
-        ?.substring(1, it.length - 1)
+        ?.let { it.substring(1, it.length - 1) }
         ?.replace("\\\"", "\"")
         ?.replace("\\\\", "\\")
 
