@@ -27,6 +27,7 @@ object BrowserMenu {
         fun onShare()
         fun onFindInPage()
         fun onDesktopSite()
+        fun isDesktopSiteEnabled(): Boolean
         fun onAddToHomeScreen()
         fun onSettings()
         fun onAbout()
@@ -42,7 +43,15 @@ object BrowserMenu {
             add(0, DOWNLOADS, 4, R.string.downloads)
             add(0, SHARE, 5, R.string.share)
             add(0, FIND, 6, R.string.find_in_page)
-            add(0, DESKTOP, 7, R.string.desktop_site)
+            add(
+                0,
+                DESKTOP,
+                7,
+                if (callbacks.isDesktopSiteEnabled()) R.string.desktop_site_enabled else R.string.desktop_site,
+            ).apply {
+                isCheckable = true
+                isChecked = callbacks.isDesktopSiteEnabled()
+            }
             add(0, HOME, 8, R.string.add_to_home_screen)
             add(0, SETTINGS, 9, R.string.settings)
             add(0, ABOUT, 10, R.string.about_phnx)

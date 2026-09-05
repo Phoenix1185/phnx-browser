@@ -215,8 +215,12 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun configureWebView(webView: BrowserView, tab: Tab) {
-        if (webView.tag == tab.id) return
+        if (webView.tag == tab.id) {
+            applyDesktopSiteMode(webView)
+            return
+        }
         webView.tag = tab.id
+        applyDesktopSiteMode(webView)
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 tab.isLoading = true
@@ -481,10 +485,12 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     override fun onDesktopSite() {
         val view = currentBrowserView() ?: return
         desktopSiteEnabled = !desktopSiteEnabled
-        view.settings.userAgentString = if (desktopSiteEnabled) DESKTOP_USER_AGENT else WebSettings.getDefaultUserAgent(this)
+        applyDesktopSiteMode(view)
         view.reload()
         Toast.makeText(this, if (desktopSiteEnabled) "Desktop site enabled" else "Mobile site enabled", Toast.LENGTH_SHORT).show()
     }
+
+    override fun isDesktopSiteEnabled(): Boolean = desktopSiteEnabled
 
     override fun onAddToHomeScreen() = showPlanned("Home-screen shortcuts will be available in a later phase.")
 
@@ -516,5 +522,17 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             <h1 style='font-size:42px;margin:12px 0'>A clearer way to browse.</h1>
             <p style='color:#b8c2d9;font-size:17px;line-height:1.6'>Enter a web address or search term above to get started.</p></main></body></html>
         """
+    }
+
+    private fun applyDesktopSiteMode(view: WebView) {
+        view.settings.apply {
+            userAgentString = if (desktopSiteEnabled) {
+                DESKTOP_USER_AGENT
+            } else {
+                WebSettings.getDefaultUserAgent(this@MainActivity)
+            }
+            useWideViewPort = desktopSiteEnabled
+            loadWithOverviewMode = desktopSiteEnabled
+        }
     }
 }
