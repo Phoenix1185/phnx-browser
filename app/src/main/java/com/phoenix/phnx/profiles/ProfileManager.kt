@@ -32,6 +32,12 @@ class ProfileManager(context: Context) {
 
     fun getAllProfiles(): List<ProfileEntity> = dao.getAll()
 
+    fun updateStatus(id: String, status: ProfileStatus): ProfileEntity? {
+        val profile = dao.getById(id) ?: return null
+        val lastUsedAt = if (status == ProfileStatus.ACTIVE) System.currentTimeMillis() else profile.lastUsedAt
+        return profile.copy(status = status, lastUsedAt = lastUsedAt).also(dao::upsert)
+    }
+
     fun loadTabSessions(profileId: String): List<TabSessionEntity> = tabSessionDao.getForProfile(profileId)
 
     fun saveTabSessions(profileId: String, sessions: List<TabSessionEntity>) {

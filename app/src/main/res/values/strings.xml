@@ -20,7 +20,7 @@
     <string name="theme_dark">Dark</string>
     <string name="profiles">Profiles</string>
     <string name="profiles_summary">Manage isolated browser storage, tabs, and profile metadata.</string>
-    <string name="profiles_isolation_note">Each profile uses separate WebView storage on Android 9+. Switching restarts PHNX so cookies, cache, and site data stay separated.</string>
+    <string name="profiles_isolation_note">Each profile keeps its own saved browser session and configuration. Switching restarts PHNX so Android WebView can use the selected profile data directory.</string>
     <string name="new_profile">New profile</string>
     <string name="rename_profile">Rename profile</string>
     <string name="profile_name">Profile name</string>

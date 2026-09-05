@@ -5,6 +5,7 @@ enum class ProfileLifecycleState {
     IDLE,
     FROZEN,
     SUSPENDED,
+    RECREATING,
     CLOSED,
 }
 
@@ -30,5 +31,34 @@ data class ProfileResourceState(
             userPinned -> ResourcePriority.HIGH
             activeTabCount > 0 -> ResourcePriority.NORMAL
             else -> ResourcePriority.BACKGROUND
-        }
+    }
+}
+
+data class LifecycleTransition(
+    val profileId: String,
+    val from: ProfileLifecycleState,
+    val to: ProfileLifecycleState,
+    val changed: Boolean,
+)
+
+class ProfileLifecycleTracker {
+    private val states = mutableMapOf<String, ProfileLifecycleState>()
+
+    fun state(profileId: String): ProfileLifecycleState =
+        states[profileId] ?: ProfileLifecycleState.IDLE
+
+    fun stateOrNull(profileId: String): ProfileLifecycleState? = states[profileId]
+
+    fun seed(profileId: String, state: ProfileLifecycleState) {
+        states.putIfAbsent(profileId, state)
+    }
+
+    fun transition(profileId: String, target: ProfileLifecycleState): LifecycleTransition {
+        val current = state(profileId)
+        if (current == target) return LifecycleTransition(profileId, current, target, changed = false)
+        states[profileId] = target
+        return LifecycleTransition(profileId, current, target, changed = true)
+    }
+
+    fun clear() = states.clear()
 }

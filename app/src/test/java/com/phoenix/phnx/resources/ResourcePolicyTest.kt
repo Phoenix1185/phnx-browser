@@ -1,6 +1,7 @@
 package com.phoenix.phnx.resources
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -35,6 +36,42 @@ class ResourcePolicyTest {
         ).evaluate(listOf(profile)).single()
 
         assertEquals(ProfileLifecycleState.SUSPENDED, decision.to)
+    }
+
+    @Test
+    fun suspendedProfileRecoversToIdleWhenPressureClears() {
+        val profile = profile("background", foreground = false, state = ProfileLifecycleState.SUSPENDED)
+        val decision = ResourceManager().evaluate(
+            listOf(profile),
+            ResourceSnapshot(),
+        ).single()
+
+        assertEquals(ProfileLifecycleState.IDLE, decision.to)
+    }
+
+    @Test
+    fun lifecycleTransitionsAreIdempotent() {
+        val tracker = ProfileLifecycleTracker()
+
+        val first = tracker.transition("profile", ProfileLifecycleState.FROZEN)
+        val second = tracker.transition("profile", ProfileLifecycleState.FROZEN)
+
+        assertTrue(first.changed)
+        assertFalse(second.changed)
+        assertEquals(ProfileLifecycleState.FROZEN, tracker.state("profile"))
+    }
+
+    @Test
+    fun reconcileAppliesDecisionsToLifecycleAdapter() {
+        val applied = mutableListOf<ProfileResourceDecision>()
+        val profile = profile("background", foreground = false, state = ProfileLifecycleState.IDLE)
+
+        ResourceManager(lifecycleAdapter = { applied += it }).reconcile(
+            listOf(profile),
+            ResourceSnapshot(memoryPressure = MemoryPressure.CRITICAL),
+        )
+
+        assertEquals(ProfileLifecycleState.SUSPENDED, applied.single().to)
     }
 
     @Test

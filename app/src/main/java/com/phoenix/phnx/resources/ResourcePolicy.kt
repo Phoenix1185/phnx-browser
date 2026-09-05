@@ -44,8 +44,6 @@ class ResourcePolicy {
         val target = when {
             profile.lifecycleState == ProfileLifecycleState.CLOSED -> ProfileLifecycleState.CLOSED
             profile.foreground -> ProfileLifecycleState.ACTIVE
-            profile.lifecycleState == ProfileLifecycleState.SUSPENDED -> ProfileLifecycleState.SUSPENDED
-            profile.lifecycleState == ProfileLifecycleState.FROZEN && pressure(snapshot) < Pressure.HIGH -> ProfileLifecycleState.FROZEN
             pressure(snapshot) >= Pressure.CRITICAL -> ProfileLifecycleState.SUSPENDED
             pressure(snapshot) >= Pressure.HIGH -> ProfileLifecycleState.FROZEN
             pressure(snapshot) >= Pressure.MODERATE -> ProfileLifecycleState.IDLE
@@ -94,6 +92,7 @@ class ResourcePolicy {
         ProfileLifecycleState.IDLE -> "Background activity is reduced."
         ProfileLifecycleState.FROZEN -> "Background profile is frozen under resource pressure."
         ProfileLifecycleState.SUSPENDED -> "Background profile is suspended under severe resource pressure."
+        ProfileLifecycleState.RECREATING -> "Profile view is being recreated from persisted session state."
         ProfileLifecycleState.CLOSED -> "Profile is closed and retains persistent data."
     }
 

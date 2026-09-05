@@ -50,6 +50,9 @@ import com.phoenix.phnx.browser.NavigationController
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.profiles.TabSessionEntity
+import com.phoenix.phnx.profiles.ProfileStatus
+import com.phoenix.phnx.resources.ProfileLifecycleState
+import com.phoenix.phnx.resources.ProfileResourceState
 import com.phoenix.phnx.settings.SettingsActivity
 import com.phoenix.phnx.tabs.Tab
 import com.phoenix.phnx.tabs.TabManager
@@ -57,9 +60,11 @@ import kotlin.math.abs
 
 class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val tabManager = TabManager()
-    private val browserController by lazy { BrowserController(this) }
-    private val profileManager by lazy { (application as PhnxApplication).profileManager }
-    private val deviceProfileManager by lazy { (application as PhnxApplication).deviceProfileManager }
+    private val app by lazy { application as PhnxApplication }
+    private val browserController by lazy { BrowserController(app.profileViewPool) }
+    private val profileManager by lazy { app.profileManager }
+    private val deviceProfileManager by lazy { app.deviceProfileManager }
+    private val resourceManager by lazy { app.resourceManager }
     private val identityAdapter = WebViewIdentityAdapter()
 
     private lateinit var browserContainer: FrameLayout
@@ -70,6 +75,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var errorView: View? = null
     private var desktopSiteEnabled = false
     private var dataSaverEnabled = false
+    private var activityVisible = false
+    private var attachedTabId: String? = null
 
     private val swipeDetector by lazy {
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -166,6 +173,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 savedTabs.firstOrNull { it.isActive }?.tabId,
             )
         }
+        browserController.setSessionSaver(::saveProfileSession)
         attachCurrentTab()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -177,24 +185,40 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onResume() {
         super.onResume()
+        activityVisible = true
         val savedDataSaver = PhnxPreferences.store(this).getBoolean(PhnxPreferences.DATA_SAVER_ENABLED, false)
         if (savedDataSaver != dataSaverEnabled) {
             dataSaverEnabled = savedDataSaver
             browserController.forEachView(::applyBrowserModes)
             currentBrowserView()?.reload()
         }
+        reconcileResources()
+        attachCurrentTab()
     }
 
     override fun onStop() {
         saveCurrentProfileSession()
+        activityVisible = false
+        reconcileResources()
         super.onStop()
+    }
+
+    override fun onTrimMemory(level: Int) {
+        super.onTrimMemory(level)
+        reconcileResources()
     }
 
     private fun saveCurrentProfileSession() {
         if (!::browserContainer.isInitialized) return
-        val profileId = profileManager.activeProfile().id
+        saveProfileSession(profileManager.activeProfile().id)
+    }
+
+    private fun saveProfileSession(profileId: String) {
+        if (!::browserContainer.isInitialized) return
+        val tabs = tabManager.getTabs(profileId)
+        if (tabs.isEmpty() && profileId != profileManager.activeProfile().id) return
         val activeTabId = tabManager.activeTabId()
-        val sessions = tabManager.getTabs(profileId).mapIndexed { index, tab ->
+        val sessions = tabs.mapIndexed { index, tab ->
             TabSessionEntity(
                 profileId = profileId,
                 tabId = tab.id,
@@ -302,6 +326,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private fun attachCurrentTab() {
         val tab = tabManager.currentTab() ?: return
         val webView = browserController.getOrCreate(tab)
+        val tabChanged = attachedTabId != tab.id
         configureWebView(webView, tab)
         (webView.parent as? ViewGroup)?.removeView(webView)
         browserContainer.removeAllViews()
@@ -309,10 +334,11 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         errorView = null
         updateTabChrome(tab, webView)
 
-        if (webView.url == null) {
+        attachedTabId = tab.id
+        if (tabChanged || webView.url == null) {
             if (tab.url.isBlank()) {
                 webView.loadDataWithBaseURL(START_PAGE_BASE, startPageHtml(), "text/html", "UTF-8", null)
-            } else {
+            } else if (webView.url != tab.url) {
                 webView.loadUrl(tab.url)
             }
         }
@@ -372,7 +398,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
             override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
                 val isCurrentTab = tabManager.currentTab()?.id == tab.id
-                browserController.remove(tab.id)
+                browserController.suspendProfile(tab.profileId)
+                attachedTabId = null
                 if (isCurrentTab) {
                     refreshLayout.isRefreshing = false
                     showError("The page renderer stopped unexpectedly. Retry to reopen this tab.")
@@ -559,7 +586,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 text = "Close"
                 contentDescription = "Close tab"
                 setOnClickListener {
-                    browserController.remove(tab.id)
                     tabManager.closeTab(tab.id)
                     if (tabManager.tabCount(profileId) == 0) {
                         tabManager.createTab(profileId = profileId)
@@ -635,8 +661,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         PhnxPreferences.store(this).edit()
             .putBoolean(PhnxPreferences.DESKTOP_SITE_ENABLED, desktopSiteEnabled)
             .apply()
-        val profileId = profileManager.activeProfile().id
-        tabManager.getTabs(profileId).forEach { tab -> browserController.remove(tab.id) }
         attachCurrentTab()
         Toast.makeText(this, if (desktopSiteEnabled) "Desktop site enabled" else "Mobile site enabled", Toast.LENGTH_SHORT).show()
     }
@@ -666,6 +690,47 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     override fun onDestroy() {
         browserController.clear()
         super.onDestroy()
+    }
+
+    private fun reconcileResources() {
+        if (!::browserContainer.isInitialized) return
+        val activeProfileId = profileManager.activeProfile().id
+        val decisions = resourceManager.reconcile(resourceStates(activeProfileId))
+        decisions.forEach { decision ->
+            val status = when (decision.to) {
+                ProfileLifecycleState.ACTIVE,
+                ProfileLifecycleState.IDLE,
+                ProfileLifecycleState.RECREATING,
+                -> if (decision.profileId == activeProfileId) ProfileStatus.ACTIVE else ProfileStatus.IDLE
+                ProfileLifecycleState.FROZEN -> ProfileStatus.FROZEN
+                ProfileLifecycleState.SUSPENDED -> ProfileStatus.SUSPENDED
+                ProfileLifecycleState.CLOSED -> ProfileStatus.CLOSED
+            }
+            profileManager.updateStatus(decision.profileId, status)
+        }
+    }
+
+    private fun resourceStates(activeProfileId: String): List<ProfileResourceState> =
+        profileManager.getAllProfiles().map { profile ->
+            val persistedState = profile.status.toLifecycleState()
+            browserController.seed(profile.id, persistedState)
+            ProfileResourceState(
+                profileId = profile.id,
+                lifecycleState = browserController.state(profile.id) ?: persistedState,
+                lastActiveTime = profile.lastUsedAt,
+                activeTabCount = tabManager.tabCount(profile.id),
+                foreground = activityVisible && profile.id == activeProfileId,
+                userPinned = false,
+            )
+        }
+
+    private fun ProfileStatus.toLifecycleState(): ProfileLifecycleState = when (this) {
+        ProfileStatus.ACTIVE -> ProfileLifecycleState.ACTIVE
+        ProfileStatus.IDLE -> ProfileLifecycleState.IDLE
+        ProfileStatus.FROZEN -> ProfileLifecycleState.FROZEN
+        ProfileStatus.SUSPENDED -> ProfileLifecycleState.SUSPENDED
+        ProfileStatus.RECREATING -> ProfileLifecycleState.SUSPENDED
+        ProfileStatus.CLOSED -> ProfileLifecycleState.CLOSED
     }
 
     private data class PendingDownload(

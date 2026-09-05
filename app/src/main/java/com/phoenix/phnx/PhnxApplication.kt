@@ -2,6 +2,7 @@ package com.phoenix.phnx
 
 import android.app.Application
 import android.webkit.WebView
+import com.phoenix.phnx.browser.ProfileViewPool
 import com.phoenix.phnx.identity.DeviceProfileManager
 import com.phoenix.phnx.network.NetworkManager
 import com.phoenix.phnx.profiles.ProfileManager
@@ -19,6 +20,8 @@ class PhnxApplication : Application() {
         private set
     lateinit var resourceManager: ResourceManager
         private set
+    lateinit var profileViewPool: ProfileViewPool
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -30,7 +33,11 @@ class PhnxApplication : Application() {
         deviceProfileManager = DeviceProfileManager(this)
         deviceProfileManager.getProfileConfiguration(activeProfile.id)
         resourceMonitor = AndroidResourceMonitor(this)
-        resourceManager = ResourceManager(snapshotProvider = resourceMonitor::currentSnapshot)
+        profileViewPool = ProfileViewPool(this)
+        resourceManager = ResourceManager(
+            snapshotProvider = resourceMonitor::currentSnapshot,
+            lifecycleAdapter = profileViewPool::apply,
+        )
         WebView.setDataDirectorySuffix(activeProfile.id)
     }
 }

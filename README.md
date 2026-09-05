@@ -18,12 +18,12 @@ Phase 1 now has a buildable native Kotlin Android shell in `app/`. It includes:
 - The required three-dot browser menu, settings placeholders, About screen, branding, sharing, find-in-page, desktop-site toggle, and Android Downloads integration.
 - Unit tests for navigation routing and tab management.
 - GitHub Actions builds for tests, debug/release APKs, and the release AAB.
-- Profile metadata, profile-owned tab sessions, and Android WebView data-directory separation.
+- Profile metadata, profile-owned tab sessions, and a disposable per-profile WebView pool. Profile switching preserves Android WebView data-directory isolation by restarting the process.
 - Profile-scoped network configuration persistence, secure proxy credentials, connection testing, and connectivity monitoring.
 - Profile-scoped identity presets, consistency validation, persistence, and a WebView capability-reporting editor.
-- Resource-pressure policy, profile-priority scheduling, and Android memory/battery/thermal snapshot foundations; lifecycle adapters and CPU monitoring remain in progress.
+- Resource-pressure policy, profile-priority scheduling, Android memory/battery/thermal snapshots, and a real per-profile view lifecycle (`ACTIVE` → `IDLE` → `FROZEN` → `SUSPENDED` → `RECREATING` → `ACTIVE`). CPU monitoring remains unsupported by the current Android integration.
 
-The browser engine is isolated behind `BrowserController` and `BrowserView`; the current adapter uses the Android system's Chromium-backed WebView runtime. A separately embeddable Chromium distribution is not committed to this repository. Android WebView does not expose the per-profile proxy routing required by the Phase 3 blueprint, so proxy configuration is persisted, testable, and reported as unsupported at application time rather than silently claimed as applied. On-device browser-context isolation, profile-specific permissions/history/bookmarks, and the later blueprint phases still require further implementation and testing.
+The browser engine is isolated behind `BrowserController`, `ProfileViewPool`, and `BrowserView`; the current adapter uses the Android system's Chromium-backed WebView runtime. A separately embeddable Chromium distribution is not committed to this repository. Android WebView does not expose the per-profile proxy routing required by the Phase 3 blueprint, so proxy configuration is persisted, testable, and reported as unsupported at application time rather than silently claimed as applied. Profile session metadata survives view destruction and recreation; profile-specific permissions/history/bookmarks and later blueprint phases still require further implementation and testing.
 
 ## Development rule
 

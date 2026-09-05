@@ -1,27 +1,29 @@
 package com.phoenix.phnx.browser
 
-import android.content.Context
 import com.phoenix.phnx.tabs.Tab
+import com.phoenix.phnx.resources.ProfileLifecycleState
+import com.phoenix.phnx.resources.ProfileResourceDecision
 
-class BrowserController(private val context: Context) {
-    private val views = mutableMapOf<String, BrowserView>()
+class BrowserController(private val pool: ProfileViewPool) {
+    fun getOrCreate(profileId: String): BrowserView = pool.acquire(profileId)
 
-    fun getOrCreate(tab: Tab): BrowserView = views.getOrPut(tab.id) { BrowserView(context) }
+    fun getOrCreate(tab: Tab): BrowserView = getOrCreate(tab.profileId)
 
-    fun remove(tabId: String) {
-        views.remove(tabId)?.apply {
-            stopLoading()
-            loadUrl("about:blank")
-            removeAllViews()
-            destroy()
-        }
-    }
+    fun apply(decision: ProfileResourceDecision) = pool.apply(decision)
 
-    fun forEachView(action: (BrowserView) -> Unit) {
-        views.values.forEach(action)
-    }
+    fun transition(profileId: String, state: ProfileLifecycleState) =
+        pool.transition(profileId, state)
 
-    fun clear() {
-        views.keys.toList().forEach(::remove)
-    }
+    fun seed(profileId: String, state: ProfileLifecycleState) =
+        pool.seed(profileId, state)
+
+    fun state(profileId: String): ProfileLifecycleState? = pool.state(profileId)
+
+    fun suspendProfile(profileId: String) = pool.transition(profileId, ProfileLifecycleState.SUSPENDED)
+
+    fun setSessionSaver(saver: (String) -> Unit) = pool.setSessionSaver(saver)
+
+    fun forEachView(action: (BrowserView) -> Unit) = pool.forEachView(action)
+
+    fun clear() = pool.clear()
 }
