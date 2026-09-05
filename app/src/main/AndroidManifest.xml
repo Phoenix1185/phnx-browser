@@ -43,6 +43,9 @@
             android:name=".privacy.ClearDataActivity"
             android:exported="false" />
         <activity
+            android:name=".resources.PerformanceActivity"
+            android:exported="false" />
+        <activity
             android:name=".permissions.PermissionActivity"
             android:exported="false" />
         <activity

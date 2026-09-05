@@ -14,6 +14,7 @@ import com.phoenix.phnx.R
 import com.phoenix.phnx.network.NetworkActivity
 import com.phoenix.phnx.privacy.PrivacyActivity
 import com.phoenix.phnx.profiles.ProfilesActivity
+import com.phoenix.phnx.resources.PerformanceActivity
 import com.phoenix.phnx.search.SearchEngineActivity
 
 class SettingsActivity : AppCompatActivity() {
@@ -35,7 +36,7 @@ class SettingsActivity : AppCompatActivity() {
         addSearchSection(content)
         addProfileSection(content)
         addNetworkSection(content)
-        addSection(content, "Performance", "Automatic resource lifecycle management is active; the advanced dashboard is still planned.")
+        addPerformanceSection(content)
         addSection(content, "About PHNX", "Open the About screen from the browser menu for version and runtime details.")
 
         setContentView(ScrollView(this).apply {
@@ -59,6 +60,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addNetworkSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.network), getString(R.string.network_summary))
         row.setOnClickListener { startActivity(Intent(this, NetworkActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addPerformanceSection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.performance), getString(R.string.performance_summary))
+        row.setOnClickListener { startActivity(Intent(this, PerformanceActivity::class.java)) }
         parent.addView(row)
     }
 

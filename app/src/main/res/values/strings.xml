@@ -107,4 +107,17 @@
     <string name="search_engine">Search engine</string>
     <string name="search_engine_summary">Choose where address-bar searches are sent.</string>
     <string name="search_engine_selected">Selected: %1$s</string>
+    <string name="performance">Performance</string>
+    <string name="performance_summary">View resource pressure and profile lifecycle state.</string>
+    <string name="refresh">Refresh</string>
+    <string name="resource_snapshot">Resource snapshot</string>
+    <string name="memory_pressure">Memory pressure: %1$s</string>
+    <string name="thermal_status">Thermal status: %1$s</string>
+    <string name="thermal_unsupported">Thermal status: unsupported on this Android version</string>
+    <string name="battery_status">Battery: %1$d%%</string>
+    <string name="battery_saver_on">Battery Saver: on</string>
+    <string name="battery_saver_off">Battery Saver: off</string>
+    <string name="cpu_status">CPU monitoring: unsupported by the current Android integration</string>
+    <string name="profile_lifecycle">Profile lifecycle</string>
+    <string name="profile_state">%1$s: %2$s</string>
 </resources>
