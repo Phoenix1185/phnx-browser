@@ -1,0 +1,31 @@
+flowchart TB
+    PHNX[PHNX Browser] --> Shell[Browser shell]
+    PHNX --> Profiles[Multiple persistent profiles]
+    Profiles --> A[Profile A]
+    Profiles --> B[Profile B]
+    Profiles --> C[Profile C]
+
+    A --> A1[Cookies A]
+    A --> A2[Storage A]
+    A --> A3[History A]
+    A --> A4[Network A]
+    A --> A5[Identity A]
+
+    B --> B1[Cookies B]
+    B --> B2[Storage B]
+    B --> B3[History B]
+    B --> B4[Network B]
+    B --> B5[Identity B]
+
+    C --> C1[Cookies C]
+    C --> C2[Storage C]
+    C --> C3[History C]
+    C --> C4[Network C]
+    C --> C5[Identity C]
+
+    classDef root fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:2px
+    classDef profile fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef data fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class PHNX,Shell,Profiles root
+    class A,B,C profile
+    class A1,A2,A3,A4,A5,B1,B2,B3,B4,B5,C1,C2,C3,C4,C5 data

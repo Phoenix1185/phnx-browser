@@ -1,0 +1,24 @@
+flowchart TB
+    Capability[Identity capability] --> Supported[SUPPORTED]
+    Capability --> Partial[PARTIALLY_SUPPORTED]
+    Capability --> Unsupported[NOT_SUPPORTED]
+
+    Supported --> S1[User-Agent]
+    Supported --> S2[Locale]
+    Supported --> S3[Timezone]
+    Supported --> S4[Device scale factor]
+
+    Partial --> P1[Client hints\nwhere Chromium limits support]
+
+    Unsupported --> U1[Canvas modification]
+    Unsupported --> U2[WebGL modification]
+    Unsupported --> U3[Audio/font spoofing]
+
+    classDef root fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:2px
+    classDef supported fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef partial fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:1.5px
+    classDef unsupported fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Capability root
+    class Supported,S1,S2,S3,S4 supported
+    class Partial,P1 partial
+    class Unsupported,U1,U2,U3 unsupported

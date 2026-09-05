@@ -1,0 +1,32 @@
+flowchart LR
+    Input[Preset or custom configuration] --> Validator[DeviceProfileValidator]
+    Validator --> Checks{Consistency checks}
+    Checks --> OS[OS ↔ User-Agent]
+    Checks --> Platform[Platform ↔ OS]
+    Checks --> Viewport[Mobile mode ↔ viewport]
+    Checks --> Screen[Screen ↔ viewport]
+    Checks --> DPR[DPR ↔ screen]
+    Checks --> Locale[Locale ↔ language]
+    Checks --> Timezone[Timezone ↔ locale]
+    Checks --> Touch[Touch ↔ device type]
+    Checks --> Hints[Client hints ↔ User-Agent]
+    OS --> Result{All checks pass?}
+    Platform --> Result
+    Viewport --> Result
+    Screen --> Result
+    DPR --> Result
+    Locale --> Result
+    Timezone --> Result
+    Touch --> Result
+    Hints --> Result
+    Result -->|Yes| Persist[Persist and apply]
+    Result -->|No| Error[Clear validation error\nNothing is applied]
+
+    classDef input fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef check fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef success fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef error fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Input input
+    class Validator,Checks,OS,Platform,Viewport,Screen,DPR,Locale,Timezone,Touch,Hints,Result check
+    class Persist success
+    class Error error

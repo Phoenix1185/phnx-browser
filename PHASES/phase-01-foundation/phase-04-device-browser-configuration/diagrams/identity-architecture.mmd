@@ -1,0 +1,21 @@
+flowchart TB
+    Profile[ProfileManager] --> DPM[DeviceProfileManager]
+    Profile --> Network[NetworkManager]
+    DPM --> Config[BrowserIdentityConfig]
+    Config --> Validator[DeviceProfileValidator]
+    Validator --> Repo[ProfileIdentityRepository]
+    Repo --> Adapter[ChromiumIdentityAdapter]
+    Adapter --> Chromium[Chromium supported APIs]
+    DPM --> Snapshot[ProfileConfigurationSnapshot]
+    Snapshot --> Checker[IdentityRuntimeChecker]
+    Checker --> Status[Match or mismatch diagnostic]
+    DPM --> Presets[DevicePreset catalog]
+
+    classDef profile fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef identity fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef validation fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef runtime fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class Profile,Network profile
+    class DPM,Config,Repo,Adapter,Chromium,Presets identity
+    class Validator validation
+    class Snapshot,Checker,Status runtime

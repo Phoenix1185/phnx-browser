@@ -1,0 +1,17 @@
+flowchart TB
+    Start[Switch to selected profile] --> Load[Load profile identity configuration]
+    Load --> Validate[DeviceProfileValidator]
+    Validate --> Decision{Configuration valid?}
+    Decision -->|Yes| Apply[ChromiumIdentityAdapter applies supported properties]
+    Apply --> Verify[IdentityRuntimeChecker verifies application]
+    Verify --> Resume[Resume or start selected profile]
+    Decision -->|No| Error[Show validation error\nApply nothing]
+
+    classDef action fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef decision fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef success fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef error fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Start,Load,Validate,Apply,Verify action
+    class Decision decision
+    class Resume success
+    class Error error
