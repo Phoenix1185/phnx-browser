@@ -159,6 +159,8 @@ class ProfilesActivity : AppCompatActivity() {
                     (application as PhnxApplication).deviceProfileManager.clearProfileConfiguration(profile.id)
                     (application as PhnxApplication).privacyManager.clearSettings(profile.id)
                     (application as PhnxApplication).permissionManager.clearProfile(profile.id)
+                    (application as PhnxApplication).historyManager.clearProfile(profile.id)
+                    (application as PhnxApplication).bookmarkManager.clearProfile(profile.id)
                 }
                 refreshProfiles()
             }

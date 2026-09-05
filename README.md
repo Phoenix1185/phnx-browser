@@ -25,6 +25,7 @@ Phase 1 now has a buildable native Kotlin Android shell in `app/`. It includes:
 - Phase 6 privacy settings persisted per profile for JavaScript, third-party cookies, pop-ups, Safe Browsing, and stored tracking preferences; unsupported Do Not Track and full tracker blocking are reported honestly.
 - Profile/origin site permission decisions for camera, microphone, and location are persisted separately from Android OS permissions and can be reviewed or reset in Settings.
 - Active-profile clear-data controls remove selected WebView cookies, site storage, cache, and in-memory navigation data without deleting profile configuration.
+- Profile-aware history and bookmarks are persisted, private visits are excluded from history, and both are available from the browser menu.
 
 The browser engine is isolated behind `BrowserController`, `ProfileViewPool`, and `BrowserView`; the current adapter uses the Android system's Chromium-backed WebView runtime. A separately embeddable Chromium distribution is not committed to this repository. Android WebView does not expose the per-profile proxy routing required by the Phase 3 blueprint, so proxy configuration is persisted, testable, and reported as unsupported at application time rather than silently claimed as applied. Profile session metadata survives view destruction and recreation; site permissions, clear-data operations, private storage, history/bookmarks, and later blueprint phases still require further implementation and testing.
 

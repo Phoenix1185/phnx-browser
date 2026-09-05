@@ -43,6 +43,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.phoenix.phnx.bookmarks.BookmarksActivity
+import com.phoenix.phnx.history.HistoryActivity
 import com.phoenix.phnx.about.AboutActivity
 import com.phoenix.phnx.browser.BrowserController
 import com.phoenix.phnx.browser.BrowserView
@@ -376,6 +378,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.isLoading = false
                 if (url != START_PAGE_BASE) tab.url = url
                 tab.title = view.title?.takeIf { it.isNotBlank() } ?: tabTitleForUrl(url)
+                app.historyManager.recordVisit(tab.profileId, url, tab.title, tab.isPrivate)
                 refreshLayout.isRefreshing = false
                 updateTabChrome(tab, view)
                 hideError()
@@ -701,9 +704,15 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         Toast.makeText(this, "Private tab entry point opened; private isolation is planned for Phase 6.", Toast.LENGTH_LONG).show()
     }
 
-    override fun onBookmarks() = showPlanned("Bookmarks are planned for a later phase.")
+    override fun onBookmarks() {
+        val tab = tabManager.currentTab() ?: return
+        startActivity(Intent(this, BookmarksActivity::class.java).apply {
+            putExtra("url", tab.url)
+            putExtra("title", tab.title)
+        })
+    }
 
-    override fun onHistory() = showPlanned("History is planned for a later phase.")
+    override fun onHistory() = startActivity(Intent(this, HistoryActivity::class.java))
 
     override fun onDownloads() = showPlanned("Downloads are available through Android's Downloads app.")
 

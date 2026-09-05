@@ -19,6 +19,12 @@
             android:name=".about.AboutActivity"
             android:exported="false" />
         <activity
+            android:name=".history.HistoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".bookmarks.BookmarksActivity"
+            android:exported="false" />
+        <activity
             android:name=".settings.SettingsActivity"
             android:exported="false" />
         <activity

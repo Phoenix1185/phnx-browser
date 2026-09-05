@@ -90,4 +90,9 @@
     <string name="clear_nothing_selected">Select at least one data category.</string>
     <string name="clear_complete">Selected browsing data cleared.</string>
     <string name="clear">Clear</string>
+    <string name="clear_history">Clear history</string>
+    <string name="clear_history_warning">This removes saved history for the active profile but does not delete bookmarks or profile settings.</string>
+    <string name="no_history">No history for this profile.</string>
+    <string name="add_current_bookmark">Add current page</string>
+    <string name="no_bookmarks">No bookmarks for this profile.</string>
 </resources>
