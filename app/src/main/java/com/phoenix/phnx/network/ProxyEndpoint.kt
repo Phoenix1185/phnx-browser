@@ -14,6 +14,7 @@ data class ProxyEndpoint(
     val health: ProxyHealthStatus = ProxyHealthStatus.UNKNOWN,
     val failureCount: Int = 0,
     val lastError: String = "",
+    val source: String = "",
 ) {
     fun asWebViewRule(): String = when (type) {
         ProxyType.HTTP -> "http://$host:$port"
@@ -38,6 +39,7 @@ object ProxyEndpointCodec {
             it.health.name,
             it.failureCount.toString(),
             it.lastError,
+            it.source,
         ).joinToString("|")
     }
 
@@ -65,6 +67,7 @@ object ProxyEndpointCodec {
                         ?: ProxyHealthStatus.UNKNOWN,
                     failureCount = parts.getOrNull(11)?.toIntOrNull() ?: 0,
                     lastError = parts.getOrNull(12).orEmpty(),
+                    source = parts.getOrNull(13).orEmpty(),
                 )
             }
         }

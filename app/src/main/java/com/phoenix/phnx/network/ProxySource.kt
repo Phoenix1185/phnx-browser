@@ -16,7 +16,32 @@ object ProxySources {
         ProxySource(
             id = "proxyscrape",
             name = "ProxyScrape HTTP feed",
-            endpoint = "https://api.proxyscrape.com/v2/?request=getproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all",
+            endpoint = "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all",
+        ),
+        ProxySource(
+            id = "geonode",
+            name = "Geonode public feed",
+            endpoint = "https://proxylist.geonode.com/api/proxy-list?limit=50&page=1&sort_by=lastChecked&sort_type=desc",
+        ),
+        ProxySource(
+            id = "proxifly",
+            name = "Proxifly public feed",
+            endpoint = "https://raw.githubusercontent.com/proxifly/free-proxy-list/main/proxies/all/data.json",
+        ),
+        ProxySource(
+            id = "iplocate_http",
+            name = "IPLocate HTTP feed",
+            endpoint = "https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/http.txt",
+        ),
+        ProxySource(
+            id = "iplocate_https",
+            name = "IPLocate HTTPS feed",
+            endpoint = "https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/https.txt",
+        ),
+        ProxySource(
+            id = "iplocate_socks5",
+            name = "IPLocate SOCKS5 feed",
+            endpoint = "https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/socks5.txt",
         ),
     )
 }

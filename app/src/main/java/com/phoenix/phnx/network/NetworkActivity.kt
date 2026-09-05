@@ -499,6 +499,7 @@ class NetworkActivity : AppCompatActivity() {
         addView(text("${endpoint.host}:${endpoint.port}", 15f))
         addView(text("${endpoint.countryCode.ifBlank { "--" }}  ${healthDot(endpoint.health)} ${endpoint.health.name.lowercase()}  ${endpoint.latencyMs?.let { "$it ms" } ?: "latency unknown"}", 14f))
         addView(text("Last checked: ${endpoint.lastCheckedAt?.let(::checkedAge) ?: "not checked"}", 13f))
+        if (endpoint.source.isNotBlank()) addView(text("Source: ${endpoint.source}", 13f))
         if (endpoint.anonymity.isNotBlank() || endpoint.httpsSupported) {
             addView(text("${endpoint.anonymity.ifBlank { "Anonymity unknown" }}${if (endpoint.httpsSupported) "  HTTPS supported" else ""}", 13f))
         }
