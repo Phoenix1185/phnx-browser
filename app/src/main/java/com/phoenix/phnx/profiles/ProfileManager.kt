@@ -1,6 +1,7 @@
 package com.phoenix.phnx.profiles
 
 import android.content.Context
+import android.os.Build
 import androidx.room.Room
 import java.io.File
 import java.util.UUID
@@ -62,7 +63,11 @@ class ProfileManager(context: Context) {
 
     private fun createProfileInternal(name: String, id: String = "profile_${UUID.randomUUID()}"): ProfileEntity {
         val now = System.currentTimeMillis()
-        val storage = File(appContext.filesDir, "profiles/$id").apply { mkdirs() }
+        val storage = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            File(appContext.applicationInfo.dataDir, "app_webview_$id")
+        } else {
+            File(appContext.filesDir, "profiles/$id")
+        }.apply { mkdirs() }
         val status = if (dao.getAll().isEmpty()) ProfileStatus.ACTIVE else ProfileStatus.IDLE
         return ProfileEntity(id, name.ifBlank { "Phoenix" }, now, now, status, storage.absolutePath)
             .also { dao.upsert(it) }

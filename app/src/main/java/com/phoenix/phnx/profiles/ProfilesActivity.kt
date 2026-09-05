@@ -1,6 +1,9 @@
 package com.phoenix.phnx.profiles
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
@@ -83,6 +86,11 @@ class ProfilesActivity : AppCompatActivity() {
             })
             if (profile.id != activeId) {
                 actions.addView(Button(this@ProfilesActivity).apply {
+                    text = getString(R.string.switch_profile)
+                    isEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                    setOnClickListener { switchProfile(profile) }
+                })
+                actions.addView(Button(this@ProfilesActivity).apply {
                     text = getString(R.string.delete)
                     setOnClickListener { confirmDelete(profile) }
                 })
@@ -90,6 +98,23 @@ class ProfilesActivity : AppCompatActivity() {
             row.addView(actions)
             profileList.addView(row)
         }
+    }
+
+    private fun switchProfile(profile: ProfileEntity) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            Toast.makeText(this, R.string.profile_switch_requires_android_9, Toast.LENGTH_LONG).show()
+            return
+        }
+        profileManager.switchProfile(profile.id) ?: return
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        if (launchIntent == null) {
+            Toast.makeText(this, R.string.profile_switch_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        startActivity(launchIntent)
+        finishAffinity()
+        Process.killProcess(Process.myPid())
     }
 
     private fun showCreateDialog() {

@@ -20,7 +20,7 @@
     <string name="theme_dark">Dark</string>
     <string name="profiles">Profiles</string>
     <string name="profiles_summary">Manage profile names and metadata. Storage isolation is still being built.</string>
-    <string name="profiles_isolation_note">Profiles have persistent metadata and stable storage paths. Switching is disabled until WebView data isolation is safe.</string>
+    <string name="profiles_isolation_note">Each profile uses separate WebView storage on Android 9+. Switching restarts PHNX so cookies, cache, and site data stay separated.</string>
     <string name="new_profile">New profile</string>
     <string name="rename_profile">Rename profile</string>
     <string name="profile_name">Profile name</string>
@@ -30,6 +30,9 @@
     <string name="create">Create</string>
     <string name="save">Save</string>
     <string name="rename">Rename</string>
+    <string name="switch_profile">Switch</string>
+    <string name="profile_switch_requires_android_9">Profile isolation requires Android 9 or newer.</string>
+    <string name="profile_switch_failed">Could not restart PHNX for this profile.</string>
     <string name="delete">Delete</string>
     <string name="delete_profile">Delete profile?</string>
     <string name="delete_profile_warning">This permanently removes the metadata and storage path for %1$s.</string>
