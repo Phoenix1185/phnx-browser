@@ -16,10 +16,10 @@ class ProfileScheduler {
         .thenByDescending { it.lastActiveTime }
 
     private fun priorityScore(priority: ResourcePriority): Int = when (priority) {
-        ResourcePriority.FOREGROUND -> 0
-        ResourcePriority.HIGH -> 1
+        ResourcePriority.BACKGROUND -> 0
+        ResourcePriority.LOW -> 1
         ResourcePriority.NORMAL -> 2
-        ResourcePriority.LOW -> 3
-        ResourcePriority.BACKGROUND -> 4
+        ResourcePriority.HIGH -> 3
+        ResourcePriority.FOREGROUND -> 4
     }
 }
