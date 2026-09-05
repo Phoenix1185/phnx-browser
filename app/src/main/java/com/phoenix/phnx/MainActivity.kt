@@ -255,7 +255,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             setOnRefreshListener {
                 currentBrowserView()?.reload() ?: run { isRefreshing = false }
             }
-            addView(browserContainer, SwipeRefreshLayout.LayoutParams(-1, -1))
+            addView(browserContainer, ViewGroup.LayoutParams(-1, -1))
         }
         root.addView(refreshLayout, LinearLayout.LayoutParams(-1, 0, 1f))
 
