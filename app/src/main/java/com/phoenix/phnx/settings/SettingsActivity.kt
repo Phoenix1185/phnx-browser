@@ -13,6 +13,7 @@ import com.phoenix.phnx.PhnxPreferences
 import com.phoenix.phnx.R
 import com.phoenix.phnx.network.NetworkActivity
 import com.phoenix.phnx.privacy.PrivacyActivity
+import com.phoenix.phnx.permissions.PermissionActivity
 import com.phoenix.phnx.profiles.ProfilesActivity
 import com.phoenix.phnx.resources.PerformanceActivity
 import com.phoenix.phnx.search.SearchEngineActivity
@@ -31,7 +32,7 @@ class SettingsActivity : AppCompatActivity() {
         addThemeSection(content)
         addDataSaverSection(content)
         addPrivacySection(content)
-        addSection(content, "Site Settings", "JavaScript is enabled by default for modern websites. Per-site controls are planned.")
+        addSiteSettingsSection(content)
         addSection(content, "Downloads", "Downloads use Android's Downloads provider.")
         addSearchSection(content)
         addProfileSection(content)
@@ -72,6 +73,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addPrivacySection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.privacy_security), getString(R.string.privacy_security_summary))
         row.setOnClickListener { startActivity(Intent(this, PrivacyActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addSiteSettingsSection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.site_permissions), getString(R.string.site_permissions_summary))
+        row.setOnClickListener { startActivity(Intent(this, PermissionActivity::class.java)) }
         parent.addView(row)
     }
 

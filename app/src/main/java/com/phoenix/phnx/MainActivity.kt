@@ -5,7 +5,10 @@ import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
 import android.graphics.Color
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -187,6 +190,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         browserController.setSessionSaver(::saveProfileSession)
         attachCurrentTab()
+        openIncomingPage(intent)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val view = currentBrowserView()
@@ -779,13 +783,43 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun isDataSaverEnabled(): Boolean = dataSaverEnabled
 
-    override fun onAddToHomeScreen() = showPlanned("Home-screen shortcuts will be available in a later phase.")
+    override fun onAddToHomeScreen() {
+        val tab = tabManager.currentTab() ?: return
+        if (!tab.url.startsWith("http://") && !tab.url.startsWith("https://")) {
+            Toast.makeText(this, getString(R.string.shortcut_requires_page), Toast.LENGTH_SHORT).show()
+            return
+        }
+        val shortcuts = getSystemService(ShortcutManager::class.java)
+        if (!shortcuts.isRequestPinShortcutSupported) {
+            Toast.makeText(this, getString(R.string.shortcut_unsupported), Toast.LENGTH_SHORT).show()
+            return
+        }
+        val label = tab.title.trim().ifBlank { tab.url }.take(60)
+        val shortcut = ShortcutInfo.Builder(this, "page_${tab.url.hashCode()}")
+            .setShortLabel(label.take(25))
+            .setLongLabel(label)
+            .setIcon(Icon.createWithResource(this, R.drawable.ic_launcher))
+            .setIntent(Intent(Intent.ACTION_VIEW, Uri.parse(tab.url)).setClass(this, MainActivity::class.java))
+            .build()
+        shortcuts.requestPinShortcut(shortcut, null)
+        Toast.makeText(this, getString(R.string.shortcut_requested), Toast.LENGTH_SHORT).show()
+    }
 
     override fun onSettings() = startActivity(Intent(this, SettingsActivity::class.java))
 
     override fun onAbout() = startActivity(Intent(this, AboutActivity::class.java))
 
     private fun showPlanned(message: String) = Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+
+    private fun openIncomingPage(incomingIntent: Intent?) {
+        if (incomingIntent?.action != Intent.ACTION_VIEW) return
+        val url = incomingIntent.dataString ?: return
+        if (!url.startsWith("http://") && !url.startsWith("https://")) return
+        val tab = tabManager.currentTab() ?: return
+        tab.url = url
+        tab.title = url
+        currentBrowserView()?.loadUrl(url)
+    }
 
     override fun onDestroy() {
         browserController.clear()

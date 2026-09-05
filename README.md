@@ -15,7 +15,7 @@ Phase 1 now has a buildable native Kotlin Android shell in `app/`. It includes:
 - Chromium-backed Android browsing with JavaScript and DOM storage enabled.
 - URL/search address-bar routing, back, forward, reload, stop/loading state, and friendly navigation errors.
 - Basic tabs with switching and closing, plus a private-tab entry point.
-- The required three-dot browser menu, settings placeholders, About screen, branding, sharing, find-in-page, desktop-site toggle, profile-scoped download records/statuses, and Android DownloadManager integration.
+- The required three-dot browser menu, About screen, branding, sharing, find-in-page, desktop-site toggle, pinned home-screen shortcuts, profile-scoped download records/statuses, and Android DownloadManager integration.
 - Unit tests for navigation routing and tab management.
 - GitHub Actions builds for tests, debug/release APKs, and the release AAB.
 - Profile metadata, profile-owned tab sessions, and a disposable per-profile WebView pool. Profile switching preserves Android WebView data-directory isolation by restarting the process.
