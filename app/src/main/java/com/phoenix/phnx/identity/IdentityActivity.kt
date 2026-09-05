@@ -143,6 +143,7 @@ class IdentityActivity : AppCompatActivity() {
             "Timezone: ${config.timezone}",
             "Touch: ${config.touchSupport}; mobile mode: ${config.mobileMode}",
             "Client hints: ${config.clientHints.platform}, mobile=${config.clientHints.mobile}",
+            "WebView support: User-Agent and viewport mode supported; locale, timezone, client hints, and scale factor unavailable.",
         ).joinToString("\n")
     }
 
