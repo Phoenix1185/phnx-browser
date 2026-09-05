@@ -7,6 +7,7 @@ import com.phoenix.phnx.identity.DeviceProfileManager
 import com.phoenix.phnx.network.NetworkManager
 import com.phoenix.phnx.permissions.PermissionManager
 import com.phoenix.phnx.profiles.ProfileManager
+import com.phoenix.phnx.privacy.ClearDataManager
 import com.phoenix.phnx.privacy.PrivacyManager
 import com.phoenix.phnx.resources.AndroidResourceMonitor
 import com.phoenix.phnx.resources.ResourceManager
