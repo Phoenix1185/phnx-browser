@@ -10,7 +10,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.view.GestureDetector
 import android.view.Gravity
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
@@ -46,6 +48,7 @@ import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.settings.SettingsActivity
 import com.phoenix.phnx.tabs.Tab
 import com.phoenix.phnx.tabs.TabManager
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val tabManager = TabManager()
@@ -58,6 +61,37 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var errorView: View? = null
     private var desktopSiteEnabled = false
     private var dataSaverEnabled = false
+
+    private val swipeDetector by lazy {
+        GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onDown(event: MotionEvent): Boolean = true
+
+            override fun onFling(
+                start: MotionEvent?,
+                end: MotionEvent,
+                velocityX: Float,
+                velocityY: Float,
+            ): Boolean {
+                val first = start ?: return false
+                val distanceX = end.x - first.x
+                val distanceY = end.y - first.y
+                if (abs(distanceX) < dp(72) || abs(distanceX) < abs(distanceY) * 1.2f || abs(velocityX) < dp(240)) {
+                    return false
+                }
+
+                val view = currentBrowserView() ?: return false
+                return if (distanceX > 0 && view.canGoBack()) {
+                    view.goBack()
+                    true
+                } else if (distanceX < 0 && view.canGoForward()) {
+                    view.goForward()
+                    true
+                } else {
+                    false
+                }
+            }
+        })
+    }
 
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
@@ -233,6 +267,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         webView.tag = tab.id
         applyBrowserModes(webView)
+        webView.setOnTouchListener { _, event ->
+            swipeDetector.onTouchEvent(event)
+            false
+        }
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 tab.isLoading = true
@@ -474,6 +512,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     override fun onHistory() = showPlanned("History is planned for a later phase.")
 
     override fun onDownloads() = showPlanned("Downloads are available through Android's Downloads app.")
+
+    override fun onReload() {
+        currentBrowserView()?.reload()
+    }
 
     override fun onShare() {
         val tab = tabManager.currentTab() ?: return

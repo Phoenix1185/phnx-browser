@@ -6,6 +6,7 @@
     <string name="bookmarks">Bookmarks</string>
     <string name="history">History</string>
     <string name="downloads">Downloads</string>
+    <string name="reload">Reload</string>
     <string name="share">Share</string>
     <string name="find_in_page">Find in page</string>
     <string name="desktop_site">Desktop site</string>

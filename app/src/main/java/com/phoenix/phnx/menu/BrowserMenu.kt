@@ -18,6 +18,7 @@ object BrowserMenu {
     private const val SETTINGS = 10
     private const val ABOUT = 11
     private const val DATA_SAVER = 12
+    private const val RELOAD = 13
 
     interface Callbacks {
         fun onNewTab()
@@ -25,6 +26,7 @@ object BrowserMenu {
         fun onBookmarks()
         fun onHistory()
         fun onDownloads()
+        fun onReload()
         fun onShare()
         fun onFindInPage()
         fun onDesktopSite()
@@ -44,12 +46,13 @@ object BrowserMenu {
             add(0, BOOKMARKS, 2, R.string.bookmarks)
             add(0, HISTORY, 3, R.string.history)
             add(0, DOWNLOADS, 4, R.string.downloads)
-            add(0, SHARE, 5, R.string.share)
-            add(0, FIND, 6, R.string.find_in_page)
+            add(0, RELOAD, 5, R.string.reload)
+            add(0, SHARE, 6, R.string.share)
+            add(0, FIND, 7, R.string.find_in_page)
             add(
                 0,
                 DESKTOP,
-                7,
+                8,
                 if (callbacks.isDesktopSiteEnabled()) R.string.desktop_site_enabled else R.string.desktop_site,
             ).apply {
                 isCheckable = true
@@ -58,15 +61,15 @@ object BrowserMenu {
             add(
                 0,
                 DATA_SAVER,
-                8,
+                9,
                 if (callbacks.isDataSaverEnabled()) R.string.data_saver_enabled else R.string.data_saver,
             ).apply {
                 isCheckable = true
                 isChecked = callbacks.isDataSaverEnabled()
             }
-            add(0, HOME, 9, R.string.add_to_home_screen)
-            add(0, SETTINGS, 10, R.string.settings)
-            add(0, ABOUT, 11, R.string.about_phnx)
+            add(0, HOME, 10, R.string.add_to_home_screen)
+            add(0, SETTINGS, 11, R.string.settings)
+            add(0, ABOUT, 12, R.string.about_phnx)
         }
         popup.setOnMenuItemClickListener { item: MenuItem ->
             when (item.itemId) {
@@ -75,6 +78,7 @@ object BrowserMenu {
                 BOOKMARKS -> callbacks.onBookmarks()
                 HISTORY -> callbacks.onHistory()
                 DOWNLOADS -> callbacks.onDownloads()
+                RELOAD -> callbacks.onReload()
                 SHARE -> callbacks.onShare()
                 FIND -> callbacks.onFindInPage()
                 DESKTOP -> callbacks.onDesktopSite()
