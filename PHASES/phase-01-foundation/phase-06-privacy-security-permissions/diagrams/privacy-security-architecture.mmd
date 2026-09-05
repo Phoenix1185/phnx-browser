@@ -1,0 +1,27 @@
+flowchart TB
+    Profile[ProfileManager] --> Privacy[PrivacyManager]
+    Profile --> Permissions[PermissionManager]
+    Profile --> Security[SecurityManager]
+    Privacy --> PrivacyAdapter[ChromiumPrivacyAdapter]
+    Permissions --> PermissionAdapter[ChromiumPermissionAdapter]
+    Security --> SecurityAdapter[ChromiumSecurityAdapter]
+    Privacy --> Cookies[Cookie and storage controls]
+    Privacy --> Tracking[Tracking protection]
+    Privacy --> Private[Private browsing]
+    Permissions --> Site[Per-site decisions]
+    Security --> Cert[Certificate validation]
+    Security --> Safe[Safe browsing]
+    Security --> Events[Security events]
+    Downloads[DownloadSecurityManager] --> SecurityAdapter
+    PrivacyAdapter --> Chromium[Supported Chromium APIs]
+    PermissionAdapter --> Chromium
+    SecurityAdapter --> Chromium
+
+    classDef profile fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef manager fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef control fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef adapter fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class Profile profile
+    class Privacy,Permissions,Security,Downloads manager
+    class Cookies,Tracking,Private,Site,Cert,Safe,Events control
+    class PrivacyAdapter,PermissionAdapter,SecurityAdapter,Chromium adapter

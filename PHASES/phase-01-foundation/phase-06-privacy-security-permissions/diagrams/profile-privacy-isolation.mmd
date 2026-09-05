@@ -1,0 +1,15 @@
+flowchart LR
+    A[Profile A] --> APrivacy[Privacy settings A]
+    A --> APerm[Permissions A]
+    A --> AData[Cookies and storage A]
+    B[Profile B] --> BPrivacy[Privacy settings B]
+    B --> BPerm[Permissions B]
+    B --> BData[Cookies and storage B]
+    APrivacy -. isolated from .-> BPrivacy
+    APerm -. isolated from .-> BPerm
+    AData -. isolated from .-> BData
+
+    classDef profile fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef data fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    class A,B profile
+    class APrivacy,APerm,AData,BPrivacy,BPerm,BData data

@@ -1,0 +1,18 @@
+flowchart TB
+    Request[User selects clear browsing data] --> Scope[Select profile and data scope]
+    Scope --> Preview[Show exactly what will be removed]
+    Preview --> Confirm{User confirms?}
+    Confirm -->|No| Cancel[Cancel; preserve data]
+    Confirm -->|Yes| Clear[Clear selected profile data]
+    Clear --> Keep[Keep bookmarks and saved profile unless selected]
+    Clear --> Other[Leave other profiles unaffected]
+    Delete[Delete profile] -. separate destructive action .-> ProfileConfirm[Separate confirmation]
+
+    classDef action fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef decision fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef safe fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef danger fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Request,Scope,Preview,Clear action
+    class Confirm decision
+    class Cancel,Keep,Other safe
+    class Delete,ProfileConfirm danger

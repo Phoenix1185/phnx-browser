@@ -1,0 +1,22 @@
+flowchart TB
+    Website[Website requests permission] --> Chromium[Chromium request]
+    Chromium --> Manager[PermissionManager]
+    Manager --> Stored{Stored site decision?}
+    Stored -->|Yes| Decision[Apply profile + origin decision]
+    Stored -->|No| Prompt[PHNX permission prompt]
+    Prompt --> User{User choice}
+    User --> Allow[Allow, if Android also permits]
+    User --> Block[Block]
+    Allow --> Save[Save by profile + origin + type]
+    Block --> Save
+    Android[Android runtime permission] --> Allow
+    Android --> Block
+
+    classDef source fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef system fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef decision fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:1.5px
+    classDef result fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Website source
+    class Chromium,Manager,Prompt,Android system
+    class Stored,User decision
+    class Decision,Allow,Block,Save result

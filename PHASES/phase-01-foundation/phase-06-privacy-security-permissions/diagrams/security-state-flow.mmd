@@ -1,0 +1,16 @@
+flowchart LR
+    Page[Page navigation] --> State[Chromium security state]
+    State --> Secure[SECURE\nShow secure indicator]
+    State --> NotSecure[NOT_SECURE\nShow warning state]
+    State --> Cert[CERTIFICATE_ERROR\nBlock or warn clearly]
+    State --> Mixed[MIXED_CONTENT\nShow actual state]
+    State --> Unknown[UNKNOWN\nDo not imply security]
+    Safe[SafeBrowsingManager] --> Warning[Danger warning\nDo not silently continue]
+    Cert --> Warning
+
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef safe fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef warning fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Page,State input
+    class Secure safe
+    class NotSecure,Cert,Mixed,Unknown,Safe,Warning warning
