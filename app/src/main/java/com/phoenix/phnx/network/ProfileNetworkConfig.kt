@@ -20,6 +20,9 @@ object NetworkConfigValidator {
             if (config.proxyType == null) add("A proxy type is required.")
             if (config.proxyHost.isBlank()) add("A proxy host is required.")
             if (config.proxyPort !in 1..65535) add("Proxy port must be between 1 and 65535.")
+            if (config.username.isNotBlank() && config.credentialReference.isNullOrBlank()) {
+                add("Proxy credentials are incomplete.")
+            }
         }
     }
 }

@@ -11,6 +11,8 @@ class NetworkManager(context: Context) {
     ).allowMainThreadQueries().build()
     private val dao = database.configDao()
     private val credentials = SecureCredentialStore(context)
+    private val monitor = NetworkMonitor(context)
+    private val connectionTester = ConnectionTester(credentials::getCredential)
 
     fun getConfig(profileId: String): ProfileNetworkConfig {
         return dao.getForProfile(profileId)?.toDomain() ?: directConfig(profileId).also { dao.upsert(it.toEntity()) }
@@ -26,6 +28,19 @@ class NetworkManager(context: Context) {
         dao.getForProfile(profileId)?.let(dao::delete)
     }
 
+    fun testConfig(profileId: String): ConnectionTestResult =
+        connectionTester.test(getConfig(profileId))
+
+    fun applyConfig(profileId: String, adapter: ChromiumNetworkAdapter): NetworkApplyResult =
+        adapter.apply(getConfig(profileId))
+
+    fun observeConnection(listener: NetworkStateListener): NetworkState =
+        monitor.observeConnection(listener)
+
+    fun detectNetworkChanges(): NetworkState = monitor.detectNetworkChanges()
+
+    fun reportConnectionState(): NetworkState = monitor.reportConnectionState()
+
     fun saveProxyCredential(profileId: String, secret: String): String {
         val reference = "proxy_$profileId"
         require(credentials.saveCredential(reference, secret)) { "Could not save proxy credential securely." }
@@ -37,6 +52,7 @@ class NetworkManager(context: Context) {
     fun deleteProxyCredential(reference: String) = credentials.deleteCredential(reference)
 
     fun close() {
+        monitor.stop()
         database.close()
     }
 

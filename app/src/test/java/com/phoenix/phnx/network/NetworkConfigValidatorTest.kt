@@ -21,4 +21,19 @@ class NetworkConfigValidatorTest {
 
         assertTrue(NetworkConfigValidator.validate(config).size >= 3)
     }
+
+    @Test
+    fun proxyUsernameRequiresSecureCredentialReference() {
+        val config = ProfileNetworkConfig(
+            id = "network_a",
+            profileId = "profile_a",
+            mode = NetworkMode.PROXY,
+            proxyType = ProxyType.HTTP,
+            proxyHost = "proxy.example",
+            proxyPort = 8080,
+            username = "user",
+        )
+
+        assertTrue(NetworkConfigValidator.validate(config).any { it.contains("credentials") })
+    }
 }
