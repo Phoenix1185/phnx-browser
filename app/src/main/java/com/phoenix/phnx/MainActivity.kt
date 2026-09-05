@@ -40,6 +40,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.phoenix.phnx.about.AboutActivity
 import com.phoenix.phnx.browser.BrowserController
 import com.phoenix.phnx.browser.BrowserView
@@ -60,6 +61,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private lateinit var addressBar: EditText
     private lateinit var progressBar: ProgressBar
     private lateinit var tabCount: TextView
+    private lateinit var refreshLayout: SwipeRefreshLayout
     private var errorView: View? = null
     private var desktopSiteEnabled = false
     private var dataSaverEnabled = false
@@ -130,7 +132,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        dataSaverEnabled = PhnxPreferences.store(this).getBoolean(PhnxPreferences.DATA_SAVER_ENABLED, false)
+        val preferences = PhnxPreferences.store(this)
+        dataSaverEnabled = preferences.getBoolean(PhnxPreferences.DATA_SAVER_ENABLED, false)
+        desktopSiteEnabled = preferences.getBoolean(PhnxPreferences.DESKTOP_SITE_ENABLED, false)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = getColor(R.color.phnx_navy)
         window.navigationBarColor = getColor(R.color.phnx_navy)
@@ -246,7 +250,14 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         browserContainer = FrameLayout(this).apply {
             setBackgroundColor(Color.WHITE)
         }
-        root.addView(browserContainer, LinearLayout.LayoutParams(-1, 0, 1f))
+        refreshLayout = SwipeRefreshLayout(this).apply {
+            setColorSchemeResources(R.color.phnx_blue)
+            setOnRefreshListener {
+                currentBrowserView()?.reload() ?: run { isRefreshing = false }
+            }
+            addView(browserContainer, SwipeRefreshLayout.LayoutParams(-1, -1))
+        }
+        root.addView(refreshLayout, LinearLayout.LayoutParams(-1, 0, 1f))
 
         val bottomBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -317,23 +328,29 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 tab.isLoading = true
                 tab.url = url
+                tab.title = tabTitleForUrl(url)
                 updateTabChrome(tab, view)
             }
 
             override fun onPageFinished(view: WebView, url: String) {
                 tab.isLoading = false
                 if (url != START_PAGE_BASE) tab.url = url
-                tab.title = view.title?.takeIf { it.isNotBlank() } ?: tab.title
+                tab.title = view.title?.takeIf { it.isNotBlank() } ?: tabTitleForUrl(url)
+                refreshLayout.isRefreshing = false
                 updateTabChrome(tab, view)
                 hideError()
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
-                if (request.isForMainFrame) showError(error.description?.toString() ?: "The page could not be loaded.")
+                if (request.isForMainFrame) {
+                    refreshLayout.isRefreshing = false
+                    showError(error.description?.toString() ?: "The page could not be loaded.")
+                }
             }
 
             override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, errorResponse: WebResourceResponse) {
                 if (request.isForMainFrame && errorResponse.statusCode >= 400) {
+                    refreshLayout.isRefreshing = false
                     showError("The page returned an error (${errorResponse.statusCode}).")
                 }
             }
@@ -446,7 +463,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         tab.canGoBack = view.canGoBack()
         tab.canGoForward = view.canGoForward()
         val profileTabCount = tabManager.tabCount(tab.profileId)
-        tabCount.text = "$profileTabCount tab${if (profileTabCount == 1) "" else "s"}"
+        val profileName = profileManager.getAllProfiles().firstOrNull { it.id == tab.profileId }?.name ?: "Profile"
+        tabCount.text = "$profileName · $profileTabCount tab${if (profileTabCount == 1) "" else "s"}"
     }
 
     private fun currentBrowserView(): BrowserView? = tabManager.currentTab()?.let(browserController::getOrCreate)
@@ -487,6 +505,11 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private fun hideError() {
         errorView?.let(browserContainer::removeView)
         errorView = null
+    }
+
+    private fun tabTitleForUrl(url: String): String {
+        if (url == START_PAGE_BASE) return "New tab"
+        return Uri.parse(url).host?.removePrefix("www.").takeUnless { it.isNullOrBlank() } ?: "Loading"
     }
 
     private fun showTabSwitcher() {
@@ -583,10 +606,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     override fun onDesktopSite() {
-        val view = currentBrowserView() ?: return
         desktopSiteEnabled = !desktopSiteEnabled
-        applyBrowserModes(view)
-        view.reload()
+        PhnxPreferences.store(this).edit()
+            .putBoolean(PhnxPreferences.DESKTOP_SITE_ENABLED, desktopSiteEnabled)
+            .apply()
+        val profileId = profileManager.activeProfile().id
+        tabManager.getTabs(profileId).forEach { tab -> browserController.remove(tab.id) }
+        attachCurrentTab()
         Toast.makeText(this, if (desktopSiteEnabled) "Desktop site enabled" else "Mobile site enabled", Toast.LENGTH_SHORT).show()
     }
 
@@ -626,7 +652,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     private companion object {
         const val START_PAGE_BASE = "https://phnx.local/"
-        const val DESKTOP_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36"
+        const val DESKTOP_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
     }
 
     private fun startPageHtml(): String {

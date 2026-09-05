@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatDelegate
 object PhnxPreferences {
     const val STORE = "phnx_preferences"
     const val DATA_SAVER_ENABLED = "data_saver_enabled"
+    const val DESKTOP_SITE_ENABLED = "desktop_site_enabled"
     const val THEME_MODE = "theme_mode"
     const val THEME_SYSTEM = "system"
     const val THEME_LIGHT = "light"
