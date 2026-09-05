@@ -19,6 +19,8 @@ object BrowserMenu {
     private const val ABOUT = 11
     private const val DATA_SAVER = 12
     private const val RELOAD = 13
+    private const val PAGE_ZOOM = 14
+    private const val TEXT_SIZE = 15
 
     interface Callbacks {
         fun onNewTab()
@@ -29,6 +31,8 @@ object BrowserMenu {
         fun onReload()
         fun onShare()
         fun onFindInPage()
+        fun onPageZoom()
+        fun onTextSize()
         fun onDesktopSite()
         fun isDesktopSiteEnabled(): Boolean
         fun onDataSaver()
@@ -49,10 +53,12 @@ object BrowserMenu {
             add(0, RELOAD, 5, R.string.reload)
             add(0, SHARE, 6, R.string.share)
             add(0, FIND, 7, R.string.find_in_page)
+            add(0, PAGE_ZOOM, 8, R.string.page_zoom)
+            add(0, TEXT_SIZE, 9, R.string.text_size)
             add(
                 0,
                 DESKTOP,
-                8,
+                10,
                 if (callbacks.isDesktopSiteEnabled()) R.string.desktop_site_enabled else R.string.desktop_site,
             ).apply {
                 isCheckable = true
@@ -61,15 +67,15 @@ object BrowserMenu {
             add(
                 0,
                 DATA_SAVER,
-                9,
+                11,
                 if (callbacks.isDataSaverEnabled()) R.string.data_saver_enabled else R.string.data_saver,
             ).apply {
                 isCheckable = true
                 isChecked = callbacks.isDataSaverEnabled()
             }
-            add(0, HOME, 10, R.string.add_to_home_screen)
-            add(0, SETTINGS, 11, R.string.settings)
-            add(0, ABOUT, 12, R.string.about_phnx)
+            add(0, HOME, 12, R.string.add_to_home_screen)
+            add(0, SETTINGS, 13, R.string.settings)
+            add(0, ABOUT, 14, R.string.about_phnx)
         }
         popup.setOnMenuItemClickListener { item: MenuItem ->
             when (item.itemId) {
@@ -81,6 +87,8 @@ object BrowserMenu {
                 RELOAD -> callbacks.onReload()
                 SHARE -> callbacks.onShare()
                 FIND -> callbacks.onFindInPage()
+                PAGE_ZOOM -> callbacks.onPageZoom()
+                TEXT_SIZE -> callbacks.onTextSize()
                 DESKTOP -> callbacks.onDesktopSite()
                 DATA_SAVER -> callbacks.onDataSaver()
                 HOME -> callbacks.onAddToHomeScreen()

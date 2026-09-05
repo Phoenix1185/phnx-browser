@@ -89,6 +89,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var errorView: View? = null
     private var desktopSiteEnabled = false
     private var dataSaverEnabled = false
+    private var pageZoomPercent = 100
+    private var textScalePercent = 100
     private var activityVisible = false
     private var attachedTabId: String? = null
     private var appliedNetworkConfigHash: Int? = null
@@ -371,12 +373,14 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         if (webView.tag == tab.id) {
             applyBrowserModes(webView)
             applyProfileIdentity(webView, tab.profileId)
+            applyPageControls(webView)
             privacyManager.applyTo(webView, tab.profileId)
             return
         }
         webView.tag = tab.id
         applyBrowserModes(webView)
         applyProfileIdentity(webView, tab.profileId)
+        applyPageControls(webView)
         privacyManager.applyTo(webView, tab.profileId)
         webView.setOnTouchListener { _, event ->
             swipeDetector.onTouchEvent(event)
@@ -778,6 +782,35 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             .show()
     }
 
+    override fun onPageZoom() {
+        val view = currentBrowserView() ?: return
+        val levels = intArrayOf(50, 75, 90, 100, 110, 125, 150, 175, 200)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.page_zoom)
+            .setSingleChoiceItems(levels.map { "$it%" }.toTypedArray(), levels.indexOf(pageZoomPercent).coerceAtLeast(0)) { dialog, which ->
+                pageZoomPercent = levels[which]
+                applyPageControls(view)
+                view.reload()
+                dialog.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    override fun onTextSize() {
+        val view = currentBrowserView() ?: return
+        val levels = intArrayOf(80, 90, 100, 115, 130, 150, 175, 200)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.text_size)
+            .setSingleChoiceItems(levels.map { "$it%" }.toTypedArray(), levels.indexOf(textScalePercent).coerceAtLeast(0)) { dialog, which ->
+                textScalePercent = levels[which]
+                applyPageControls(view)
+                dialog.dismiss()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     override fun onDesktopSite() {
         desktopSiteEnabled = !desktopSiteEnabled
         PhnxPreferences.store(this).edit()
@@ -933,6 +966,11 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             blockNetworkImage = dataSaverEnabled
             mediaPlaybackRequiresUserGesture = true
         }
+    }
+
+    private fun applyPageControls(view: WebView) {
+        view.setInitialScale(pageZoomPercent)
+        view.settings.textZoom = textScalePercent
     }
 
     private fun applyProfileIdentity(view: WebView, profileId: String) {

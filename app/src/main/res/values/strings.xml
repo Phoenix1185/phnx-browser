@@ -21,6 +21,8 @@
     <string name="reload">Reload</string>
     <string name="share">Share</string>
     <string name="find_in_page">Find in page</string>
+    <string name="page_zoom">Page zoom</string>
+    <string name="text_size">Text size</string>
     <string name="desktop_site">Desktop site</string>
     <string name="desktop_site_enabled">Desktop site (on)</string>
     <string name="data_saver">Data Saver</string>
