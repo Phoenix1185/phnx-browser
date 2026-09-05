@@ -49,4 +49,16 @@ class NetworkConfigValidatorTest {
 
         assertFalse(NetworkConfigValidator.validate(config).isNotEmpty())
     }
+
+    @Test
+    fun freeProxyOnlyConfigurationDoesNotRequirePrimaryEndpoint() {
+        val config = ProfileNetworkConfig(
+            id = "network_a",
+            profileId = "profile_a",
+            mode = NetworkMode.PROXY,
+            fallbackToFreeProxy = true,
+        )
+
+        assertTrue(NetworkConfigValidator.validate(config).isEmpty())
+    }
 }

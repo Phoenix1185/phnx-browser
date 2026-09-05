@@ -28,6 +28,9 @@ class ConnectionTester(
         val errors = NetworkConfigValidator.validate(config)
         if (errors.isNotEmpty()) return failure(errors.joinToString(" "))
         if (!config.enabled) return failure("Network configuration is disabled.")
+        if (config.mode == NetworkMode.PROXY && config.proxyHost.isBlank()) {
+            return unsupported("Free proxy pool routes are applied by WebView; configure a primary proxy to test it directly.")
+        }
 
         val proxy = when (config.mode) {
             NetworkMode.DIRECT -> Proxy.NO_PROXY

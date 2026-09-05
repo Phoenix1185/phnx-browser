@@ -65,7 +65,7 @@
     <string name="proxy_enabled">Use proxy</string>
     <string name="proxy_enabled_summary">Turn proxy routing on or off without deleting the saved endpoint.</string>
     <string name="proxy_free_fallback">Use free proxy fallbacks</string>
-    <string name="proxy_free_fallback_summary">Loads fresh public proxies from HProxy and adds them after the primary route. Public proxies are untrusted; do not use them for sensitive accounts.</string>
+    <string name="proxy_free_fallback_summary">Loads fresh public proxies from HProxy after saving. Use them after a primary route or as the free-only route when the primary host is blank.</string>
     <string name="proxy_direct_fallback">Allow direct fallback</string>
     <string name="proxy_direct_fallback_summary">If every proxy fails, allow a direct connection. This can expose your normal IP address.</string>
     <string name="proxy_fallback_loading">Loading free proxy fallbacks...</string>

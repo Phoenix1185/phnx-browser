@@ -42,20 +42,32 @@ class WebViewNetworkAdapter : ChromiumNetworkAdapter {
         }
 
         return runCatching {
-            val primary = ProxyEndpoint(
-                type = config.proxyType ?: return@runCatching NetworkApplyResult(NetworkApplyStatus.UNSUPPORTED, "Proxy type is missing."),
-                host = config.proxyHost,
-                port = config.proxyPort,
-            )
+            val primary = if (config.proxyHost.isBlank()) {
+                null
+            } else {
+                ProxyEndpoint(
+                    type = config.proxyType ?: return@runCatching NetworkApplyResult(NetworkApplyStatus.UNSUPPORTED, "Proxy type is missing."),
+                    host = config.proxyHost,
+                    port = config.proxyPort,
+                )
+            }
             val fallbacks = if (config.fallbackToFreeProxy) config.freeProxyFallbacks else emptyList()
-            val builder = ProxyConfig.Builder().addProxyRule(primary.asWebViewRule())
+            if (primary == null && fallbacks.isEmpty()) {
+                return@runCatching NetworkApplyResult(NetworkApplyStatus.UNSUPPORTED, "No free proxy route is available.")
+            }
+            val builder = ProxyConfig.Builder()
+            primary?.let { builder.addProxyRule(it.asWebViewRule()) }
             fallbacks.forEach { builder.addProxyRule(it.asWebViewRule()) }
             if (config.fallbackToDirect) builder.addDirect()
             ProxyController.getInstance().setProxyOverride(builder.build(), Runnable::run) {}
             val fallbackCount = fallbacks.size + if (config.fallbackToDirect) 1 else 0
             NetworkApplyResult(
                 NetworkApplyStatus.APPLIED,
-                "Proxy enabled with $fallbackCount fallback route${if (fallbackCount == 1) "" else "s"}.",
+                if (primary == null) {
+                    "Free proxy pool enabled with ${fallbacks.size} route${if (fallbacks.size == 1) "" else "s"}."
+                } else {
+                    "Proxy enabled with $fallbackCount fallback route${if (fallbackCount == 1) "" else "s"}."
+                },
             )
         }.getOrElse { error ->
             NetworkApplyResult(
