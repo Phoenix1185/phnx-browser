@@ -86,6 +86,39 @@ class ResourcePolicyTest {
         assertTrue(selected.none { it.foreground })
     }
 
+    @Test
+    fun schedulerOnlyFreezesEligibleBackgroundProfiles() {
+        val alreadyFrozen = profile("frozen", state = ProfileLifecycleState.FROZEN)
+        val closed = profile("closed", state = ProfileLifecycleState.CLOSED)
+        val idle = profile("idle", state = ProfileLifecycleState.IDLE)
+
+        val selected = ProfileScheduler().selectProfilesToFreeze(listOf(alreadyFrozen, closed, idle), 3)
+
+        assertEquals(listOf("idle"), selected.map { it.profileId })
+    }
+
+    @Test
+    fun schedulerDoesNotReselectSuspendedOrClosedProfiles() {
+        val suspended = profile("suspended", state = ProfileLifecycleState.SUSPENDED)
+        val closed = profile("closed", state = ProfileLifecycleState.CLOSED)
+        val idle = profile("idle", state = ProfileLifecycleState.IDLE)
+
+        val selected = ProfileScheduler().selectProfilesToSuspend(listOf(suspended, closed, idle), 3)
+
+        assertEquals(listOf("idle"), selected.map { it.profileId })
+    }
+
+    @Test
+    fun schedulerClosesLowestPriorityNonForegroundProfiles() {
+        val foreground = profile("foreground", foreground = true, state = ProfileLifecycleState.ACTIVE)
+        val idle = profile("idle", state = ProfileLifecycleState.IDLE)
+        val pinned = profile("pinned", pinned = true, state = ProfileLifecycleState.IDLE)
+
+        val selected = ProfileScheduler().selectProfilesToClose(listOf(foreground, pinned, idle), 1)
+
+        assertEquals(listOf("idle"), selected.map { it.profileId })
+    }
+
     private fun profile(
         id: String,
         foreground: Boolean = false,
