@@ -1,0 +1,22 @@
+flowchart TB
+    Signal[Memory, CPU, battery, or thermal pressure] --> Policy[Performance and resource policy]
+    Policy --> Normal[NORMAL\nNormal operation]
+    Policy --> Low[LOW\nReduce background resources]
+    Policy --> Moderate[MODERATE\nFreeze inactive tabs/profiles]
+    Policy --> High[HIGH\nSuspend low-priority profiles]
+    Policy --> Critical[CRITICAL\nKeep essential active resources]
+    Low --> Preserve[Preserve profile data]
+    Moderate --> Preserve
+    High --> Preserve
+    Critical --> Preserve
+    Preserve --> Restore[Restore when needed]
+
+    classDef signal fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef policy fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef pressure fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    classDef safe fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Signal signal
+    class Policy policy
+    class Normal pressure
+    class Low,Moderate,High,Critical pressure
+    class Preserve,Restore safe

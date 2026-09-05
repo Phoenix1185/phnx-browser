@@ -1,0 +1,15 @@
+flowchart TB
+    Select[User selects Profile B] --> Save[Save required Profile A state]
+    Save --> Transition[Transition Profile A lifecycle]
+    Transition --> Load[Load Profile B]
+    Load --> Network[Apply Profile B network configuration]
+    Network --> Identity[Apply Profile B identity configuration]
+    Identity --> Restore[Restore browser state]
+    Restore --> Ready[Profile B ready]
+    Ready -. avoid unnecessary full app restart .-> Select
+
+    classDef action fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef optimize fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef result fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:2px
+    class Select,Save,Transition,Load,Network,Identity,Restore action
+    class Ready result

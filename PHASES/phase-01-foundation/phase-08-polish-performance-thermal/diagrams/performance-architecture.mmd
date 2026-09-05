@@ -1,0 +1,23 @@
+flowchart TB
+    Android[Android lifecycle and device signals] --> Resource[Phase 5 ResourceManager]
+    Resource --> Performance[Phase 8 PerformanceManager]
+    Performance --> Memory[MemoryOptimizer]
+    Performance --> CPU[CpuOptimizer]
+    Performance --> Battery[BatteryOptimizer]
+    Performance --> Thermal[ThermalOptimizer]
+    Performance --> Database[DatabaseOptimizer]
+    Performance --> Network[NetworkOptimizer]
+    Performance --> Policy[Performance policy]
+    Policy --> Lifecycle[ProfileLifecycleManager]
+    Lifecycle --> Chromium[ChromiumPerformanceAdapter]
+    Performance --> Monitor[PerformanceMonitor]
+    Monitor --> Diagnostics[DiagnosticsManager]
+
+    classDef signal fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef manager fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef optimizer fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef output fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class Android,Resource signal
+    class Performance,Policy,Lifecycle manager
+    class Memory,CPU,Battery,Thermal,Database,Network,Chromium optimizer
+    class Monitor,Diagnostics output

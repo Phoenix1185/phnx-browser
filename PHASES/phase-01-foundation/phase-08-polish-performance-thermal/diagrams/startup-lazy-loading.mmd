@@ -1,0 +1,14 @@
+flowchart TB
+    Launch[App startup] --> Metadata[Load profile metadata]
+    Metadata --> Active[Load active profile only]
+    Active --> Browser[Display first usable browser screen]
+    Browser --> OnDemand[Load other profile runtime on demand]
+    OnDemand --> Features[Lazy-load History, Bookmarks, Downloads, Settings]
+    Profile[Optional profile preloading] -. only when ResourceManager permits .-> OnDemand
+
+    classDef start fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef flow fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef lazy fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Launch start
+    class Metadata,Active,Browser flow
+    class OnDemand,Features,Profile lazy

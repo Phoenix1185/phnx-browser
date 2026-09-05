@@ -1,0 +1,28 @@
+flowchart TB
+    Settings[Settings → Advanced → Diagnostics] --> Snapshot[PerformanceSnapshot]
+    Snapshot --> Metrics[RAM • CPU • thermal • battery]
+    Snapshot --> Counts[Active profiles • active tabs • frozen • suspended]
+    Tests[Performance test matrix] --> UI[UI smoothness]
+    Tests --> Startup[Startup and restoration]
+    Tests --> Stress[Stress and long-run]
+    Tests --> Battery[Battery]
+    Tests --> Thermal[Thermal]
+    Tests --> Regression[Phase 1–7 regression]
+    Metrics --> Report[Measure, compare, improve]
+    Counts --> Report
+    UI --> Report
+    Startup --> Report
+    Stress --> Report
+    Battery --> Report
+    Thermal --> Report
+    Regression --> Report
+    Report --> Safe[Preserve correctness and profile isolation]
+
+    classDef entry fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef metric fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef test fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef result fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class Settings,Tests entry
+    class Snapshot,Metrics,Counts metric
+    class UI,Startup,Stress,Battery,Thermal,Regression test
+    class Report,Safe result
