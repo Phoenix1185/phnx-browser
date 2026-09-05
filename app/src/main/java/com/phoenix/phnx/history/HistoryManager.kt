@@ -1,7 +1,6 @@
 package com.phoenix.phnx.history
 
 import android.content.Context
-import android.net.Uri
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -21,7 +20,18 @@ data class HistoryEntry(
     val visitedAt: Long,
     val visitCount: Int,
 ) {
-    val host: String get() = Uri.parse(url).host.orEmpty()
+    val host: String
+        get() = url.substringAfter("://", "")
+            .substringBeforeAny('/', '?', '#')
+            .substringAfterLast('@')
+}
+
+private fun String.substringBeforeAny(vararg delimiters: Char): String =
+    substringBeforeFirstOrNull(delimiters) ?: this
+
+private fun String.substringBeforeFirstOrNull(delimiters: CharArray): String? {
+    val index = indexOfFirst { it in delimiters }
+    return if (index >= 0) substring(0, index) else null
 }
 
 @Entity(tableName = "history_entries")
