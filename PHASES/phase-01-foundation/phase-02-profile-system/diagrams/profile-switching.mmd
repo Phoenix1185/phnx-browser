@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor User
+    participant UI as Profile UI
+    participant PM as ProfileManager
+    participant Current as Current profile
+    participant Selected as Selected profile
+    participant Storage as Storage manager
+
+    User->>UI: Select profile B
+    UI->>PM: switchProfile(profileB)
+    PM->>Current: Save tabs and session state
+    PM->>Storage: Flush profile A data safely
+    PM->>Current: Pause or release runtime
+    PM->>Selected: Load metadata and browser context
+    PM->>Storage: Restore profile B storage
+    Selected-->>PM: Restore session and tabs
+    PM-->>UI: Active profile = B
+    UI-->>User: Show profile B as active

@@ -1,0 +1,18 @@
+flowchart LR
+    A[Profile A] --> CA[Browser context A]
+    CA --> SA[Private storage A]
+    SA --> AData[Cookie A\nLocalStorage A\nIndexedDB A\nPermissions A]
+
+    B[Profile B] --> CB[Browser context B]
+    CB --> SB[Private storage B]
+    SB --> BData[Cookie B or none\nLocalStorage B\nIndexedDB B\nPermissions B]
+
+    SA -. must not leak .-> SB
+    AData -. isolated from .-> BData
+
+    classDef profile fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef context fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef storage fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class A,B profile
+    class CA,CB context
+    class SA,SB,AData,BData storage

@@ -1,0 +1,14 @@
+flowchart TB
+    Tests[Phase 2 automated tests]
+    Tests --> Create[Profile creation\nA, B, C have unique IDs]
+    Tests --> Isolation[Storage isolation\nCookie in A absent from B]
+    Tests --> Persist[Persistence\nData survives restart and reload]
+    Tests --> Rename[Rename\nSame ID and storage, new name]
+    Tests --> Delete[Deletion\nTarget removed, others unaffected]
+    Tests --> Tabs[Tab ownership\nTabs remain within profile]
+    Tests --> Crash[Crash recovery\nData remains intact]
+
+    classDef root fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:2px
+    classDef test fill:#eff6ff,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    class Tests root
+    class Create,Isolation,Persist,Rename,Delete,Tabs,Crash test

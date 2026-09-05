@@ -1,0 +1,14 @@
+stateDiagram-v2
+    [*] --> ACTIVE: create or load
+    ACTIVE --> IDLE: backgrounded
+    IDLE --> ACTIVE: selected
+    IDLE --> SUSPENDED: runtime released
+    SUSPENDED --> ACTIVE: selected
+    ACTIVE --> CLOSED: close profile
+    IDLE --> CLOSED: close profile
+    SUSPENDED --> CLOSED: close profile
+    CLOSED --> ACTIVE: reopen profile
+    ACTIVE --> [*]: delete after confirmation
+    IDLE --> [*]: delete after confirmation
+    SUSPENDED --> [*]: delete after confirmation
+    CLOSED --> [*]: delete after confirmation

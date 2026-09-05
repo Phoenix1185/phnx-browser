@@ -1,0 +1,22 @@
+flowchart TB
+    UI[PHNX Profile UI] --> PM[ProfileManager]
+    PM --> DB[Room + SQLite\nProfileEntity]
+    PM --> SM[ProfileStorageManager]
+    PM --> CM[Chromium Context Factory]
+    PM --> Tabs[Profile-scoped TabManager]
+    SM --> Private[Android application-private storage]
+    CM --> ContextA[Profile A browser context]
+    CM --> ContextB[Profile B browser context]
+    ContextA --> DataA[Cookies • LocalStorage • IndexedDB • Cache]
+    ContextB --> DataB[Cookies • LocalStorage • IndexedDB • Cache]
+    PM --> Lifecycle[Lifecycle state machine]
+    PM --> Recovery[Safe writes + crash recovery]
+
+    classDef ui fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef manager fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef data fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef runtime fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class UI ui
+    class PM,DB,SM manager
+    class Private,DataA,DataB data
+    class CM,Tabs,ContextA,ContextB,Lifecycle,Recovery runtime

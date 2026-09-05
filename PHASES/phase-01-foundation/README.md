@@ -232,10 +232,10 @@ Expected artifact names are `PHNX-debug.apk`, `PHNX-release.apk`, and `PHNX-rele
 
 ## Related diagrams
 
-The diagram source files are stored in [`diagrams/`](./diagrams/), with rendered PNGs in [`diagrams/rendered/`](./diagrams/rendered/). The source files are intentionally kept beside their rendered outputs so future implementation changes can update both consistently.
+The diagram source files are stored in [`diagrams/`](./phase-02-profile-system/diagrams/), with rendered PNGs in [`diagrams/rendered/`](./phase-02-profile-system/diagrams/rendered/). The source files are intentionally kept beside their rendered outputs so future implementation changes can update both consistently.
 
-- [Architecture](./diagrams/rendered/architecture.png)
-- [Browser screen](./diagrams/rendered/browser-screen.png)
-- [CI pipeline](./diagrams/rendered/ci-pipeline.png)
-- [Download flow](./diagrams/rendered/downloads.png)
-- [Nine-phase roadmap](./diagrams/rendered/phase-roadmap.png)
+- [Architecture](./phase-02-profile-system/diagrams/rendered/architecture.png)
+- [Browser screen](./phase-02-profile-system/diagrams/rendered/browser-screen.png)
+- [CI pipeline](./phase-02-profile-system/diagrams/rendered/ci-pipeline.png)
+- [Download flow](./phase-02-profile-system/diagrams/rendered/downloads.png)
+- [Nine-phase roadmap](./phase-02-profile-system/diagrams/rendered/phase-roadmap.png)
