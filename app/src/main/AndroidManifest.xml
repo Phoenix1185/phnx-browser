@@ -20,6 +20,12 @@
             android:name=".about.AboutActivity"
             android:exported="false" />
         <activity
+            android:name=".about.LegalActivity"
+            android:exported="false" />
+        <activity
+            android:name=".about.UpdateActivity"
+            android:exported="false" />
+        <activity
             android:name=".history.HistoryActivity"
             android:exported="false" />
         <activity
