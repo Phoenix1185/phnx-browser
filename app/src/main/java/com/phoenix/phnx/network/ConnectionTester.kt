@@ -24,7 +24,22 @@ class ConnectionTester(
     private val testUrl: URL = URL(DEFAULT_TEST_URL),
     private val timeoutMillis: Int = DEFAULT_TIMEOUT_MILLIS,
 ) {
-    fun test(config: ProfileNetworkConfig): ConnectionTestResult {
+    fun test(config: ProfileNetworkConfig): ConnectionTestResult = testConfig(config)
+
+    fun testProxy(config: ProfileNetworkConfig, endpoint: ProxyEndpoint): ConnectionTestResult =
+        testConfig(
+            config.copy(
+                proxyType = endpoint.type,
+                proxyHost = endpoint.host,
+                proxyPort = endpoint.port,
+                username = "",
+                credentialReference = null,
+                fallbackToFreeProxy = false,
+                fallbackToDirect = false,
+            ),
+        )
+
+    private fun testConfig(config: ProfileNetworkConfig): ConnectionTestResult {
         val errors = NetworkConfigValidator.validate(config)
         if (errors.isNotEmpty()) return failure(errors.joinToString(" "))
         if (!config.enabled) return failure("Network configuration is disabled.")

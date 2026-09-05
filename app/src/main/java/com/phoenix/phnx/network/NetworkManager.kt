@@ -36,8 +36,35 @@ class NetworkManager(context: Context) {
         }
     }
 
-    fun testConfig(profileId: String): ConnectionTestResult =
-        connectionTester.test(getConfig(profileId))
+    fun testConfig(profileId: String): ConnectionTestResult {
+        val config = getConfig(profileId)
+        if (config.mode != NetworkMode.PROXY || config.proxyHost.isNotBlank() || !config.fallbackToFreeProxy) {
+            return connectionTester.test(config)
+        }
+
+        val endpoints = config.freeProxyFallbacks.ifEmpty { freeProxyProvider.fetch() }
+        if (endpoints.isEmpty()) {
+            return ConnectionTestResult(
+                state = ConnectionTestState.FAILURE,
+                message = "No free proxy routes are available to test.",
+            )
+        }
+
+        val attempts = endpoints.map { endpoint ->
+            endpoint to connectionTester.testProxy(config, endpoint)
+        }
+        val successful = attempts.firstOrNull { (_, result) -> result.state == ConnectionTestState.SUCCESS }
+        if (successful != null) {
+            val (endpoint, result) = successful
+            return result.copy(message = "Free proxy test succeeded via ${endpoint.host}:${endpoint.port}.")
+        }
+
+        val lastResult = attempts.last().second
+        return lastResult.copy(
+            message = "No free proxy route succeeded after ${attempts.size} attempt(s). " +
+                "Last error: ${lastResult.message}",
+        )
+    }
 
     fun applyConfig(profileId: String, adapter: ChromiumNetworkAdapter): NetworkApplyResult =
         adapter.apply(getConfig(profileId))

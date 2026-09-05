@@ -20,7 +20,7 @@ Phase 1 now has a buildable native Kotlin Android shell in `app/`. It includes:
 - GitHub Actions builds for tests, debug/release APKs, and the release AAB.
 - Profile metadata, profile-owned tab sessions, and a disposable per-profile WebView pool. Profile switching preserves Android WebView data-directory isolation by restarting the process.
 - Profile-scoped network configuration persistence, secure proxy credentials, connection testing, and connectivity monitoring.
-- WebView proxy override with an explicit on/off switch, profile-persisted proxy routes, optional HProxy free-public-proxy fallbacks, and an opt-in direct fallback that is clearly warned as an IP exposure.
+- WebView proxy override with an explicit on/off switch, profile-persisted proxy routes, optional HProxy free-public-proxy fallbacks, free-route connection testing, and an opt-in direct fallback that is clearly warned as an IP exposure.
 - Profile-scoped identity presets, consistency validation, persistence, and a WebView capability-reporting editor.
 - New profiles receive a rotating selectable identity preset; Reset returns to the actual System Default identity rather than reapplying the same hard-coded phone preset.
 - Resource-pressure policy, profile-priority scheduling, Android memory/battery/thermal snapshots, and a real per-profile view lifecycle (`ACTIVE` → `IDLE` → `FROZEN` → `SUSPENDED` → `RECREATING` → `ACTIVE`). CPU monitoring remains unsupported by the current Android integration.
