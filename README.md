@@ -20,6 +20,7 @@ Phase 1 now has a buildable native Kotlin Android shell in `app/`. It includes:
 - GitHub Actions builds for tests, debug/release APKs, and the release AAB.
 - Profile metadata, profile-owned tab sessions, and Android WebView data-directory separation.
 - Profile-scoped network configuration persistence, secure proxy credentials, connection testing, and connectivity monitoring.
+- Profile-scoped identity presets, consistency validation, persistence, and a WebView capability-reporting editor.
 
 The browser engine is isolated behind `BrowserController` and `BrowserView`; the current adapter uses the Android system's Chromium-backed WebView runtime. A separately embeddable Chromium distribution is not committed to this repository. Android WebView does not expose the per-profile proxy routing required by the Phase 3 blueprint, so proxy configuration is persisted, testable, and reported as unsupported at application time rather than silently claimed as applied. On-device browser-context isolation, profile-specific permissions/history/bookmarks, and the later blueprint phases still require further implementation and testing.
 
