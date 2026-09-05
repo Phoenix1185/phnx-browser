@@ -6,7 +6,8 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 
 - Unit tests and debug/release APK plus AAB builds pass in GitHub Actions.
 - Phases 1-7 have working prototypes for the browser shell, profiles, network settings, identity presets, lifecycle policy, privacy settings, tabs, history, bookmarks, downloads, search routing, and page controls.
-- Recent work added tab groups, bookmark folders, history search/date grouping, start-page bookmark/history content, full-screen WebView handling, renderer retry recovery, first-party cookie control, and native zoom/text selection.
+- Recent work added tab groups, bookmark folders, history search/date grouping, start-page bookmark/history content, full-screen WebView handling, renderer retry recovery, first-party cookie control, native zoom/text selection, find-in-page navigation/count, profile-aware shortcuts, and profile/site page controls.
+- Recent work also added basic HTTPS/HTTP/certificate/Safe Browsing state indicators, download URL/type safety checks, dangerous-download confirmation, mixed-content blocking, and persisted crash-loop recovery state.
 - Release R8/resource shrinking is enabled and verified by the latest debug/release APK and AAB build.
 
 ## Remaining Gaps
@@ -15,10 +16,10 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Phase 2: each tab now retains its own WebView and navigation state; private tabs do not have a separate cookie/storage partition; profile switching is process-restart based and not transactional.
 - Phase 3: WebView proxy override is process-wide; Android WebView does not expose enforceable DNS or WebRTC routing controls, so proxy mode is documented as best-effort rather than leak-proof.
 - Phase 4: custom identity fields and real locale/timezone/client-hint control are unsupported. The app now reports those limits instead of injecting fingerprint overrides.
-- Phase 5: lifecycle/resource policy is prototype-level; crash recovery, crash-loop protection, and persisted runtime recovery state are missing.
-- Phase 6: actual tracking protection, browser security-state indicators, download security, and fully profile-scoped clear-data coverage remain incomplete.
-- Phase 7: download pause/resume, find-next/previous/count, profile/site-persisted page controls, profile-aware shortcuts, and full settings organization remain incomplete; download progress and sharing are implemented.
-- Phase 8: Room managers use main-thread queries; lazy startup, performance snapshots/configuration, startup profiling, bounded stress tests, database optimization, and crash recovery are not production-ready.
+- Phase 5: lifecycle/resource policy is prototype-level; crash-loop recovery is implemented, but broader resource policy and production crash reporting remain.
+- Phase 6: actual tracking protection and fully profile-scoped clear-data coverage remain incomplete; security-state indicators and baseline download safety are implemented.
+- Phase 7: download pause/resume and full settings organization remain incomplete; find-in-page controls, profile/site page controls, profile-aware shortcuts, progress, and sharing are implemented.
+- Phase 8: Room managers use main-thread queries; lazy startup, performance snapshots/configuration, startup profiling, bounded stress tests, and database optimization are not production-ready.
 - Phase 9: release signing, tagged release workflow, migration/instrumentation upgrade tests, network-security hardening, legal package generation, rollback documentation, and repository security controls remain.
 
 ## Policy Notes
