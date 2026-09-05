@@ -1,9 +1,15 @@
 package com.phoenix.phnx.identity
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DeviceProfileValidatorTest {
+    @Test
+    fun exposesTenSelectableDeviceProfiles() {
+        assertEquals(10, DevicePresets.all().size)
+    }
+
     @Test
     fun supportedPresetsAreInternallyConsistent() {
         DevicePresets.all().forEach { preset ->

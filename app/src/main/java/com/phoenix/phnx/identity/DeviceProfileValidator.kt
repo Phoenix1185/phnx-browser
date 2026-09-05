@@ -41,11 +41,21 @@ object DeviceProfileValidator {
         if (platform.contains("windows") && !operatingSystem.contains("windows")) {
             add("Windows platform and operating system do not match.")
         }
+        if (platform == "ios" && !userAgent.contains("iphone") && !userAgent.contains("ipad")) {
+            add("iOS configuration requires an iPhone or iPad User-Agent.")
+        }
+        if (platform == "macos" && !userAgent.contains("macintosh")) {
+            add("macOS configuration requires a Macintosh User-Agent.")
+        }
+        if (platform == "linux" && !userAgent.contains("linux")) {
+            add("Linux configuration requires a Linux User-Agent.")
+        }
         if (config.mobileMode && !config.touchSupport) add("Mobile mode requires touch support.")
         if (config.mobileMode && config.viewportWidth > 1600) add("Mobile viewport is too wide.")
         if (!config.mobileMode && config.viewportWidth < 640) add("Desktop viewport is too narrow.")
         if (config.clientHints.platform.isBlank()) add("Client-hints platform is required.")
         if (config.clientHints.mobile != config.mobileMode) add("Client-hints mobile mode does not match the profile.")
         if (config.clientHints.platform.lowercase() != platform) add("Client-hints platform does not match the profile platform.")
+        if (config.clientHints.brands.isEmpty()) add("At least one client-hints brand is required.")
     }
 }
