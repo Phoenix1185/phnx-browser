@@ -4,7 +4,7 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 
 ## Verified
 
-- Unit tests and debug/release APK plus AAB builds pass in GitHub Actions.
+- Unit tests, instrumentation-test compilation, and debug/release APK plus AAB builds pass in GitHub Actions.
 - Phases 1-7 have working prototypes for the browser shell, profiles, network settings, identity presets, lifecycle policy, privacy settings, tabs, history, bookmarks, downloads, search routing, and page controls.
 - Recent work added tab groups, bookmark folders, history search/date grouping, start-page bookmark/history content, full-screen WebView handling, renderer retry recovery, first-party cookie control, native zoom/text selection, find-in-page navigation/count, profile-aware shortcuts, and profile/site page controls.
 - Recent work also added basic HTTPS/HTTP/certificate/Safe Browsing state indicators, download URL/type safety checks, dangerous-download confirmation, mixed-content blocking, and persisted crash-loop recovery state.
@@ -14,7 +14,7 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 
 ## Remaining Gaps
 
-- Phase 1: no instrumentation suite; the app still uses Android System WebView rather than an independently packaged Chromium engine.
+- Phase 1: an offline About-screen instrumentation smoke test is present and compiled in CI, but hosted emulator execution is not reliable in the current runner; the app still uses Android System WebView rather than an independently packaged Chromium engine.
 - Phase 2: each tab now retains its own WebView and navigation state; private tabs do not have a separate cookie/storage partition; profile switching is process-restart based and not transactional.
 - Phase 3: WebView proxy override is process-wide; Android WebView does not expose enforceable DNS or WebRTC routing controls, so proxy mode is documented as best-effort rather than leak-proof.
 - Phase 4: custom identity fields and real locale/timezone/client-hint control are unsupported. The app now reports those limits instead of injecting fingerprint overrides.
