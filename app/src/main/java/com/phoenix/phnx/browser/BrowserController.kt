@@ -17,6 +17,10 @@ class BrowserController(private val context: Context) {
         }
     }
 
+    fun forEachView(action: (BrowserView) -> Unit) {
+        views.values.forEach(action)
+    }
+
     fun clear() {
         views.keys.toList().forEach(::remove)
     }

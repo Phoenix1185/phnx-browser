@@ -57,6 +57,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private lateinit var tabCount: TextView
     private var errorView: View? = null
     private var desktopSiteEnabled = false
+    private var dataSaverEnabled = false
 
     private var pendingPermissionRequest: PermissionRequest? = null
     private var pendingGeolocationOrigin: String? = null
@@ -93,6 +94,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        dataSaverEnabled = PhnxPreferences.store(this).getBoolean(PhnxPreferences.DATA_SAVER_ENABLED, false)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = getColor(R.color.phnx_navy)
         window.navigationBarColor = getColor(R.color.phnx_navy)
@@ -109,6 +111,16 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 if (view?.canGoBack() == true) view.goBack() else finish()
             }
         })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val savedDataSaver = PhnxPreferences.store(this).getBoolean(PhnxPreferences.DATA_SAVER_ENABLED, false)
+        if (savedDataSaver != dataSaverEnabled) {
+            dataSaverEnabled = savedDataSaver
+            browserController.forEachView(::applyBrowserModes)
+            currentBrowserView()?.reload()
+        }
     }
 
     private fun buildLayout(): View {
@@ -136,8 +148,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             textSize = 15f
             imeOptions = android.view.inputmethod.EditorInfo.IME_ACTION_GO
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
-            setTextColor(Color.WHITE)
-            setHintTextColor(0xFFB8C2D9.toInt())
+            setTextColor(getColor(R.color.phnx_toolbar_content))
+            setHintTextColor(getColor(R.color.phnx_toolbar_hint))
             setPadding(dp(10), 0, dp(10), 0)
             setOnEditorActionListener { _, _, _ -> navigateFromAddressBar(); true }
         }
@@ -172,7 +184,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         tabCount = TextView(this).apply {
             gravity = Gravity.CENTER
             textSize = 15f
-            setTextColor(Color.WHITE)
+            setTextColor(getColor(R.color.phnx_toolbar_content))
             setOnClickListener { showTabSwitcher() }
             contentDescription = "Open tabs"
         }
@@ -207,7 +219,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
         if (webView.url == null) {
             if (tab.url.isBlank()) {
-                webView.loadDataWithBaseURL(START_PAGE_BASE, START_PAGE_HTML, "text/html", "UTF-8", null)
+                webView.loadDataWithBaseURL(START_PAGE_BASE, startPageHtml(), "text/html", "UTF-8", null)
             } else {
                 webView.loadUrl(tab.url)
             }
@@ -216,11 +228,11 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     private fun configureWebView(webView: BrowserView, tab: Tab) {
         if (webView.tag == tab.id) {
-            applyDesktopSiteMode(webView)
+            applyBrowserModes(webView)
             return
         }
         webView.tag = tab.id
-        applyDesktopSiteMode(webView)
+        applyBrowserModes(webView)
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 tab.isLoading = true
@@ -437,7 +449,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         textSize = 25f
         gravity = Gravity.CENTER
         contentDescription = description
-        setTextColor(Color.WHITE)
+        setTextColor(getColor(R.color.phnx_toolbar_content))
         isClickable = true
         isFocusable = true
         setPadding(dp(6), 0, dp(6), 0)
@@ -485,12 +497,24 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     override fun onDesktopSite() {
         val view = currentBrowserView() ?: return
         desktopSiteEnabled = !desktopSiteEnabled
-        applyDesktopSiteMode(view)
+        applyBrowserModes(view)
         view.reload()
         Toast.makeText(this, if (desktopSiteEnabled) "Desktop site enabled" else "Mobile site enabled", Toast.LENGTH_SHORT).show()
     }
 
     override fun isDesktopSiteEnabled(): Boolean = desktopSiteEnabled
+
+    override fun onDataSaver() {
+        dataSaverEnabled = !dataSaverEnabled
+        PhnxPreferences.store(this).edit()
+            .putBoolean(PhnxPreferences.DATA_SAVER_ENABLED, dataSaverEnabled)
+            .apply()
+        browserController.forEachView(::applyBrowserModes)
+        currentBrowserView()?.reload()
+        Toast.makeText(this, if (dataSaverEnabled) "Data Saver enabled" else "Data Saver disabled", Toast.LENGTH_SHORT).show()
+    }
+
+    override fun isDataSaverEnabled(): Boolean = dataSaverEnabled
 
     override fun onAddToHomeScreen() = showPlanned("Home-screen shortcuts will be available in a later phase.")
 
@@ -515,16 +539,26 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private companion object {
         const val START_PAGE_BASE = "https://phnx.local/"
         const val DESKTOP_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36"
-        const val START_PAGE_HTML = """
-            <!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head>
-            <body style='margin:0;background:#111a2e;color:#f7f8fc;font-family:sans-serif;display:grid;place-items:center;min-height:100vh'>
-            <main style='padding:32px;max-width:520px'><div style='color:#326bff;font-size:18px;font-weight:700;letter-spacing:.2em'>PHNX</div>
-            <h1 style='font-size:42px;margin:12px 0'>A clearer way to browse.</h1>
-            <p style='color:#b8c2d9;font-size:17px;line-height:1.6'>Enter a web address or search term above to get started.</p></main></body></html>
-        """
     }
 
-    private fun applyDesktopSiteMode(view: WebView) {
+    private fun startPageHtml(): String {
+        val background = colorHex(R.color.phnx_navy)
+        val foreground = colorHex(R.color.phnx_text)
+        val muted = colorHex(R.color.phnx_muted)
+        val blue = colorHex(R.color.phnx_blue)
+        return """
+            <!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head>
+            <body style='margin:0;background:$background;color:$foreground;font-family:sans-serif;display:grid;place-items:center;min-height:100vh'>
+            <main style='padding:32px;max-width:520px'><div style='color:$blue;font-size:18px;font-weight:700;letter-spacing:.2em'>PHNX</div>
+            <h1 style='font-size:42px;margin:12px 0'>A clearer way to browse.</h1>
+            <p style='color:$muted;font-size:17px;line-height:1.6'>Enter a web address or search term above to get started.</p></main></body></html>
+        """.trimIndent()
+    }
+
+    private fun colorHex(@androidx.annotation.ColorRes colorRes: Int): String =
+        String.format("#%06X", 0xFFFFFF and getColor(colorRes))
+
+    private fun applyBrowserModes(view: WebView) {
         view.settings.apply {
             userAgentString = if (desktopSiteEnabled) {
                 DESKTOP_USER_AGENT
@@ -533,6 +567,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             }
             useWideViewPort = desktopSiteEnabled
             loadWithOverviewMode = desktopSiteEnabled
+            cacheMode = if (dataSaverEnabled) WebSettings.LOAD_CACHE_ELSE_NETWORK else WebSettings.LOAD_DEFAULT
+            blockNetworkImage = dataSaverEnabled
+            mediaPlaybackRequiresUserGesture = true
         }
     }
 }

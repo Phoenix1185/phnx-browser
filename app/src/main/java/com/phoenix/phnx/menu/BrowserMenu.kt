@@ -17,6 +17,7 @@ object BrowserMenu {
     private const val HOME = 9
     private const val SETTINGS = 10
     private const val ABOUT = 11
+    private const val DATA_SAVER = 12
 
     interface Callbacks {
         fun onNewTab()
@@ -28,6 +29,8 @@ object BrowserMenu {
         fun onFindInPage()
         fun onDesktopSite()
         fun isDesktopSiteEnabled(): Boolean
+        fun onDataSaver()
+        fun isDataSaverEnabled(): Boolean
         fun onAddToHomeScreen()
         fun onSettings()
         fun onAbout()
@@ -52,9 +55,18 @@ object BrowserMenu {
                 isCheckable = true
                 isChecked = callbacks.isDesktopSiteEnabled()
             }
-            add(0, HOME, 8, R.string.add_to_home_screen)
-            add(0, SETTINGS, 9, R.string.settings)
-            add(0, ABOUT, 10, R.string.about_phnx)
+            add(
+                0,
+                DATA_SAVER,
+                8,
+                if (callbacks.isDataSaverEnabled()) R.string.data_saver_enabled else R.string.data_saver,
+            ).apply {
+                isCheckable = true
+                isChecked = callbacks.isDataSaverEnabled()
+            }
+            add(0, HOME, 9, R.string.add_to_home_screen)
+            add(0, SETTINGS, 10, R.string.settings)
+            add(0, ABOUT, 11, R.string.about_phnx)
         }
         popup.setOnMenuItemClickListener { item: MenuItem ->
             when (item.itemId) {
@@ -66,6 +78,7 @@ object BrowserMenu {
                 SHARE -> callbacks.onShare()
                 FIND -> callbacks.onFindInPage()
                 DESKTOP -> callbacks.onDesktopSite()
+                DATA_SAVER -> callbacks.onDataSaver()
                 HOME -> callbacks.onAddToHomeScreen()
                 SETTINGS -> callbacks.onSettings()
                 ABOUT -> callbacks.onAbout()
