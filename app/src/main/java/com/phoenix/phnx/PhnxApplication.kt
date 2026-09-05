@@ -5,6 +5,7 @@ import android.webkit.WebView
 import com.phoenix.phnx.browser.ProfileViewPool
 import com.phoenix.phnx.identity.DeviceProfileManager
 import com.phoenix.phnx.network.NetworkManager
+import com.phoenix.phnx.permissions.PermissionManager
 import com.phoenix.phnx.profiles.ProfileManager
 import com.phoenix.phnx.privacy.PrivacyManager
 import com.phoenix.phnx.resources.AndroidResourceMonitor
@@ -25,6 +26,8 @@ class PhnxApplication : Application() {
         private set
     lateinit var privacyManager: PrivacyManager
         private set
+    lateinit var permissionManager: PermissionManager
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -35,6 +38,7 @@ class PhnxApplication : Application() {
         networkManager.getConfig(activeProfile.id)
         privacyManager = PrivacyManager(this)
         privacyManager.getSettings(activeProfile.id)
+        permissionManager = PermissionManager(this)
         deviceProfileManager = DeviceProfileManager(this)
         deviceProfileManager.getProfileConfiguration(activeProfile.id)
         resourceMonitor = AndroidResourceMonitor(this)

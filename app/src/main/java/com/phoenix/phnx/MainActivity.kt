@@ -49,6 +49,9 @@ import com.phoenix.phnx.browser.BrowserView
 import com.phoenix.phnx.browser.NavigationController
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
+import com.phoenix.phnx.permissions.SitePermissionDecision
+import com.phoenix.phnx.permissions.SitePermission
+import com.phoenix.phnx.permissions.SitePermissionType
 import com.phoenix.phnx.profiles.TabSessionEntity
 import com.phoenix.phnx.profiles.ProfileStatus
 import com.phoenix.phnx.resources.ProfileLifecycleState
@@ -66,6 +69,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val deviceProfileManager by lazy { app.deviceProfileManager }
     private val resourceManager by lazy { app.resourceManager }
     private val privacyManager by lazy { app.privacyManager }
+    private val permissionManager by lazy { app.permissionManager }
     private val identityAdapter = WebViewIdentityAdapter()
 
     private lateinit var browserContainer: FrameLayout
@@ -438,16 +442,55 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun handleWebPermissionRequest(request: PermissionRequest) {
-        val androidPermissions = buildList {
-            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in request.resources) add(Manifest.permission.CAMERA)
-            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in request.resources) add(Manifest.permission.RECORD_AUDIO)
+        val types = buildList {
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in request.resources) add(SitePermissionType.CAMERA)
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in request.resources) add(SitePermissionType.MICROPHONE)
         }
-        if (androidPermissions.isEmpty()) {
+        if (types.isEmpty()) {
             request.deny()
+            return
+        }
+        val profileId = tabManager.currentTab()?.profileId ?: profileManager.activeProfile().id
+        val origin = request.origin.toString()
+        val decisions = types.map { permissionManager.get(profileId, origin, it) }
+        if (decisions.any { it == SitePermissionDecision.BLOCK }) {
+            request.deny()
+            return
+        }
+        if (decisions.all { it == SitePermissionDecision.ALLOW }) {
+            requestAndroidPermissions(request)
             return
         }
         pendingPermissionRequest?.deny()
         pendingPermissionRequest = request
+        AlertDialog.Builder(this)
+            .setTitle("Permission request")
+            .setMessage("$origin wants to use ${types.joinToString { it.name.lowercase() }}.")
+            .setNegativeButton("Block") { _, _ ->
+                types.forEach { type ->
+                    permissionManager.save(SitePermission(profileId, origin, type, SitePermissionDecision.BLOCK))
+                }
+                pendingPermissionRequest = null
+                request.deny()
+            }
+            .setPositiveButton("Allow") { _, _ ->
+                types.forEach { type ->
+                    permissionManager.save(SitePermission(profileId, origin, type, SitePermissionDecision.ALLOW))
+                }
+                requestAndroidPermissions(request)
+            }
+            .setOnCancelListener {
+                pendingPermissionRequest = null
+                request.deny()
+            }
+            .show()
+    }
+
+    private fun requestAndroidPermissions(request: PermissionRequest) {
+        val androidPermissions = buildList {
+            if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in request.resources) add(Manifest.permission.CAMERA)
+            if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in request.resources) add(Manifest.permission.RECORD_AUDIO)
+        }
         val missing = androidPermissions.filter {
             ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
         }
@@ -460,6 +503,34 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun handleLocationRequest(origin: String, callback: GeolocationPermissions.Callback) {
+        val profileId = tabManager.currentTab()?.profileId ?: profileManager.activeProfile().id
+        when (permissionManager.get(profileId, origin, SitePermissionType.LOCATION)) {
+            SitePermissionDecision.BLOCK -> {
+                callback.invoke(origin, false, false)
+                return
+            }
+            SitePermissionDecision.ASK -> {
+                AlertDialog.Builder(this)
+                    .setTitle("Location permission")
+                    .setMessage("$origin wants to access your location.")
+                    .setNegativeButton("Block") { _, _ ->
+                        permissionManager.save(SitePermission(profileId, origin, SitePermissionType.LOCATION, SitePermissionDecision.BLOCK))
+                        callback.invoke(origin, false, false)
+                    }
+                    .setPositiveButton("Allow") { _, _ ->
+                        permissionManager.save(SitePermission(profileId, origin, SitePermissionType.LOCATION, SitePermissionDecision.ALLOW))
+                        requestAndroidLocation(origin, callback)
+                    }
+                    .setOnCancelListener { callback.invoke(origin, false, false) }
+                    .show()
+                return
+            }
+            SitePermissionDecision.ALLOW -> Unit
+        }
+        requestAndroidLocation(origin, callback)
+    }
+
+    private fun requestAndroidLocation(origin: String, callback: GeolocationPermissions.Callback) {
         val fine = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
         val coarse = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
         if (fine == PackageManager.PERMISSION_GRANTED || coarse == PackageManager.PERMISSION_GRANTED) {
