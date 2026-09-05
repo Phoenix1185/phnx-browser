@@ -11,4 +11,7 @@ data class TabSessionEntity(
     val isPrivate: Boolean,
     val position: Int,
     val isActive: Boolean,
+    val groupId: String? = null,
+    val groupTitle: String? = null,
+    val groupCreatedAt: Long? = null,
 )

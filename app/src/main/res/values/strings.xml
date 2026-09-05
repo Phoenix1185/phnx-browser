@@ -11,6 +11,11 @@
     <string name="downloads">Downloads</string>
     <string name="recent_tabs">Recent tabs</string>
     <string name="no_recent_tabs">No recently closed tabs for this profile.</string>
+    <string name="group_tab">Group tab</string>
+    <string name="ungroup_tab">Ungroup</string>
+    <string name="new_tab_group">New tab group</string>
+    <string name="tab_group_name">Group name</string>
+    <string name="tab_group_name_required">Enter a group name.</string>
     <string name="no_downloads">No downloads for this profile.</string>
     <string name="download_open">Open</string>
     <string name="download_remove">Remove</string>

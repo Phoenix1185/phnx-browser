@@ -15,7 +15,7 @@ class ProfileConverters {
     fun toStatus(value: String): ProfileStatus = ProfileStatus.valueOf(value)
 }
 
-@Database(entities = [ProfileEntity::class, TabSessionEntity::class], version = 2, exportSchema = false)
+@Database(entities = [ProfileEntity::class, TabSessionEntity::class], version = 3, exportSchema = false)
 @TypeConverters(ProfileConverters::class)
 abstract class ProfileDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
@@ -38,6 +38,14 @@ abstract class ProfileDatabase : RoomDatabase() {
                     )
                     """.trimIndent(),
                 )
+            }
+        }
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE tab_sessions ADD COLUMN groupId TEXT")
+                database.execSQL("ALTER TABLE tab_sessions ADD COLUMN groupTitle TEXT")
+                database.execSQL("ALTER TABLE tab_sessions ADD COLUMN groupCreatedAt INTEGER")
             }
         }
     }

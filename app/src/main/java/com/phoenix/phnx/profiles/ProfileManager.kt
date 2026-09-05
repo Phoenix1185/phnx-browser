@@ -8,7 +8,7 @@ import java.util.UUID
 class ProfileManager(context: Context) {
     private val appContext = context.applicationContext
     private val database = Room.databaseBuilder(appContext, ProfileDatabase::class.java, "profiles.db")
-        .addMigrations(ProfileDatabase.MIGRATION_1_2)
+        .addMigrations(ProfileDatabase.MIGRATION_1_2, ProfileDatabase.MIGRATION_2_3)
         .allowMainThreadQueries()
         .build()
     private val dao = database.profileDao()

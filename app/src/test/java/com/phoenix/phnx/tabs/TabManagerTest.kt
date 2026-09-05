@@ -94,4 +94,22 @@ class TabManagerTest {
 
         assertTrue(manager.recentlyClosed("profile_phoenix").isEmpty())
     }
+
+    @Test
+    fun tabGroupsStayWithinTheirProfile() {
+        val manager = TabManager()
+        val first = manager.createTab(profileId = "profile_phoenix")
+        val second = manager.createTab(profileId = "profile_phoenix")
+        val otherProfile = manager.createTab(profileId = "profile_work")
+
+        val group = manager.createGroup("profile_phoenix", "Work", listOf(first.id, otherProfile.id))
+            ?: error("Expected a group")
+
+        assertEquals(1, group.tabs.size)
+        assertFalse(manager.addToGroup("profile_work", otherProfile.id, group.id))
+        assertTrue(manager.addToGroup("profile_phoenix", second.id, group.id))
+        assertEquals(2, manager.getGroups("profile_phoenix").single().tabs.size)
+        assertTrue(manager.removeFromGroup("profile_phoenix", first.id))
+        assertEquals(1, manager.getGroups("profile_phoenix").single().tabs.size)
+    }
 }

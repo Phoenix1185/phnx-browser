@@ -186,6 +186,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                         title = saved.title,
                         url = saved.url,
                         isPrivate = saved.isPrivate,
+                        groupId = saved.groupId,
+                        groupTitle = saved.groupTitle,
+                        groupCreatedAt = saved.groupCreatedAt,
                     )
                 },
                 savedTabs.firstOrNull { it.isActive }?.tabId,
@@ -253,6 +256,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 isPrivate = tab.isPrivate,
                 position = index,
                 isActive = tab.id == activeTabId,
+                groupId = tab.groupId,
+                groupTitle = tab.groupTitle,
+                groupCreatedAt = tab.groupCreatedAt,
             )
         }
         profileManager.saveTabSessions(profileId, sessions)
@@ -618,8 +624,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         tab.canGoBack = view.canGoBack()
         tab.canGoForward = view.canGoForward()
         val profileTabCount = tabManager.tabCount(tab.profileId)
+        val profileGroupCount = tabManager.getGroups(tab.profileId).size
         val profileName = profileManager.getAllProfiles().firstOrNull { it.id == tab.profileId }?.name ?: "Profile"
-        tabCount.text = "$profileName · $profileTabCount tab${if (profileTabCount == 1) "" else "s"}"
+        val groupSummary = if (profileGroupCount == 0) "" else " · $profileGroupCount group${if (profileGroupCount == 1) "" else "s"}"
+        tabCount.text = "$profileName · $profileTabCount tab${if (profileTabCount == 1) "" else "s"}$groupSummary"
     }
 
     private fun currentBrowserView(): BrowserView? = tabManager.currentTab()?.let(browserController::getOrCreate)
@@ -677,7 +685,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         tabManager.getTabs(profileId).forEach { tab ->
             val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
             val select = Button(this).apply {
-                text = tab.title.ifBlank { "New tab" }.take(32)
+                val groupPrefix = tab.groupTitle?.let { "$it: " }.orEmpty()
+                text = (groupPrefix + tab.title.ifBlank { "New tab" }).take(32)
                 setOnClickListener {
                     tabManager.switchTab(tab.id, profileId = profileId)
                     dialog.dismiss()
@@ -685,6 +694,19 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 }
             }
             row.addView(select, LinearLayout.LayoutParams(0, dp(52), 1f))
+            row.addView(Button(this).apply {
+                text = getString(if (tab.groupId == null) R.string.group_tab else R.string.ungroup_tab)
+                contentDescription = text
+                setOnClickListener {
+                    if (tab.groupId == null) {
+                        showGroupPicker(tab, dialog)
+                    } else {
+                        tabManager.removeFromGroup(profileId, tab.id)
+                        dialog.dismiss()
+                        attachCurrentTab()
+                    }
+                }
+            }, LinearLayout.LayoutParams(dp(96), dp(52)))
             row.addView(Button(this).apply {
                 text = "Close"
                 contentDescription = "Close tab"
@@ -703,6 +725,45 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setOnClickListener { dialog.dismiss() }
         }
         dialog.show()
+    }
+
+    private fun showGroupPicker(tab: Tab, parentDialog: AlertDialog) {
+        val groups = tabManager.getGroups(tab.profileId).filterNot { it.id == tab.groupId }
+        val options = listOf(getString(R.string.new_tab_group)) + groups.map { it.title }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.group_tab)
+            .setItems(options.toTypedArray()) { _, which ->
+                if (which == 0) {
+                    showGroupEditor(tab, parentDialog)
+                } else if (tabManager.addToGroup(tab.profileId, tab.id, groups[which - 1].id)) {
+                    parentDialog.dismiss()
+                    attachCurrentTab()
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showGroupEditor(tab: Tab, parentDialog: AlertDialog) {
+        val input = EditText(this).apply {
+            hint = getString(R.string.tab_group_name)
+            setSingleLine(true)
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.new_tab_group)
+            .setView(input)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.create) { _, _ ->
+                val created = tabManager.createGroup(tab.profileId, input.text.toString(), listOf(tab.id))
+                if (created == null) {
+                    Toast.makeText(this, getString(R.string.tab_group_name_required), Toast.LENGTH_SHORT).show()
+                } else {
+                    parentDialog.dismiss()
+                    attachCurrentTab()
+                }
+            }
+            .show()
     }
 
     private fun toolbarButton(label: String, description: String): TextView = TextView(this).apply {

@@ -13,4 +13,15 @@ data class Tab(
     var isLoading: Boolean = false,
     var canGoBack: Boolean = false,
     var canGoForward: Boolean = false,
+    var groupId: String? = null,
+    var groupTitle: String? = null,
+    var groupCreatedAt: Long? = null,
+)
+
+data class TabGroup(
+    val id: String,
+    val profileId: String,
+    val title: String,
+    val tabs: List<Tab>,
+    val createdAt: Long,
 )

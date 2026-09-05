@@ -53,6 +53,58 @@ class TabManager {
 
     fun getTabs(profileId: String): List<Tab> = tabs.filter { it.profileId == profileId }
 
+    fun getGroups(profileId: String): List<TabGroup> =
+        getTabs(profileId)
+            .filter { it.groupId != null && !it.isPrivate }
+            .groupBy { it.groupId!! }
+            .values
+            .map { groupedTabs ->
+                val first = groupedTabs.first()
+                TabGroup(
+                    id = first.groupId!!,
+                    profileId = profileId,
+                    title = first.groupTitle ?: "Tab group",
+                    tabs = groupedTabs,
+                    createdAt = first.groupCreatedAt ?: 0L,
+                )
+            }
+            .sortedWith(compareBy<TabGroup> { it.createdAt }.thenBy { it.title })
+
+    fun createGroup(profileId: String, title: String, tabIds: List<String>): TabGroup? {
+        val cleanTitle = title.trim()
+        if (cleanTitle.isEmpty()) return null
+        val groupedTabs = tabIds.mapNotNull { id -> tabs.firstOrNull { it.id == id } }
+            .filter { it.profileId == profileId && !it.isPrivate }
+        if (groupedTabs.isEmpty()) return null
+        val id = UUID.randomUUID().toString()
+        val createdAt = System.currentTimeMillis()
+        groupedTabs.forEach { tab ->
+            tab.groupId = id
+            tab.groupTitle = cleanTitle
+            tab.groupCreatedAt = createdAt
+        }
+        return TabGroup(id, profileId, cleanTitle, groupedTabs, createdAt)
+    }
+
+    fun addToGroup(profileId: String, tabId: String, groupId: String): Boolean {
+        val tab = tabs.firstOrNull { it.id == tabId } ?: return false
+        if (tab.profileId != profileId || tab.isPrivate) return false
+        val group = getGroups(profileId).firstOrNull { it.id == groupId } ?: return false
+        tab.groupId = group.id
+        tab.groupTitle = group.title
+        tab.groupCreatedAt = group.createdAt
+        return true
+    }
+
+    fun removeFromGroup(profileId: String, tabId: String): Boolean {
+        val tab = tabs.firstOrNull { it.id == tabId } ?: return false
+        if (tab.profileId != profileId || tab.groupId == null) return false
+        tab.groupId = null
+        tab.groupTitle = null
+        tab.groupCreatedAt = null
+        return true
+    }
+
     fun recentlyClosed(profileId: String): List<Tab> = recentlyClosed[profileId].orEmpty().toList()
 
     fun restoreRecentlyClosed(profileId: String, tabId: String): Tab? {
