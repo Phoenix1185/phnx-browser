@@ -1,0 +1,22 @@
+flowchart TB
+    Merge[Merge tested code] --> Version[Update version and versionCode]
+    Version --> Tag[Create and push tag v*]
+    Tag --> Build[Run tests, lint, build]
+    Build --> Sign[Sign APK/AAB]
+    Sign --> Verify[Verify version, ID, ABI, permissions, signature]
+    Verify --> Publish[Create GitHub Release]
+    Publish --> Archive[Keep historical artifacts]
+    Bug[Critical production bug] --> Hotfix[Create focused hotfix branch]
+    Hotfix --> Fix[Smallest possible fix]
+    Fix --> Regression[Run regression tests]
+    Regression --> Patch[Increment PATCH version]
+    Patch --> BuildHotfix[Build, sign, and test]
+    BuildHotfix --> Release[Release hotfix]
+    Release --> Archive
+    Archive --> Rollback[If needed, investigate and prepare next safe release]
+
+    classDef normal fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef release fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef hotfix fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    class Merge,Version,Tag,Build,Sign,Verify,Publish,Archive,Rollback normal
+    class Bug,Hotfix,Fix,Regression,Patch,BuildHotfix,Release hotfix

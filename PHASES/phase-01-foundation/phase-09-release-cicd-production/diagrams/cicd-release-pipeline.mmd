@@ -1,0 +1,24 @@
+flowchart LR
+    Push[Push or pull request] --> CI[Checkout + pinned JDK/SDK]
+    CI --> Validate[Gradle validation]
+    Validate --> Checks[Lint + unit + instrumentation tests]
+    Checks --> Debug[Build debug APK]
+    Checks --> Release[Build release APK]
+    Checks --> Bundle[Build release AAB]
+    Debug --> Upload[Upload CI artifacts]
+    Release --> Upload
+    Bundle --> Upload
+    Tag[Version tag v*] --> ReleaseCI[Release workflow]
+    ReleaseCI --> Test[Tests + lint]
+    Test --> Sign[Sign from GitHub Secrets]
+    Sign --> Verify[Verify artifacts]
+    Verify --> GitHub[Create GitHub Release]
+
+    classDef trigger fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef check fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef artifact fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef release fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class Push,Tag trigger
+    class CI,Validate,Checks,ReleaseCI,Test check
+    class Debug,Release,Bundle,Upload,Sign,Verify artifact
+    class GitHub release

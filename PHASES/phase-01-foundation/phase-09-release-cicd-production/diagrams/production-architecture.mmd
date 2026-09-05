@@ -1,0 +1,27 @@
+flowchart TB
+    App[PHNX Browser] --> Engine[Chromium engine]
+    App --> UI[Native Android UI]
+    App --> Profiles[Profiles]
+    Profiles --> Isolation[Persistent isolation]
+    Profiles --> Network[Network configuration]
+    Profiles --> Identity[Device/browser configuration]
+    Profiles --> Lifecycle[Lifecycle management]
+    App --> Privacy[Privacy and security]
+    App --> Features[Tabs • History • Bookmarks • Downloads • Search]
+    App --> Resources[ResourceManager and PerformanceManager]
+    App --> Diagnostics[Diagnostics and crash recovery]
+    App --> Release[Release infrastructure]
+    Release --> Gradle[Gradle builds]
+    Release --> R8[R8 optimization]
+    Release --> Signing[Secure signing]
+    Release --> Actions[GitHub Actions]
+    Release --> Artifacts[Versioned APK/AAB]
+    Release --> Management[Release management]
+
+    classDef app fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef core fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef support fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef release fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class App app
+    class Engine,UI,Profiles,Isolation,Network,Identity,Lifecycle,Privacy,Features,Resources,Diagnostics core
+    class Release,Gradle,R8,Signing,Actions,Artifacts,Management release

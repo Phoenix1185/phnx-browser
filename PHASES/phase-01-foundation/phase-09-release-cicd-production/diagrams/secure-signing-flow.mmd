@@ -1,0 +1,19 @@
+flowchart TB
+    Secrets[GitHub Secrets] --> Temp[Create temporary keystore]
+    Temp --> Gradle[Gradle release signing]
+    Gradle --> APK[Signed APK]
+    Gradle --> AAB[Signed AAB]
+    APK --> Verify[Artifact verification]
+    AAB --> Verify
+    Verify --> Upload[Upload release artifacts]
+    Upload --> Cleanup[Delete temporary signing files]
+    Secrets -. never print secrets .-> Logs[Workflow logs]
+
+    classDef secure fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef action fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef artifact fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef danger fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Secrets,Temp secure
+    class Gradle,Verify,Upload,Cleanup action
+    class APK,AAB artifact
+    class Logs danger

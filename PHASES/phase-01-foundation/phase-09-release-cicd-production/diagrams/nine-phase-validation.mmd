@@ -1,0 +1,19 @@
+flowchart TB
+    P1[Phase 1\nFoundation] --> P2[Phase 2\nProfiles]
+    P2 --> P3[Phase 3\nNetwork]
+    P3 --> P4[Phase 4\nDevice/browser configuration]
+    P4 --> P5[Phase 5\nLifecycle + resources]
+    P5 --> P6[Phase 6\nPrivacy + security]
+    P6 --> P7[Phase 7\nBrowser features]
+    P7 --> P8[Phase 8\nPerformance + thermal]
+    P8 --> P9[Phase 9\nProduction release]
+    P9 --> E2E[End-to-end validation]
+    E2E --> APK[Signed APK/AAB]
+    E2E --> Maintenance[Normal maintenance\nBug fixes • patches • upgrades]
+
+    classDef phase fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef final fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:2px
+    classDef result fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class P1,P2,P3,P4,P5,P6,P7,P8 phase
+    class P9,E2E final
+    class APK,Maintenance result
