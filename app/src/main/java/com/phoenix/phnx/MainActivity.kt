@@ -35,6 +35,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import com.phoenix.phnx.about.AboutActivity
 import com.phoenix.phnx.browser.BrowserController
 import com.phoenix.phnx.browser.BrowserView
@@ -90,7 +93,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(buildLayout())
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = getColor(R.color.phnx_navy)
+        window.navigationBarColor = getColor(R.color.phnx_navy)
+
+        val layout = buildLayout()
+        setContentView(layout)
+        applySystemBarInsets(layout)
 
         tabManager.createTab()
         attachCurrentTab()
@@ -105,7 +114,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private fun buildLayout(): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(getColor(R.color.phnx_cream))
+            setBackgroundColor(getColor(R.color.phnx_navy))
         }
 
         val toolbar = LinearLayout(this).apply {
@@ -173,6 +182,17 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         bottomBar.addView(bottomMenu)
         root.addView(bottomBar)
         return root
+    }
+
+    private fun applySystemBarInsets(root: View) {
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val safeInsets = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout(),
+            )
+            view.setPadding(view.paddingLeft, safeInsets.top, view.paddingRight, safeInsets.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(root)
     }
 
     private fun attachCurrentTab() {
