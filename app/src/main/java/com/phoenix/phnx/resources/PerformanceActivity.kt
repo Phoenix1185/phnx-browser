@@ -1,6 +1,8 @@
 package com.phoenix.phnx.resources
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -15,6 +17,15 @@ import java.util.Locale
 
 class PerformanceActivity : AppCompatActivity() {
     private val app by lazy { application as PhnxApplication }
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshTask = object : Runnable {
+        override fun run() {
+            if (!isFinishing) {
+                refresh()
+                refreshHandler.postDelayed(this, 1000L)
+            }
+        }
+    }
     private lateinit var content: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,6 +41,16 @@ class PerformanceActivity : AppCompatActivity() {
             addView(content)
         })
         refresh()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        refreshHandler.post(refreshTask)
+    }
+
+    override fun onStop() {
+        refreshHandler.removeCallbacks(refreshTask)
+        super.onStop()
     }
 
     private fun refresh() {

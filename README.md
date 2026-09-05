@@ -21,7 +21,7 @@ Phase 1 now has a buildable native Kotlin Android shell in `app/`. It includes:
 - Profile metadata, profile-owned tab sessions, and a disposable per-profile WebView pool. Profile switching preserves Android WebView data-directory isolation by restarting the process.
 - Profile-scoped network configuration persistence, secure proxy credentials, connection testing, health monitoring, and connectivity monitoring.
 - Explicit DIRECT, MY PROXY, and FREE PUBLIC PROXY modes. Free proxy discovery uses configurable public feeds, caches results for five minutes, checks connectivity and latency with bounded parallelism, supports protocol/country/HTTPS/health filters, and provides explicit route selection or auto-selection.
-- Profile-scoped identity presets, consistency validation, persistence, and a WebView capability-reporting editor with 10 selectable device profiles plus System Default.
+- Profile-scoped identity presets, consistency validation, persistence, and a WebView capability-reporting editor with 20 selectable device and browser profiles plus System Default.
 - New profiles receive a rotating selectable identity preset; Reset returns to the actual System Default identity rather than reapplying the same hard-coded phone preset.
 - Resource-pressure policy, profile-priority scheduling, Android memory/battery/thermal snapshots, process CPU sampling from `/proc`, and a real per-profile view lifecycle (`ACTIVE` → `IDLE` → `FROZEN` → `SUSPENDED` → `RECREATING` → `ACTIVE`).
 - Phase 6 privacy settings persisted per profile for JavaScript, third-party cookies, pop-ups, Safe Browsing, and stored tracking preferences; unsupported Do Not Track and full tracker blocking are reported honestly.

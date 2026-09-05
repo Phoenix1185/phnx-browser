@@ -85,6 +85,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private lateinit var progressBar: ProgressBar
     private lateinit var tabCount: TextView
     private lateinit var bookmarkButton: TextView
+    private lateinit var refreshButton: TextView
     private var errorView: View? = null
     private var desktopSiteEnabled = false
     private var dataSaverEnabled = false
@@ -290,7 +291,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         bookmarkButton = toolbarButton("☆", "Bookmark current page")
         bookmarkButton.setOnClickListener { toggleCurrentBookmark() }
         toolbar.addView(bookmarkButton)
-        val refreshButton = toolbarButton("↻", getString(R.string.refresh))
+        refreshButton = toolbarButton("↻", getString(R.string.refresh))
         refreshButton.setOnClickListener { currentBrowserView()?.reload() }
         toolbar.addView(refreshButton)
         val menuButton = toolbarButton("⋮", "Browser menu")
@@ -782,7 +783,12 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             .putBoolean(PhnxPreferences.DESKTOP_SITE_ENABLED, desktopSiteEnabled)
             .apply()
         attachCurrentTab()
-        Toast.makeText(this, if (desktopSiteEnabled) "Desktop site enabled" else "Mobile site enabled", Toast.LENGTH_SHORT).show()
+        currentBrowserView()?.reload()
+        Toast.makeText(
+            this,
+            if (desktopSiteEnabled) "Desktop site and device agent applied" else "Mobile site and device agent applied",
+            Toast.LENGTH_SHORT,
+        ).show()
     }
 
     override fun isDesktopSiteEnabled(): Boolean = desktopSiteEnabled

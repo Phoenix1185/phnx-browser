@@ -29,7 +29,8 @@ class SettingsActivity : AppCompatActivity() {
             setPadding(dp(20), dp(24), dp(20), dp(24))
             setBackgroundColor(getColor(R.color.phnx_cream))
         }
-        content.addView(header("Settings"))
+        content.addView(backRow("Back") { finish() })
+        content.addView(header(getString(R.string.settings)))
         addThemeSection(content)
         addDataSaverSection(content)
         addPrivacySection(content)
@@ -73,7 +74,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun addAboutSection(parent: LinearLayout) {
-        val row = optionRow("About PHNX", "Version, updates, privacy policy, licenses, and third-party notices.")
+        val row = optionRow(getString(R.string.about_phnx), getString(R.string.about_phnx_summary))
         row.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
         parent.addView(row)
     }
@@ -236,6 +237,16 @@ class SettingsActivity : AppCompatActivity() {
         textSize = 30f
         setTextColor(getColor(R.color.phnx_blue))
         setPadding(0, 0, 0, dp(8))
+    }
+
+    private fun backRow(label: String, action: () -> Unit): View = TextView(this).apply {
+        text = "‹  $label"
+        textSize = 16f
+        setTextColor(getColor(R.color.phnx_blue))
+        setPadding(0, 0, 0, dp(16))
+        isClickable = true
+        isFocusable = true
+        setOnClickListener { action() }
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

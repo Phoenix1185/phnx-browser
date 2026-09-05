@@ -21,6 +21,7 @@ class AboutActivity : AppCompatActivity() {
             setPadding(dp(24), dp(28), dp(24), dp(32))
             setBackgroundColor(getColor(R.color.phnx_cream))
         }
+        content.addView(backButton())
         content.addView(text("PHNX Browser", 30f, true))
         content.addView(text("A fast, private, and powerful Chromium-based browser built for modern browsing.", 16f, false))
         content.addView(text(getString(R.string.builder_attribution), 15f, false))
@@ -103,6 +104,13 @@ class AboutActivity : AppCompatActivity() {
         "release" -> "Stable"
         "debug" -> "Debug"
         else -> BuildConfig.BUILD_TYPE.replaceFirstChar { it.uppercase() }
+    }
+
+    private fun backButton(): Button = Button(this).apply {
+        text = "‹  Back"
+        setOnClickListener { finish() }
+        setTextColor(getColor(R.color.phnx_blue))
+        setPadding(0, 0, 0, dp(4))
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

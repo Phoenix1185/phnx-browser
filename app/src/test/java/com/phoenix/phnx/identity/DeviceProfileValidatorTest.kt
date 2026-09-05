@@ -6,8 +6,8 @@ import org.junit.Test
 
 class DeviceProfileValidatorTest {
     @Test
-    fun exposesTenSelectableDeviceProfiles() {
-        assertEquals(10, DevicePresets.all().size)
+    fun exposesTwentySelectableDeviceProfiles() {
+        assertEquals(20, DevicePresets.all().size)
     }
 
     @Test
