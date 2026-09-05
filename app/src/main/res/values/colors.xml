@@ -1,0 +1,8 @@
+<resources>
+    <color name="phnx_navy">#111A2E</color>
+    <color name="phnx_blue">#326BFF</color>
+    <color name="phnx_cream">#F7F8FC</color>
+    <color name="phnx_text">#172033</color>
+    <color name="phnx_muted">#697386</color>
+    <color name="phnx_error">#B42318</color>
+</resources>

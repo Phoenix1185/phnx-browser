@@ -1,0 +1,9 @@
+<resources>
+    <style name="Theme.PhNX" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">@color/phnx_blue</item>
+        <item name="android:navigationBarColor">@color/phnx_navy</item>
+        <item name="android:statusBarColor">@color/phnx_navy</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
