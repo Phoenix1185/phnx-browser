@@ -11,7 +11,8 @@ data class DownloadSecurityAssessment(
 class DownloadSecurityManager {
     fun assess(url: String, contentDisposition: String, mimeType: String): DownloadSecurityAssessment {
         val uri = runCatching { URI(url) }.getOrNull()
-        if (uri?.scheme?.lowercase() !in SUPPORTED_SCHEMES || uri.host.isNullOrBlank()) {
+            ?: return DownloadSecurityAssessment(false, false, "Only downloads from valid HTTP or HTTPS URLs are allowed.")
+        if (uri.scheme?.lowercase() !in SUPPORTED_SCHEMES || uri.host.isNullOrBlank()) {
             return DownloadSecurityAssessment(false, false, "Only downloads from valid HTTP or HTTPS URLs are allowed.")
         }
 
