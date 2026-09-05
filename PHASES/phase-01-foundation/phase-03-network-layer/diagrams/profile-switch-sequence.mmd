@@ -1,0 +1,18 @@
+sequenceDiagram
+    actor User
+    participant UI as Profile UI
+    participant NM as NetworkManager
+    participant A as Profile A session
+    participant B as Profile B session
+    participant Adapter as ChromiumNetworkAdapter
+
+    User->>UI: Switch from A to B
+    UI->>NM: switchProfileNetwork(profileB)
+    NM->>A: Stop or transition session
+    NM->>Adapter: clearNetworkConfiguration()
+    NM->>Adapter: applyNetworkConfiguration(configB)
+    Adapter-->>NM: Route B applied
+    NM->>B: Start or resume session
+    B-->>NM: Restore profile B state
+    NM-->>UI: Report profile B status
+    UI-->>User: Show B as active

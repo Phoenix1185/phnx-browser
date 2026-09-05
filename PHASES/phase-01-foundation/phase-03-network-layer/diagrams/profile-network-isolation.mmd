@@ -1,0 +1,22 @@
+flowchart LR
+    A[Profile A] --> AC[Network config A]
+    AC --> AD[DIRECT]
+    AD --> ARoute[Chromium route A]
+
+    B[Profile B] --> BC[Network config B]
+    BC --> BP[SOCKS5 proxy]
+    BP --> BRoute[Chromium route B]
+
+    C[Profile C] --> CC[Network config C]
+    CC --> CD[DIRECT]
+    CD --> CRoute[Chromium route C]
+
+    ARoute -. isolated from .-> BRoute
+    BRoute -. isolated from .-> CRoute
+
+    classDef profile fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef config fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef route fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class A,B,C profile
+    class AC,BC,CC,AD,BP,CD config
+    class ARoute,BRoute,CRoute route

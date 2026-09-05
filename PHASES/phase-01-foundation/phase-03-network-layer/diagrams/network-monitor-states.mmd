@@ -1,0 +1,12 @@
+stateDiagram-v2
+    [*] --> CONNECTING: observe connection
+    CONNECTING --> CONNECTED: route available
+    CONNECTING --> ERROR: route test failed
+    CONNECTED --> DISCONNECTED: Wi-Fi/mobile data lost
+    CONNECTED --> CONNECTING: network changed
+    DISCONNECTED --> CONNECTING: network restored
+    DISCONNECTED --> ERROR: recovery failed
+    ERROR --> CONNECTING: retry or network change
+    CONNECTED --> [*]: app closed
+    DISCONNECTED --> [*]: app closed
+    ERROR --> [*]: app closed

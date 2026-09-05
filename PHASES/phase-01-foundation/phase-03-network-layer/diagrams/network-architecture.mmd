@@ -1,0 +1,21 @@
+flowchart TB
+    UI[Profile network settings UI] --> PM[ProfileManager]
+    PM --> Config[ProfileNetworkConfig]
+    Config --> NM[NetworkManager]
+    NM --> Adapter[ChromiumNetworkAdapter]
+    Adapter --> Chromium[Chromium network implementation]
+    NM --> Monitor[NetworkMonitor]
+    NM --> Tester[ConnectionTester]
+    NM --> Secure[SecureCredentialStore]
+    Monitor --> Status[Connection status]
+    Tester --> Result[Test result]
+    Secure --> Keystore[Android Keystore-backed storage]
+
+    classDef ui fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef core fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef adapter fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef support fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class UI ui
+    class PM,Config,NM core
+    class Adapter,Chromium adapter
+    class Monitor,Tester,Secure,Status,Result,Keystore support
