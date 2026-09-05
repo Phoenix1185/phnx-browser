@@ -147,6 +147,7 @@ class ProfilesActivity : AppCompatActivity() {
             .setPositiveButton(R.string.delete) { _, _ ->
                 if (profileManager.deleteProfile(profile.id)) {
                     (application as PhnxApplication).networkManager.clearConfig(profile.id)
+                    (application as PhnxApplication).deviceProfileManager.clearProfileConfiguration(profile.id)
                 }
                 refreshProfiles()
             }

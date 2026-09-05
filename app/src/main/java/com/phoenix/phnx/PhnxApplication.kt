@@ -2,6 +2,7 @@ package com.phoenix.phnx
 
 import android.app.Application
 import android.webkit.WebView
+import com.phoenix.phnx.identity.DeviceProfileManager
 import com.phoenix.phnx.network.NetworkManager
 import com.phoenix.phnx.profiles.ProfileManager
 
@@ -9,6 +10,8 @@ class PhnxApplication : Application() {
     lateinit var profileManager: ProfileManager
         private set
     lateinit var networkManager: NetworkManager
+        private set
+    lateinit var deviceProfileManager: DeviceProfileManager
         private set
 
     override fun onCreate() {
@@ -18,6 +21,8 @@ class PhnxApplication : Application() {
         val activeProfile = profileManager.ensureDefaultProfile()
         networkManager = NetworkManager(this)
         networkManager.getConfig(activeProfile.id)
+        deviceProfileManager = DeviceProfileManager(this)
+        deviceProfileManager.getProfileConfiguration(activeProfile.id)
         WebView.setDataDirectorySuffix(activeProfile.id)
     }
 }

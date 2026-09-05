@@ -47,6 +47,7 @@ import com.phoenix.phnx.about.AboutActivity
 import com.phoenix.phnx.browser.BrowserController
 import com.phoenix.phnx.browser.BrowserView
 import com.phoenix.phnx.browser.NavigationController
+import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.profiles.TabSessionEntity
 import com.phoenix.phnx.settings.SettingsActivity
@@ -58,6 +59,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val tabManager = TabManager()
     private val browserController by lazy { BrowserController(this) }
     private val profileManager by lazy { (application as PhnxApplication).profileManager }
+    private val deviceProfileManager by lazy { (application as PhnxApplication).deviceProfileManager }
+    private val identityAdapter = WebViewIdentityAdapter()
 
     private lateinit var browserContainer: FrameLayout
     private lateinit var addressBar: EditText
@@ -318,10 +321,12 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private fun configureWebView(webView: BrowserView, tab: Tab) {
         if (webView.tag == tab.id) {
             applyBrowserModes(webView)
+            applyProfileIdentity(webView, tab.profileId)
             return
         }
         webView.tag = tab.id
         applyBrowserModes(webView)
+        applyProfileIdentity(webView, tab.profileId)
         webView.setOnTouchListener { _, event ->
             swipeDetector.onTouchEvent(event)
             false
@@ -704,6 +709,12 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             cacheMode = if (dataSaverEnabled) WebSettings.LOAD_CACHE_ELSE_NETWORK else WebSettings.LOAD_DEFAULT
             blockNetworkImage = dataSaverEnabled
             mediaPlaybackRequiresUserGesture = true
+        }
+    }
+
+    private fun applyProfileIdentity(view: WebView, profileId: String) {
+        if (!desktopSiteEnabled) {
+            identityAdapter.apply(view, deviceProfileManager.getProfileConfiguration(profileId))
         }
     }
 }
