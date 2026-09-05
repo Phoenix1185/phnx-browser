@@ -27,6 +27,7 @@ data class ResourceSnapshot(
     val memoryPressure: MemoryPressure = MemoryPressure.NORMAL,
     val cpuPressure: CpuPressure = CpuPressure.NORMAL,
     val thermalLevel: ThermalLevel = ThermalLevel.THERMAL_NORMAL,
+    val thermalSupported: Boolean = false,
     val batteryPercent: Int = 100,
     val batterySaver: Boolean = false,
 )
