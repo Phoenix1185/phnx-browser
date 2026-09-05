@@ -6,6 +6,15 @@
     <string name="bookmarks">Bookmarks</string>
     <string name="history">History</string>
     <string name="downloads">Downloads</string>
+    <string name="no_downloads">No downloads for this profile.</string>
+    <string name="download_open">Open</string>
+    <string name="download_remove">Remove</string>
+    <string name="download_queued">Queued</string>
+    <string name="download_downloading">Downloading</string>
+    <string name="download_paused">Paused</string>
+    <string name="download_completed">Completed</string>
+    <string name="download_failed">Failed</string>
+    <string name="download_missing">Unavailable</string>
     <string name="reload">Reload</string>
     <string name="share">Share</string>
     <string name="find_in_page">Find in page</string>

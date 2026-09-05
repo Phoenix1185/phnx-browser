@@ -25,6 +25,9 @@
             android:name=".bookmarks.BookmarksActivity"
             android:exported="false" />
         <activity
+            android:name=".downloads.DownloadsActivity"
+            android:exported="false" />
+        <activity
             android:name=".search.SearchEngineActivity"
             android:exported="false" />
         <activity

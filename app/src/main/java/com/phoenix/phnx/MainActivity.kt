@@ -49,6 +49,7 @@ import com.phoenix.phnx.about.AboutActivity
 import com.phoenix.phnx.browser.BrowserController
 import com.phoenix.phnx.browser.BrowserView
 import com.phoenix.phnx.browser.NavigationController
+import com.phoenix.phnx.downloads.DownloadsActivity
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.permissions.SitePermissionDecision
@@ -570,7 +571,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
         val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        manager.enqueue(request)
+        val downloadId = manager.enqueue(request)
+        val profileId = tabManager.currentTab()?.profileId ?: profileManager.activeProfile().id
+        app.downloadManager.record(profileId, downloadId, download.url, filename, download.mimeType)
         Toast.makeText(this, "Download started", Toast.LENGTH_SHORT).show()
     }
 
@@ -717,7 +720,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onHistory() = startActivity(Intent(this, HistoryActivity::class.java))
 
-    override fun onDownloads() = showPlanned("Downloads are available through Android's Downloads app.")
+    override fun onDownloads() = startActivity(Intent(this, DownloadsActivity::class.java))
 
     override fun onReload() {
         currentBrowserView()?.reload()

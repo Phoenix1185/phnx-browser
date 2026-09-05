@@ -6,6 +6,7 @@ import com.phoenix.phnx.bookmarks.BookmarkManager
 import com.phoenix.phnx.browser.ProfileViewPool
 import com.phoenix.phnx.history.HistoryManager
 import com.phoenix.phnx.identity.DeviceProfileManager
+import com.phoenix.phnx.downloads.DownloadManager
 import com.phoenix.phnx.network.NetworkManager
 import com.phoenix.phnx.permissions.PermissionManager
 import com.phoenix.phnx.profiles.ProfileManager
@@ -40,6 +41,8 @@ class PhnxApplication : Application() {
         private set
     lateinit var searchEngineManager: SearchEngineManager
         private set
+    lateinit var downloadManager: DownloadManager
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -55,6 +58,7 @@ class PhnxApplication : Application() {
         historyManager = HistoryManager(this)
         bookmarkManager = BookmarkManager(this)
         searchEngineManager = SearchEngineManager(this)
+        downloadManager = DownloadManager(this)
         deviceProfileManager = DeviceProfileManager(this)
         deviceProfileManager.getProfileConfiguration(activeProfile.id)
         resourceMonitor = AndroidResourceMonitor(this)
