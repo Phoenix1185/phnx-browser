@@ -22,7 +22,9 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
+import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebSettings
+import android.webkit.SslErrorHandler
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
@@ -353,6 +355,24 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                     refreshLayout.isRefreshing = false
                     showError("The page returned an error (${errorResponse.statusCode}).")
                 }
+            }
+
+            override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: android.net.http.SslError) {
+                handler.cancel()
+                if (view.url == error.url) {
+                    refreshLayout.isRefreshing = false
+                    showError("The secure connection could not be verified.")
+                }
+            }
+
+            override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
+                val isCurrentTab = tabManager.currentTab()?.id == tab.id
+                browserController.remove(tab.id)
+                if (isCurrentTab) {
+                    refreshLayout.isRefreshing = false
+                    showError("The page renderer stopped unexpectedly. Retry to reopen this tab.")
+                }
+                return true
             }
         }
         webView.webChromeClient = object : WebChromeClient() {

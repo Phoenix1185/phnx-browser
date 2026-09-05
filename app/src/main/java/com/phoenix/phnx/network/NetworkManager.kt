@@ -21,11 +21,18 @@ class NetworkManager(context: Context) {
     fun saveConfig(config: ProfileNetworkConfig) {
         val errors = NetworkConfigValidator.validate(config)
         require(errors.isEmpty()) { errors.joinToString(" ") }
+        val previous = dao.getForProfile(config.profileId)
+        if (previous?.credentialReference != config.credentialReference) {
+            previous?.credentialReference?.let(credentials::deleteCredential)
+        }
         dao.upsert(config.toEntity())
     }
 
     fun clearConfig(profileId: String) {
-        dao.getForProfile(profileId)?.let(dao::delete)
+        dao.getForProfile(profileId)?.let { config ->
+            config.credentialReference?.let(credentials::deleteCredential)
+            dao.delete(config)
+        }
     }
 
     fun testConfig(profileId: String): ConnectionTestResult =
@@ -40,6 +47,8 @@ class NetworkManager(context: Context) {
     fun detectNetworkChanges(): NetworkState = monitor.detectNetworkChanges()
 
     fun reportConnectionState(): NetworkState = monitor.reportConnectionState()
+
+    fun stopObservingConnection() = monitor.stop()
 
     fun saveProxyCredential(profileId: String, secret: String): String {
         val reference = "proxy_$profileId"

@@ -22,6 +22,9 @@
             android:name=".settings.SettingsActivity"
             android:exported="false" />
         <activity
+            android:name=".network.NetworkActivity"
+            android:exported="false" />
+        <activity
             android:name=".profiles.ProfilesActivity"
             android:exported="false" />
         <activity

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import com.phoenix.phnx.PhnxPreferences
 import com.phoenix.phnx.R
+import com.phoenix.phnx.network.NetworkActivity
 import com.phoenix.phnx.profiles.ProfilesActivity
 
 class SettingsActivity : AppCompatActivity() {
@@ -31,7 +32,7 @@ class SettingsActivity : AppCompatActivity() {
         addSection(content, "Downloads", "Downloads use Android's Downloads provider.")
         addSection(content, "Language and Search", "The default search engine is Google. Search-engine selection is planned.")
         addProfileSection(content)
-        addSection(content, "Network", "Per-profile network configuration is planned for Phase 3.")
+        addNetworkSection(content)
         addSection(content, "Performance", "Resource management is planned for Phase 5.")
         addSection(content, "About PHNX", "Open the About screen from the browser menu for version and runtime details.")
 
@@ -50,6 +51,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addProfileSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.profiles), getString(R.string.profiles_summary))
         row.setOnClickListener { startActivity(Intent(this, ProfilesActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addNetworkSection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.network), getString(R.string.network_summary))
+        row.setOnClickListener { startActivity(Intent(this, NetworkActivity::class.java)) }
         parent.addView(row)
     }
 

@@ -145,7 +145,9 @@ class ProfilesActivity : AppCompatActivity() {
             .setMessage(getString(R.string.delete_profile_warning, profile.name))
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.delete) { _, _ ->
-                profileManager.deleteProfile(profile.id)
+                if (profileManager.deleteProfile(profile.id)) {
+                    (application as PhnxApplication).networkManager.clearConfig(profile.id)
+                }
                 refreshProfiles()
             }
             .show()

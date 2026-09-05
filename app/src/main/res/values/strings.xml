@@ -19,7 +19,7 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="profiles">Profiles</string>
-    <string name="profiles_summary">Manage profile names and metadata. Storage isolation is still being built.</string>
+    <string name="profiles_summary">Manage isolated browser storage, tabs, and profile metadata.</string>
     <string name="profiles_isolation_note">Each profile uses separate WebView storage on Android 9+. Switching restarts PHNX so cookies, cache, and site data stay separated.</string>
     <string name="new_profile">New profile</string>
     <string name="rename_profile">Rename profile</string>
@@ -40,4 +40,16 @@
     <string name="about_phnx">About PHNX</string>
     <string name="address_hint">Search or enter address</string>
     <string name="retry">Retry</string>
+    <string name="network">Network</string>
+    <string name="network_summary">Configure and test the active profile connection.</string>
+    <string name="network_direct">Direct connection</string>
+    <string name="network_proxy">Proxy connection</string>
+    <string name="proxy_type">Proxy type</string>
+    <string name="proxy_host">Proxy host</string>
+    <string name="proxy_port">Proxy port</string>
+    <string name="proxy_username">Username (optional)</string>
+    <string name="proxy_password">Password (optional)</string>
+    <string name="proxy_password_saved">Password saved; leave blank to keep it</string>
+    <string name="test_connection">Test connection</string>
+    <string name="save_network">Save network</string>
 </resources>
