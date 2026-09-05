@@ -45,7 +45,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.phoenix.phnx.bookmarks.BookmarksActivity
 import com.phoenix.phnx.history.HistoryActivity
 import com.phoenix.phnx.about.AboutActivity
@@ -85,7 +84,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private lateinit var progressBar: ProgressBar
     private lateinit var tabCount: TextView
     private lateinit var bookmarkButton: TextView
-    private lateinit var refreshLayout: SwipeRefreshLayout
     private var errorView: View? = null
     private var desktopSiteEnabled = false
     private var dataSaverEnabled = false
@@ -306,14 +304,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         browserContainer = FrameLayout(this).apply {
             setBackgroundColor(Color.WHITE)
         }
-        refreshLayout = SwipeRefreshLayout(this).apply {
-            setColorSchemeResources(R.color.phnx_blue)
-            setOnRefreshListener {
-                currentBrowserView()?.reload() ?: run { isRefreshing = false }
-            }
-            addView(browserContainer, ViewGroup.LayoutParams(-1, -1))
-        }
-        root.addView(refreshLayout, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(browserContainer, LinearLayout.LayoutParams(-1, 0, 1f))
 
         val bottomBar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -399,21 +390,18 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 if (url != START_PAGE_BASE) tab.url = url
                 tab.title = view.title?.takeIf { it.isNotBlank() } ?: tabTitleForUrl(url)
                 app.historyManager.recordVisit(tab.profileId, url, tab.title, tab.isPrivate)
-                refreshLayout.isRefreshing = false
                 updateTabChrome(tab, view)
                 hideError()
             }
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                 if (request.isForMainFrame) {
-                    refreshLayout.isRefreshing = false
                     showError(error.description?.toString() ?: "The page could not be loaded.")
                 }
             }
 
             override fun onReceivedHttpError(view: WebView, request: WebResourceRequest, errorResponse: WebResourceResponse) {
                 if (request.isForMainFrame && errorResponse.statusCode >= 400) {
-                    refreshLayout.isRefreshing = false
                     showError("The page returned an error (${errorResponse.statusCode}).")
                 }
             }
@@ -421,7 +409,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: android.net.http.SslError) {
                 handler.cancel()
                 if (view.url == error.url) {
-                    refreshLayout.isRefreshing = false
                     showError("The secure connection could not be verified.")
                 }
             }
@@ -431,7 +418,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 browserController.suspendProfile(tab.profileId)
                 attachedTabId = null
                 if (isCurrentTab) {
-                    refreshLayout.isRefreshing = false
                     showError("The page renderer stopped unexpectedly. Retry to reopen this tab.")
                 }
                 return true
