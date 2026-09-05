@@ -5,6 +5,7 @@ import com.phoenix.phnx.resources.LifecycleTransition
 import com.phoenix.phnx.resources.ProfileLifecycleState
 import com.phoenix.phnx.resources.ProfileLifecycleTracker
 import com.phoenix.phnx.resources.ProfileResourceDecision
+import com.phoenix.phnx.tabs.Tab
 
 class ProfileViewPool(context: Context) {
     private val appContext = context.applicationContext
@@ -16,11 +17,11 @@ class ProfileViewPool(context: Context) {
         sessionSaver = saver
     }
 
-    fun acquire(profileId: String): BrowserView {
-        val entry = entries.getOrPut(profileId) { Entry() }
-        val view = entry.view ?: recreate(profileId, entry)
+    fun acquire(tab: Tab): BrowserView {
+        val entry = entries.getOrPut(tab.id) { Entry(tab.profileId, tab.isPrivate) }
+        val view = entry.view ?: recreate(entry)
         view.onResume()
-        tracker.transition(profileId, ProfileLifecycleState.ACTIVE)
+        tracker.transition(tab.profileId, ProfileLifecycleState.ACTIVE)
         return view
     }
 
@@ -36,43 +37,43 @@ class ProfileViewPool(context: Context) {
 
         return when (target) {
             ProfileLifecycleState.ACTIVE -> {
-                acquire(profileId)
                 tracker.transition(profileId, target)
             }
             ProfileLifecycleState.IDLE -> {
-                if (current == ProfileLifecycleState.SUSPENDED) {
-                    // A cold profile is recreated only when its runtime entry is known in this process.
-                    entries[profileId]?.let { recreate(profileId, it) }
-                }
-                entries[profileId]?.view?.let {
+                entriesFor(profileId).forEach { entry ->
+                    if (current == ProfileLifecycleState.SUSPENDED) recreate(entry.value)
+                    val view = entry.value.view ?: return@forEach
                     saveBeforeRelease(profileId)
-                    it.onPause()
-                    detach(it)
+                    view.onPause()
+                    detach(view)
                 }
                 tracker.transition(profileId, target)
             }
             ProfileLifecycleState.FROZEN -> {
-                entries[profileId]?.view?.let {
+                entriesFor(profileId).forEach { entry ->
+                    val view = entry.value.view ?: return@forEach
                     saveBeforeRelease(profileId)
-                    it.onPause()
-                    detach(it)
+                    view.onPause()
+                    detach(view)
                 }
                 tracker.transition(profileId, target)
             }
             ProfileLifecycleState.SUSPENDED -> {
                 saveBeforeRelease(profileId)
-                entries[profileId]?.view?.let(::destroy)
-                entries[profileId]?.view = null
+                entriesFor(profileId).forEach { entry ->
+                    entry.value.view?.let(::destroy)
+                    entry.value.view = null
+                }
                 tracker.transition(profileId, target)
             }
             ProfileLifecycleState.RECREATING -> {
-                val entry = entries.getOrPut(profileId) { Entry() }
-                recreate(profileId, entry)
+                entriesFor(profileId).forEach { entry -> recreate(entry.value) }
                 tracker.transition(profileId, ProfileLifecycleState.ACTIVE)
             }
             ProfileLifecycleState.CLOSED -> {
                 saveBeforeRelease(profileId)
-                entries.remove(profileId)?.view?.let(::destroy)
+                entriesFor(profileId).forEach { (_, entry) -> entry.view?.let(::destroy) }
+                entries.entries.removeIf { it.value.profileId == profileId }
                 tracker.transition(profileId, target)
             }
         }
@@ -88,17 +89,24 @@ class ProfileViewPool(context: Context) {
         entries.values.mapNotNull { it.view }.forEach(action)
     }
 
+    fun close(tab: Tab) {
+        entries.remove(tab.id)?.view?.let(::destroy)
+    }
+
     fun clear() {
         entries.values.mapNotNull { it.view }.forEach(::destroy)
         entries.clear()
         tracker.clear()
     }
 
-    private fun recreate(profileId: String, entry: Entry): BrowserView {
+    private fun recreate(entry: Entry): BrowserView {
         entry.view?.let(::destroy)
-        tracker.transition(profileId, ProfileLifecycleState.RECREATING)
-        return BrowserView(appContext).also { entry.view = it }
+        tracker.transition(entry.profileId, ProfileLifecycleState.RECREATING)
+        return BrowserView(appContext, entry.isPrivate).also { entry.view = it }
     }
+
+    private fun entriesFor(profileId: String): List<Map.Entry<String, Entry>> =
+        entries.entries.filter { it.value.profileId == profileId }
 
     private fun saveBeforeRelease(profileId: String) {
         sessionSaver?.invoke(profileId)
@@ -115,5 +123,9 @@ class ProfileViewPool(context: Context) {
         view.destroy()
     }
 
-    private class Entry(var view: BrowserView? = null)
+    private class Entry(
+        val profileId: String,
+        val isPrivate: Boolean,
+        var view: BrowserView? = null,
+    )
 }

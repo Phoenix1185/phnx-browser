@@ -5,9 +5,7 @@ import com.phoenix.phnx.resources.ProfileLifecycleState
 import com.phoenix.phnx.resources.ProfileResourceDecision
 
 class BrowserController(private val pool: ProfileViewPool) {
-    fun getOrCreate(profileId: String): BrowserView = pool.acquire(profileId)
-
-    fun getOrCreate(tab: Tab): BrowserView = getOrCreate(tab.profileId)
+    fun getOrCreate(tab: Tab): BrowserView = pool.acquire(tab)
 
     fun apply(decision: ProfileResourceDecision) = pool.apply(decision)
 
@@ -24,6 +22,8 @@ class BrowserController(private val pool: ProfileViewPool) {
     fun setSessionSaver(saver: (String) -> Unit) = pool.setSessionSaver(saver)
 
     fun forEachView(action: (BrowserView) -> Unit) = pool.forEachView(action)
+
+    fun close(tab: Tab) = pool.close(tab)
 
     fun clear() = pool.clear()
 }

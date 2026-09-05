@@ -771,7 +771,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 text = "Close"
                 contentDescription = "Close tab"
                 setOnClickListener {
-                    tabManager.closeTab(tab.id)
+                    tabManager.closeTab(tab.id)?.let(browserController::close)
                     if (tabManager.tabCount(profileId) == 0) {
                         tabManager.createTab(profileId = profileId)
                     }

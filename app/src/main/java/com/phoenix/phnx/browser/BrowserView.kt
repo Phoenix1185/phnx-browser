@@ -3,7 +3,10 @@ package com.phoenix.phnx.browser
 import android.content.Context
 import android.webkit.WebView
 
-class BrowserView(context: Context) : WebView(context) {
+class BrowserView(
+    context: Context,
+    val isPrivateTab: Boolean,
+) : WebView(context) {
     init {
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
