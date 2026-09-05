@@ -55,6 +55,9 @@ class PrivacyActivity : AppCompatActivity() {
         content.addView(optionRow(getString(R.string.site_permissions), getString(R.string.site_permissions_summary)).apply {
             setOnClickListener { startActivity(android.content.Intent(this@PrivacyActivity, PermissionActivity::class.java)) }
         })
+        content.addView(optionRow(getString(R.string.clear_browsing_data), getString(R.string.clear_browsing_data_summary)).apply {
+            setOnClickListener { startActivity(android.content.Intent(this@PrivacyActivity, ClearDataActivity::class.java)) }
+        })
         addTrackingProtection(content)
         content.addView(TextView(this).apply {
             text = getString(R.string.privacy_support_note)

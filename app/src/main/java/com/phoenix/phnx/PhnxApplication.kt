@@ -28,6 +28,8 @@ class PhnxApplication : Application() {
         private set
     lateinit var permissionManager: PermissionManager
         private set
+    lateinit var clearDataManager: ClearDataManager
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -39,6 +41,7 @@ class PhnxApplication : Application() {
         privacyManager = PrivacyManager(this)
         privacyManager.getSettings(activeProfile.id)
         permissionManager = PermissionManager(this)
+        clearDataManager = ClearDataManager(this)
         deviceProfileManager = DeviceProfileManager(this)
         deviceProfileManager.getProfileConfiguration(activeProfile.id)
         resourceMonitor = AndroidResourceMonitor(this)

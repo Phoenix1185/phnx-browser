@@ -77,4 +77,17 @@
     <string name="reset_all_site_permissions">Reset all site permissions</string>
     <string name="reset_all_site_permissions_warning">This removes saved allow and block decisions for every site in the active profile.</string>
     <string name="no_site_permissions">No site permissions have been saved.</string>
+    <string name="clear_browsing_data">Clear browsing data</string>
+    <string name="clear_browsing_data_summary">Remove selected cookies, site storage, cache, and in-memory navigation data for this profile.</string>
+    <string name="clear_cookies">Cookies</string>
+    <string name="clear_cookies_summary">Remove cookies from the active WebView profile.</string>
+    <string name="clear_site_storage">Site storage</string>
+    <string name="clear_site_storage_summary">Remove Web Storage data such as localStorage and IndexedDB where WebView exposes it.</string>
+    <string name="clear_cache">Cache and navigation</string>
+    <string name="clear_cache_summary">Clear cache, back/forward history, form data, and HTTP auth data for active views.</string>
+    <string name="clear_selected_data">Clear selected data</string>
+    <string name="clear_data_warning">This cannot be undone. It does not delete the saved profile, profile privacy settings, network configuration, identity configuration, or bookmarks.</string>
+    <string name="clear_nothing_selected">Select at least one data category.</string>
+    <string name="clear_complete">Selected browsing data cleared.</string>
+    <string name="clear">Clear</string>
 </resources>

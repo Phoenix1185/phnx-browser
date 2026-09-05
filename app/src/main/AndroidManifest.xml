@@ -28,6 +28,9 @@
             android:name=".privacy.PrivacyActivity"
             android:exported="false" />
         <activity
+            android:name=".privacy.ClearDataActivity"
+            android:exported="false" />
+        <activity
             android:name=".permissions.PermissionActivity"
             android:exported="false" />
         <activity
