@@ -32,6 +32,9 @@ jobs:
           yes | sdkmanager --licenses >/dev/null || true
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.1"
 
+      - name: Run lint
+        run: ./gradlew lint
+
       - name: Run unit tests
         run: ./gradlew test
 

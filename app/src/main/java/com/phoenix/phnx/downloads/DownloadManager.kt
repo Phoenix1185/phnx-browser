@@ -22,6 +22,11 @@ data class DownloadItem(
     val createdAt: Long,
 )
 
+data class DownloadProgress(
+    val downloadedBytes: Long,
+    val totalBytes: Long,
+)
+
 @Entity(tableName = "download_records")
 data class DownloadRecordEntity(
     @PrimaryKey val id: String,
@@ -94,6 +99,17 @@ class DownloadManager(context: Context) {
                 DownloadManager.STATUS_FAILED -> DownloadStatus.FAILED(reason)
                 else -> DownloadStatus.MISSING
             }
+        }
+    }
+
+    fun progress(downloadId: Long): DownloadProgress? {
+        val cursor = androidDownloadManager.query(DownloadManager.Query().setFilterById(downloadId))
+        cursor.use {
+            if (!it.moveToFirst()) return null
+            return DownloadProgress(
+                downloadedBytes = it.getLong(it.getColumnIndexOrThrow(DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR)),
+                totalBytes = it.getLong(it.getColumnIndexOrThrow(DownloadManager.COLUMN_TOTAL_SIZE_BYTES)),
+            )
         }
     }
 

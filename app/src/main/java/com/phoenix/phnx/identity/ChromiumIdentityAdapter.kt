@@ -1,7 +1,6 @@
 package com.phoenix.phnx.identity
 
 import android.webkit.WebView
-import org.json.JSONObject
 import kotlin.math.roundToInt
 
 enum class IdentityApplyStatus {
@@ -37,46 +36,7 @@ class WebViewIdentityAdapter : ChromiumIdentityAdapter {
         }
         return IdentityApplyResult(
             status = IdentityApplyStatus.PARTIALLY_SUPPORTED,
-            message = "User-Agent and viewport preferences applied. Page-visible screen metrics are applied after navigation; locale, timezone, and client hints remain limited by Android WebView.",
+            message = "User-Agent and supported viewport settings applied. Screen metrics, locale, timezone, and client hints remain limited by Android WebView.",
         )
-    }
-
-    fun applyPageIdentity(webView: WebView, config: BrowserIdentityConfig) {
-        val languages = config.languages.joinToString(",") { JSONObject.quote(it) }
-        val script = """
-            (function() {
-              var values = {
-                viewportWidth: ${config.viewportWidth},
-                viewportHeight: ${config.viewportHeight},
-                screenWidth: ${config.screenWidth},
-                screenHeight: ${config.screenHeight},
-                colorDepth: ${config.colorDepth},
-                deviceScaleFactor: ${config.deviceScaleFactor},
-                language: ${JSONObject.quote(config.language)},
-                languages: [$languages],
-                platform: ${JSONObject.quote(config.platform)},
-                touchPoints: ${if (config.touchSupport) 5 else 0}
-              };
-              function define(target, key, value) {
-                try { Object.defineProperty(target, key, { configurable: true, get: function() { return value; } }); } catch (_) {}
-              }
-              define(window, 'innerWidth', values.viewportWidth);
-              define(window, 'innerHeight', values.viewportHeight);
-              define(window, 'outerWidth', values.viewportWidth);
-              define(window, 'outerHeight', values.viewportHeight);
-              define(window, 'devicePixelRatio', values.deviceScaleFactor);
-              define(navigator, 'platform', values.platform);
-              define(navigator, 'language', values.language);
-              define(navigator, 'languages', values.languages);
-              define(navigator, 'maxTouchPoints', values.touchPoints);
-              define(screen, 'width', values.screenWidth);
-              define(screen, 'height', values.screenHeight);
-              define(screen, 'availWidth', values.screenWidth);
-              define(screen, 'availHeight', values.screenHeight);
-              define(screen, 'colorDepth', values.colorDepth);
-              define(screen, 'pixelDepth', values.colorDepth);
-            })();
-        """.trimIndent()
-        webView.evaluateJavascript(script, null)
     }
 }

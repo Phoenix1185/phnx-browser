@@ -18,6 +18,7 @@
     <string name="tab_group_name_required">Enter a group name.</string>
     <string name="no_downloads">No downloads for this profile.</string>
     <string name="download_open">Open</string>
+    <string name="download_share">Share</string>
     <string name="download_remove">Remove</string>
     <string name="download_queued">Queued</string>
     <string name="download_downloading">Downloading</string>
@@ -26,6 +27,7 @@
     <string name="download_failed">Failed</string>
     <string name="download_missing">Unavailable</string>
     <string name="reload">Reload</string>
+    <string name="stop">Stop loading</string>
     <string name="share">Share</string>
     <string name="find_in_page">Find in page</string>
     <string name="page_zoom">Page zoom</string>
@@ -140,6 +142,12 @@
     <string name="clear">Clear</string>
     <string name="clear_history">Clear history</string>
     <string name="clear_history_warning">This removes saved history for the active profile but does not delete bookmarks or profile settings.</string>
+    <string name="search_history">Search history</string>
+    <string name="clear_old_history">Clear older than 30 days</string>
+    <string name="clear_old_history_warning">This removes history older than 30 days for the active profile.</string>
+    <string name="history_today">Today</string>
+    <string name="history_yesterday">Yesterday</string>
+    <string name="history_earlier">Earlier</string>
     <string name="no_history">No history for this profile.</string>
     <string name="add_current_bookmark">Add current page</string>
     <string name="no_bookmarks">No bookmarks for this profile.</string>

@@ -22,6 +22,7 @@ import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
 import android.webkit.URLUtil
 import android.webkit.WebChromeClient
+import android.webkit.WebChromeClient.CustomViewCallback
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -95,6 +96,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var activityVisible = false
     private var attachedTabId: String? = null
     private var appliedNetworkConfigHash: Int? = null
+    private var customView: View? = null
+    private var customViewCallback: CustomViewCallback? = null
 
     private val swipeDetector by lazy {
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -200,6 +203,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         openIncomingPage(intent)
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
+                if (customView != null) {
+                    hideCustomView()
+                    return
+                }
                 val view = currentBrowserView()
                 if (view?.canGoBack() == true) view.goBack() else finish()
             }
@@ -297,15 +304,19 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         toolbar.addView(addressBar, LinearLayout.LayoutParams(0, dp(48), 1f))
 
+        val menuButton = toolbarButton("⋮", "Browser menu")
+        menuButton.setOnClickListener { BrowserMenu.show(menuButton, this) }
+        toolbar.addView(menuButton)
+
         bookmarkButton = toolbarButton("☆", "Bookmark current page")
         bookmarkButton.setOnClickListener { toggleCurrentBookmark() }
         toolbar.addView(bookmarkButton)
         refreshButton = toolbarButton("↻", getString(R.string.refresh))
-        refreshButton.setOnClickListener { currentBrowserView()?.reload() }
+        refreshButton.setOnClickListener {
+            if (tabManager.currentTab()?.isLoading == true) currentBrowserView()?.stopLoading()
+            else currentBrowserView()?.reload()
+        }
         toolbar.addView(refreshButton)
-        val menuButton = toolbarButton("⋮", "Browser menu")
-        menuButton.setOnClickListener { BrowserMenu.show(menuButton, this) }
-        toolbar.addView(menuButton)
         root.addView(toolbar)
 
         progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
@@ -398,7 +409,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.isLoading = true
                 tab.url = url
                 tab.title = tabTitleForUrl(url)
-                applyPageIdentity(view, tab.profileId)
                 updateTabChrome(tab, view)
             }
 
@@ -407,7 +417,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 if (url != START_PAGE_BASE) tab.url = url
                 tab.title = view.title?.takeIf { it.isNotBlank() } ?: tabTitleForUrl(url)
                 privacyManager.applyTo(view, tab.profileId)
-                applyPageIdentity(view, tab.profileId)
                 app.historyManager.recordVisit(tab.profileId, url, tab.title, tab.isPrivate)
                 updateTabChrome(tab, view)
                 hideError()
@@ -415,6 +424,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                 if (request.isForMainFrame) {
+                    tab.isLoading = false
+                    updateTabChrome(tab, view)
                     showError(error.description?.toString() ?: "The page could not be loaded.")
                 }
             }
@@ -436,6 +447,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 val isCurrentTab = tabManager.currentTab()?.id == tab.id
                 browserController.suspendProfile(tab.profileId)
                 attachedTabId = null
+                tab.isLoading = false
                 if (isCurrentTab) {
                     showError("The page renderer stopped unexpectedly. Retry to reopen this tab.")
                 }
@@ -452,6 +464,20 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.title = title.ifBlank { "New tab" }
                 updateTabChrome(tab, view)
             }
+
+            override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                if (customView != null) {
+                    callback.onCustomViewHidden()
+                    return
+                }
+                customView = view
+                customViewCallback = callback
+                browserContainer.addView(view, FrameLayout.LayoutParams(-1, -1))
+                WindowCompat.getInsetsController(window, window.decorView)
+                    .hide(WindowInsetsCompat.Type.systemBars())
+            }
+
+            override fun onHideCustomView() = hideCustomView()
 
             override fun onPermissionRequest(request: PermissionRequest) {
                 runOnUiThread { handleWebPermissionRequest(request) }
@@ -623,6 +649,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 bookmarkButton.text = if (isBookmarked) "★" else "☆"
                 bookmarkButton.contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark current page"
             }
+            if (::refreshButton.isInitialized) {
+                refreshButton.text = if (tab.isLoading) "×" else "↻"
+                refreshButton.contentDescription = if (tab.isLoading) getString(R.string.stop) else getString(R.string.refresh)
+            }
         }
         tab.canGoBack = view.canGoBack()
         tab.canGoForward = view.canGoForward()
@@ -661,7 +691,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             text = getString(R.string.retry)
             setOnClickListener {
                 hideError()
-                currentBrowserView()?.reload()
+                val tab = tabManager.currentTab()
+                if (attachedTabId == null) {
+                    attachCurrentTab()
+                    if (!tab?.url.isNullOrBlank()) currentBrowserView()?.loadUrl(tab?.url.orEmpty())
+                } else {
+                    currentBrowserView()?.reload()
+                }
             }
         })
         if (message.contains("connection", ignoreCase = true) || message.contains("closed", ignoreCase = true)) {
@@ -982,6 +1018,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     override fun onDestroy() {
+        if (::browserContainer.isInitialized) hideCustomView()
         if (isFinishing) clearHistoryOnClose()
         browserController.clear()
         super.onDestroy()
@@ -1050,13 +1087,41 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val foreground = colorHex(R.color.phnx_text)
         val muted = colorHex(R.color.phnx_muted)
         val blue = colorHex(R.color.phnx_blue)
+        val profileId = profileManager.activeProfile().id
+        val bookmarks = app.bookmarkManager.getForProfile(profileId).take(6)
+        val history = app.historyManager.getForProfile(profileId).take(6)
+        val bookmarkLinks = bookmarks.joinToString("") { bookmark ->
+            "<a href='${html(bookmark.url)}' style='display:block;color:$blue;padding:8px 0'>${html(bookmark.title.ifBlank { bookmark.url })}</a>"
+        }.ifBlank { "<p style='color:$muted'>No bookmarks yet.</p>" }
+        val historyLinks = history.joinToString("") { entry ->
+            "<a href='${html(entry.url)}' style='display:block;color:$blue;padding:8px 0'>${html(entry.title.ifBlank { entry.host })}</a>"
+        }.ifBlank { "<p style='color:$muted'>No recently visited pages.</p>" }
         return """
             <!doctype html><html><head><meta name='viewport' content='width=device-width,initial-scale=1'></head>
-            <body style='margin:0;background:$background;color:$foreground;font-family:sans-serif;display:grid;place-items:center;min-height:100vh'>
-            <main style='padding:32px;max-width:520px'><div style='color:$blue;font-size:18px;font-weight:700;letter-spacing:.2em'>PHNX</div>
+            <body style='margin:0;background:$background;color:$foreground;font-family:sans-serif;min-height:100vh'>
+            <main style='padding:32px;max-width:620px;margin:auto'><div style='color:$blue;font-size:18px;font-weight:700;letter-spacing:.2em'>PHNX</div>
             <h1 style='font-size:42px;margin:12px 0'>A clearer way to browse.</h1>
-            <p style='color:$muted;font-size:17px;line-height:1.6'>Enter a web address or search term above to get started.</p></main></body></html>
+            <p style='color:$muted;font-size:17px;line-height:1.6'>Use the address bar above to search or enter a web address.</p>
+            <section><h2>Bookmarks</h2>$bookmarkLinks</section>
+            <section><h2>Recently visited</h2>$historyLinks</section>
+            </main></body></html>
         """.trimIndent()
+    }
+
+    private fun html(value: String): String = value
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("'", "&#39;")
+        .replace("\"", "&quot;")
+
+    private fun hideCustomView() {
+        customView?.let(browserContainer::removeView)
+        customView = null
+        customViewCallback?.onCustomViewHidden()
+        customViewCallback = null
+        WindowCompat.getInsetsController(window, window.decorView)
+            .show(WindowInsetsCompat.Type.systemBars())
     }
 
     private fun colorHex(@androidx.annotation.ColorRes colorRes: Int): String =
@@ -1080,10 +1145,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private fun applyProfileIdentity(view: WebView, profileId: String) {
         val config = identityConfig(profileId)
         identityAdapter.apply(view, config)
-    }
-
-    private fun applyPageIdentity(view: WebView, profileId: String) {
-        identityAdapter.applyPageIdentity(view, identityConfig(profileId))
     }
 
     private fun identityConfig(profileId: String) = if (desktopSiteEnabled) {

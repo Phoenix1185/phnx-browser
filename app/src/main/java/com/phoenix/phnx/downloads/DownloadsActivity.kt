@@ -61,8 +61,12 @@ class DownloadsActivity : AppCompatActivity() {
                 setPadding(0, dp(12), 0, dp(12))
             }
             val status = app.downloadManager.query(download.downloadId)
+            val progress = app.downloadManager.progress(download.downloadId)
             row.addView(TextView(this).apply {
-                text = "${download.filename}\n${statusLabel(status)}"
+                val progressLabel = progress?.takeIf { it.totalBytes > 0 }?.let {
+                    "\n${formatBytes(it.downloadedBytes)} / ${formatBytes(it.totalBytes)}"
+                }.orEmpty()
+                text = "${download.filename}\n${statusLabel(status)}$progressLabel"
                 textSize = 15f
                 setTextColor(getColor(R.color.phnx_text))
             }, LinearLayout.LayoutParams(0, -2, 1f))
@@ -75,6 +79,17 @@ class DownloadsActivity : AppCompatActivity() {
                             setDataAndType(uri, download.mimeType.ifBlank { "*/*" })
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         })
+                    }
+                })
+                row.addView(Button(this).apply {
+                    text = getString(R.string.download_share)
+                    setOnClickListener {
+                        val uri = app.downloadManager.uri(download.downloadId) ?: return@setOnClickListener
+                        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                            type = download.mimeType.ifBlank { "*/*" }
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }, getString(R.string.share)))
                     }
                 })
             }
@@ -99,4 +114,10 @@ class DownloadsActivity : AppCompatActivity() {
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    private fun formatBytes(bytes: Long): String = when {
+        bytes >= 1024L * 1024L -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
+        bytes >= 1024L -> "%.1f KB".format(bytes / 1024.0)
+        else -> "$bytes B"
+    }
 }

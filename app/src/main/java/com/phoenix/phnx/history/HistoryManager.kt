@@ -51,6 +51,9 @@ interface HistoryDao {
     @Query("SELECT * FROM history_entries WHERE profileId = :profileId ORDER BY visitedAt DESC")
     fun getForProfile(profileId: String): List<HistoryEntryEntity>
 
+    @Query("SELECT * FROM history_entries WHERE profileId = :profileId AND (title LIKE '%' || :query || '%' OR url LIKE '%' || :query || '%') ORDER BY visitedAt DESC")
+    fun search(profileId: String, query: String): List<HistoryEntryEntity>
+
     @Query("SELECT * FROM history_entries WHERE profileId = :profileId AND url = :url LIMIT 1")
     fun findByUrl(profileId: String, url: String): HistoryEntryEntity?
 
@@ -62,6 +65,9 @@ interface HistoryDao {
 
     @Query("DELETE FROM history_entries WHERE profileId = :profileId")
     fun clearProfile(profileId: String)
+
+    @Query("DELETE FROM history_entries WHERE profileId = :profileId AND visitedAt < :cutoff")
+    fun deleteBefore(profileId: String, cutoff: Long)
 }
 
 @Database(entities = [HistoryEntryEntity::class], version = 1, exportSchema = false)
@@ -95,9 +101,17 @@ class HistoryManager(context: Context) {
     fun getForProfile(profileId: String): List<HistoryEntry> =
         dao.getForProfile(profileId).map(HistoryEntryEntity::toDomain)
 
+    fun search(profileId: String, query: String): List<HistoryEntry> {
+        val cleanQuery = query.trim()
+        return if (cleanQuery.isEmpty()) getForProfile(profileId)
+        else dao.search(profileId, cleanQuery).map(HistoryEntryEntity::toDomain)
+    }
+
     fun delete(profileId: String, id: String) = dao.delete(profileId, id)
 
     fun clearProfile(profileId: String) = dao.clearProfile(profileId)
+
+    fun deleteBefore(profileId: String, cutoff: Long) = dao.deleteBefore(profileId, cutoff)
 
     fun close() = database.close()
 

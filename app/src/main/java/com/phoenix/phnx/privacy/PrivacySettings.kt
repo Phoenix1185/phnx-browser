@@ -125,11 +125,12 @@ class PrivacyManager(context: android.content.Context) {
             webView,
             settings.cookiesAllowed && settings.thirdPartyCookiesAllowed,
         )
-        webView.evaluateJavascript(if (settings.doNotTrack) DNT_ENABLED_SCRIPT else DNT_DISABLED_SCRIPT, null)
-
         val unsupported = buildList {
             if (settings.trackingProtection != TrackingProtectionLevel.OFF) {
                 add("Full tracker blocking is not exposed by Android WebView.")
+            }
+            if (settings.doNotTrack) {
+                add("Do Not Track is stored but not exposed by Android WebView.")
             }
         }
         return PrivacyApplyResult(settings, unsupported)
@@ -137,18 +138,4 @@ class PrivacyManager(context: android.content.Context) {
 
     fun close() = database.close()
 
-    private companion object {
-        const val DNT_ENABLED_SCRIPT = """
-            (function() {
-              try {
-                Object.defineProperty(navigator, 'doNotTrack', { configurable: true, get: function() { return '1'; } });
-              } catch (_) {}
-            })();
-        """
-        const val DNT_DISABLED_SCRIPT = """
-            (function() {
-              try { delete navigator.doNotTrack; } catch (_) {}
-            })();
-        """
-    }
 }

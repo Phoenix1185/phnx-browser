@@ -18,4 +18,18 @@ class HistoryManagerTest {
         assertEquals("example.com", entry.host)
         assertEquals(3, entry.visitCount)
     }
+
+    @Test
+    fun hostOmitsPathAndQuery() {
+        val entry = HistoryEntryEntity(
+            id = "history_2",
+            profileId = "profile_work",
+            url = "https://example.com/path?q=1",
+            title = "Example",
+            visitedAt = 20L,
+            visitCount = 2,
+        ).toDomain()
+
+        assertEquals("example.com", entry.host)
+    }
 }
