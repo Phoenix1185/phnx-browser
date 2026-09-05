@@ -223,7 +223,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     private fun saveProfileSession(profileId: String) {
         if (!::browserContainer.isInitialized) return
-        val tabs = tabManager.getTabs(profileId)
+        val tabs = tabManager.persistedTabs(profileId)
         if (tabs.isEmpty() && profileId != profileManager.activeProfile().id) return
         val activeTabId = tabManager.activeTabId()
         val sessions = tabs.mapIndexed { index, tab ->
@@ -707,7 +707,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     override fun onNewPrivateTab() {
         tabManager.createTab(profileId = profileManager.activeProfile().id, isPrivate = true)
         attachCurrentTab()
-        Toast.makeText(this, "Private tab entry point opened; private isolation is planned for Phase 6.", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Private tab opened. It will not be restored or added to history.", Toast.LENGTH_LONG).show()
     }
 
     override fun onBookmarks() {

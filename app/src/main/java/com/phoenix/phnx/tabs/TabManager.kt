@@ -44,6 +44,8 @@ class TabManager {
 
     fun getTabs(profileId: String): List<Tab> = tabs.filter { it.profileId == profileId }
 
+    fun persistedTabs(profileId: String): List<Tab> = getTabs(profileId).filterNot { it.isPrivate }
+
     fun tabCount(): Int = tabs.size
 
     fun tabCount(profileId: String): Int = tabs.count { it.profileId == profileId }

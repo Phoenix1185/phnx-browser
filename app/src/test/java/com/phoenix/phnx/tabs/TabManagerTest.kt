@@ -55,4 +55,13 @@ class TabManagerTest {
         assertEquals(first.id, manager.currentTab()?.id)
         assertEquals(2, manager.tabCount("profile_phoenix"))
     }
+
+    @Test
+    fun privateTabsAreNotPersisted() {
+        val manager = TabManager()
+        val regular = manager.createTab(profileId = "profile_phoenix")
+        manager.createTab(profileId = "profile_phoenix", isPrivate = true)
+
+        assertEquals(listOf(regular), manager.persistedTabs("profile_phoenix"))
+    }
 }
