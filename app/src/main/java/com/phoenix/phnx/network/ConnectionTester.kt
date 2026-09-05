@@ -17,6 +17,7 @@ data class ConnectionTestResult(
     val state: ConnectionTestState,
     val message: String,
     val statusCode: Int? = null,
+    val latencyMs: Int? = null,
 )
 
 class ConnectionTester(
@@ -43,16 +44,17 @@ class ConnectionTester(
         val errors = NetworkConfigValidator.validate(config)
         if (errors.isNotEmpty()) return failure(errors.joinToString(" "))
         if (!config.enabled) return failure("Network configuration is disabled.")
-        if (config.mode == NetworkMode.PROXY && config.proxyHost.isBlank()) {
-            return unsupported("Free proxy pool routes are applied by WebView; configure a primary proxy to test it directly.")
+        if (config.mode.usesProxy() && config.proxyHost.isBlank()) {
+            return unsupported("Select a proxy route before testing it.")
         }
 
         val proxy = when (config.mode) {
             NetworkMode.DIRECT -> Proxy.NO_PROXY
-            NetworkMode.PROXY -> proxyFor(config)
+            else -> proxyFor(config)
         }
         var connection: HttpURLConnection? = null
         return try {
+            val startedAt = System.nanoTime()
             connection = testUrl.openConnection(proxy) as? HttpURLConnection
                 ?: return unsupported("The connection tester only supports HTTP endpoints.")
             connection!!.connectTimeout = timeoutMillis
@@ -65,6 +67,7 @@ class ConnectionTester(
                     state = ConnectionTestState.SUCCESS,
                     message = "Connection succeeded.",
                     statusCode = statusCode,
+                    latencyMs = ((System.nanoTime() - startedAt) / 1_000_000L).toInt(),
                 )
             } else {
                 failure("Connection returned HTTP $statusCode.", statusCode)
@@ -86,7 +89,7 @@ class ConnectionTester(
     }
 
     private fun applyProxyCredentials(connection: HttpURLConnection, config: ProfileNetworkConfig): String? {
-        if (config.mode != NetworkMode.PROXY || config.username.isBlank()) return null
+        if (!config.mode.usesProxy() || config.username.isBlank()) return null
         val reference = config.credentialReference ?: return "Proxy credentials are incomplete."
         val secret = credentialProvider(reference) ?: return "Proxy credentials are unavailable."
         val token = "${config.username}:$secret".toByteArray(StandardCharsets.UTF_8)

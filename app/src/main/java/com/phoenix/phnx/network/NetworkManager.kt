@@ -10,10 +10,10 @@ class NetworkManager(context: Context) {
         "network_configs.db",
     ).addMigrations(NetworkDatabase.MIGRATION_1_2).allowMainThreadQueries().build()
     private val dao = database.configDao()
-    private val credentials = SecureCredentialStore(context)
+    private val credentials = ProxyCredentialStore(context)
     private val monitor = NetworkMonitor(context)
     private val connectionTester = ConnectionTester(credentials::getCredential)
-    private val freeProxyProvider = FreeProxyProvider()
+    private val proxyManager = ProxyManager()
 
     fun getConfig(profileId: String): ProfileNetworkConfig {
         return dao.getForProfile(profileId)?.toDomain() ?: directConfig(profileId).also { dao.upsert(it.toEntity()) }
@@ -42,7 +42,7 @@ class NetworkManager(context: Context) {
             return connectionTester.test(config)
         }
 
-        val endpoints = config.freeProxyFallbacks.ifEmpty { freeProxyProvider.fetch() }
+        val endpoints = config.freeProxyFallbacks.ifEmpty { proxyManager.fetchAndCheck() }
         if (endpoints.isEmpty()) {
             return ConnectionTestResult(
                 state = ConnectionTestState.FAILURE,
@@ -69,8 +69,40 @@ class NetworkManager(context: Context) {
     fun applyConfig(profileId: String, adapter: ChromiumNetworkAdapter): NetworkApplyResult =
         adapter.apply(getConfig(profileId))
 
-    fun fetchFreeProxyFallbacks(limit: Int = FreeProxyProvider.DEFAULT_LIMIT): List<ProxyEndpoint> =
-        freeProxyProvider.fetch(limit)
+    fun fetchPublicProxies(
+        profileId: String,
+        limit: Int = PublicProxyFetcher.DEFAULT_LIMIT,
+        forceRefresh: Boolean = false,
+    ): List<ProxyEndpoint> {
+        val proxies = proxyManager.fetchAndCheck(limit, forceRefresh)
+        val config = getConfig(profileId)
+        saveConfig(config.copy(freeProxyFallbacks = proxies))
+        return proxies
+    }
+
+    fun refreshProxyHealth(profileId: String, endpoint: ProxyEndpoint): ProxyEndpoint {
+        val updated = proxyManager.check(endpoint)
+        val config = getConfig(profileId)
+        val proxies = config.freeProxyFallbacks.map {
+            if (it.type == endpoint.type && it.host == endpoint.host && it.port == endpoint.port) updated else it
+        }
+        saveConfig(config.copy(freeProxyFallbacks = proxies))
+        return updated
+    }
+
+    fun selectBestProxy(proxies: List<ProxyEndpoint>): ProxyEndpoint? = proxyManager.bestHealthy(proxies)
+
+    fun testProxy(profileId: String, endpoint: ProxyEndpoint): ConnectionTestResult =
+        connectionTester.testProxy(
+            getConfig(profileId).copy(
+                mode = NetworkMode.FREE_PUBLIC_PROXY,
+                enabled = true,
+            ),
+            endpoint,
+        )
+
+    fun fetchFreeProxyFallbacks(limit: Int = PublicProxyFetcher.DEFAULT_LIMIT): List<ProxyEndpoint> =
+        proxyManager.fetchAndCheck(limit, forceRefresh = true)
 
     fun observeConnection(listener: NetworkStateListener): NetworkState =
         monitor.observeConnection(listener)

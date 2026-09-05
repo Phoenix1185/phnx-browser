@@ -55,7 +55,7 @@ import com.phoenix.phnx.downloads.DownloadsActivity
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.network.NetworkApplyStatus
-import com.phoenix.phnx.network.WebViewNetworkAdapter
+import com.phoenix.phnx.chromium.network.ChromiumProxyAdapter
 import com.phoenix.phnx.permissions.SitePermissionDecision
 import com.phoenix.phnx.permissions.SitePermission
 import com.phoenix.phnx.permissions.SitePermissionType
@@ -209,7 +209,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         val networkConfig = app.networkManager.getConfig(profileManager.activeProfile().id)
         if (networkConfig.hashCode() != appliedNetworkConfigHash) {
-            val apply = app.networkManager.applyConfig(networkConfig.profileId, WebViewNetworkAdapter())
+            val apply = app.networkManager.applyConfig(networkConfig.profileId, ChromiumProxyAdapter())
             appliedNetworkConfigHash = networkConfig.hashCode()
             if (apply.status == NetworkApplyStatus.APPLIED) currentBrowserView()?.reload()
             else Toast.makeText(this, apply.message, Toast.LENGTH_LONG).show()

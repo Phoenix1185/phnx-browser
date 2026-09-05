@@ -61,4 +61,15 @@ class NetworkConfigValidatorTest {
 
         assertTrue(NetworkConfigValidator.validate(config).isEmpty())
     }
+
+    @Test
+    fun explicitFreePublicModeCanBeSavedBeforeSelection() {
+        val config = ProfileNetworkConfig(
+            id = "network_a",
+            profileId = "profile_a",
+            mode = NetworkMode.FREE_PUBLIC_PROXY,
+        )
+
+        assertTrue(NetworkConfigValidator.validate(config).isEmpty())
+    }
 }

@@ -8,7 +8,7 @@ import com.phoenix.phnx.history.HistoryManager
 import com.phoenix.phnx.identity.DeviceProfileManager
 import com.phoenix.phnx.downloads.DownloadManager
 import com.phoenix.phnx.network.NetworkManager
-import com.phoenix.phnx.network.WebViewNetworkAdapter
+import com.phoenix.phnx.chromium.network.ChromiumProxyAdapter
 import com.phoenix.phnx.permissions.PermissionManager
 import com.phoenix.phnx.profiles.ProfileManager
 import com.phoenix.phnx.privacy.ClearDataManager
@@ -50,6 +50,7 @@ class PhnxApplication : Application() {
         PhnxPreferences.applyTheme(this)
         profileManager = ProfileManager(this)
         val activeProfile = profileManager.ensureDefaultProfile()
+        WebView.setDataDirectorySuffix(activeProfile.id)
         networkManager = NetworkManager(this)
         networkManager.getConfig(activeProfile.id)
         privacyManager = PrivacyManager(this)
@@ -68,7 +69,6 @@ class PhnxApplication : Application() {
             snapshotProvider = resourceMonitor::currentSnapshot,
             lifecycleAdapter = profileViewPool::apply,
         )
-        WebView.setDataDirectorySuffix(activeProfile.id)
-        networkManager.applyConfig(activeProfile.id, WebViewNetworkAdapter())
+        networkManager.applyConfig(activeProfile.id, ChromiumProxyAdapter())
     }
 }

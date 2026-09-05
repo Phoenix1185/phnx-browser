@@ -20,7 +20,7 @@ interface ChromiumNetworkAdapter {
 
 class WebViewNetworkAdapter : ChromiumNetworkAdapter {
     override fun apply(config: ProfileNetworkConfig): NetworkApplyResult {
-        if (config.mode != NetworkMode.PROXY || !config.enabled) {
+        if (!config.mode.usesProxy() || !config.enabled) {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.PROXY_OVERRIDE)) {
                 ProxyController.getInstance().clearProxyOverride(Runnable::run) {}
             }
@@ -51,7 +51,14 @@ class WebViewNetworkAdapter : ChromiumNetworkAdapter {
                     port = config.proxyPort,
                 )
             }
-            val fallbacks = if (config.fallbackToFreeProxy) config.freeProxyFallbacks else emptyList()
+            if (config.mode == NetworkMode.FREE_PUBLIC_PROXY && primary == null) {
+                return@runCatching NetworkApplyResult(NetworkApplyStatus.UNSUPPORTED, "Choose a free public proxy before applying this mode.")
+            }
+            val fallbacks = if (config.mode == NetworkMode.PROXY || config.mode == NetworkMode.MY_PROXY) {
+                if (config.fallbackToFreeProxy) config.freeProxyFallbacks else emptyList()
+            } else {
+                emptyList()
+            }
             if (primary == null && fallbacks.isEmpty()) {
                 return@runCatching NetworkApplyResult(NetworkApplyStatus.UNSUPPORTED, "No free proxy route is available.")
             }
