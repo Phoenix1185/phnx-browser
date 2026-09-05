@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.phoenix.phnx.PhnxApplication
 import com.phoenix.phnx.R
+import com.phoenix.phnx.identity.IdentityActivity
 
 class ProfilesActivity : AppCompatActivity() {
     private val profileManager by lazy { (application as PhnxApplication).profileManager }
@@ -79,6 +80,14 @@ class ProfilesActivity : AppCompatActivity() {
                 setPadding(0, dp(4), 0, dp(8))
             })
             val actions = LinearLayout(this).apply { gravity = Gravity.END }
+            actions.addView(Button(this@ProfilesActivity).apply {
+                text = getString(R.string.identity)
+                setOnClickListener {
+                    startActivity(Intent(this@ProfilesActivity, IdentityActivity::class.java).apply {
+                        putExtra("profile_id", profile.id)
+                    })
+                }
+            })
             actions.addView(Button(this).apply {
                 text = getString(R.string.rename)
                 setOnClickListener { showRenameDialog(profile) }

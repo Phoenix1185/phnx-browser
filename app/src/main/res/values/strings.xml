@@ -52,4 +52,9 @@
     <string name="proxy_password_saved">Password saved; leave blank to keep it</string>
     <string name="test_connection">Test connection</string>
     <string name="save_network">Save network</string>
+    <string name="identity">Device &amp; Browser</string>
+    <string name="identity_summary">Choose a coherent supported device preset for this profile. Unsupported identity fields are reported instead of being spoofed.</string>
+    <string name="identity_saved">Identity saved. Active profiles restart to apply the new WebView settings.</string>
+    <string name="identity_save_failed">Could not save identity configuration.</string>
+    <string name="reset">Reset</string>
 </resources>
