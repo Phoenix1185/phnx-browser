@@ -31,9 +31,20 @@ class TabManager {
 
     fun currentTab(): Tab? = tabs.firstOrNull { it.id == activeTabId }
 
+    fun restoreTabs(restoredTabs: List<Tab>, restoredActiveTabId: String?) {
+        tabs.clear()
+        tabs += restoredTabs
+        activeTabId = restoredActiveTabId?.takeIf { id -> tabs.any { it.id == id } }
+            ?: tabs.lastOrNull()?.id
+    }
+
+    fun activeTabId(): String? = activeTabId
+
     fun getTabs(): List<Tab> = tabs.toList()
 
     fun getTabs(profileId: String): List<Tab> = tabs.filter { it.profileId == profileId }
 
     fun tabCount(): Int = tabs.size
+
+    fun tabCount(profileId: String): Int = tabs.count { it.profileId == profileId }
 }

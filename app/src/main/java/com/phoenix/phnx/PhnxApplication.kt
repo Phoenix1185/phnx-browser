@@ -1,7 +1,6 @@
 package com.phoenix.phnx
 
 import android.app.Application
-import android.os.Build
 import android.webkit.WebView
 import com.phoenix.phnx.profiles.ProfileManager
 
@@ -14,8 +13,6 @@ class PhnxApplication : Application() {
         PhnxPreferences.applyTheme(this)
         profileManager = ProfileManager(this)
         val activeProfile = profileManager.ensureDefaultProfile()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            WebView.setDataDirectorySuffix(activeProfile.id)
-        }
+        WebView.setDataDirectorySuffix(activeProfile.id)
     }
 }

@@ -44,4 +44,15 @@ class TabManagerTest {
         assertTrue(manager.switchTab(work.id, profileId = "profile_work"))
         assertFalse(manager.switchTab(phoenix.id, profileId = "profile_work"))
     }
+
+    @Test
+    fun restoresSavedTabsAndActiveTab() {
+        val manager = TabManager()
+        val first = manager.createTab(profileId = "profile_phoenix")
+        val second = manager.createTab(profileId = "profile_phoenix")
+        manager.restoreTabs(listOf(first, second), first.id)
+
+        assertEquals(first.id, manager.currentTab()?.id)
+        assertEquals(2, manager.tabCount("profile_phoenix"))
+    }
 }

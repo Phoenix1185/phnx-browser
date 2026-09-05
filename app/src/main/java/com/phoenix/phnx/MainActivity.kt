@@ -45,6 +45,7 @@ import com.phoenix.phnx.browser.BrowserController
 import com.phoenix.phnx.browser.BrowserView
 import com.phoenix.phnx.browser.NavigationController
 import com.phoenix.phnx.menu.BrowserMenu
+import com.phoenix.phnx.profiles.TabSessionEntity
 import com.phoenix.phnx.settings.SettingsActivity
 import com.phoenix.phnx.tabs.Tab
 import com.phoenix.phnx.tabs.TabManager
@@ -138,7 +139,24 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         setContentView(layout)
         applySystemBarInsets(layout)
 
-        tabManager.createTab(profileId = profileManager.activeProfile().id)
+        val activeProfileId = profileManager.activeProfile().id
+        val savedTabs = profileManager.loadTabSessions(activeProfileId)
+        if (savedTabs.isEmpty()) {
+            tabManager.createTab(profileId = activeProfileId)
+        } else {
+            tabManager.restoreTabs(
+                savedTabs.map { saved ->
+                    Tab(
+                        id = saved.tabId,
+                        profileId = saved.profileId,
+                        title = saved.title,
+                        url = saved.url,
+                        isPrivate = saved.isPrivate,
+                    )
+                },
+                savedTabs.firstOrNull { it.isActive }?.tabId,
+            )
+        }
         attachCurrentTab()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -156,6 +174,29 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             browserController.forEachView(::applyBrowserModes)
             currentBrowserView()?.reload()
         }
+    }
+
+    override fun onStop() {
+        saveCurrentProfileSession()
+        super.onStop()
+    }
+
+    private fun saveCurrentProfileSession() {
+        if (!::browserContainer.isInitialized) return
+        val profileId = profileManager.activeProfile().id
+        val activeTabId = tabManager.activeTabId()
+        val sessions = tabManager.getTabs(profileId).mapIndexed { index, tab ->
+            TabSessionEntity(
+                profileId = profileId,
+                tabId = tab.id,
+                title = tab.title,
+                url = tab.url,
+                isPrivate = tab.isPrivate,
+                position = index,
+                isActive = tab.id == activeTabId,
+            )
+        }
+        profileManager.saveTabSessions(profileId, sessions)
     }
 
     private fun buildLayout(): View {
@@ -404,7 +445,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         tab.canGoBack = view.canGoBack()
         tab.canGoForward = view.canGoForward()
-        tabCount.text = "${tabManager.tabCount()} tab${if (tabManager.tabCount() == 1) "" else "s"}"
+        val profileTabCount = tabManager.tabCount(tab.profileId)
+        tabCount.text = "$profileTabCount tab${if (profileTabCount == 1) "" else "s"}"
     }
 
     private fun currentBrowserView(): BrowserView? = tabManager.currentTab()?.let(browserController::getOrCreate)
@@ -453,12 +495,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             setPadding(dp(18), dp(4), dp(18), 0)
         }
         val dialog = AlertDialog.Builder(this).setTitle("Open tabs").setView(list).setNegativeButton("Close", null).create()
-        tabManager.getTabs().forEach { tab ->
+        val profileId = profileManager.activeProfile().id
+        tabManager.getTabs(profileId).forEach { tab ->
             val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
             val select = Button(this).apply {
                 text = tab.title.ifBlank { "New tab" }.take(32)
                 setOnClickListener {
-                    tabManager.switchTab(tab.id)
+                    tabManager.switchTab(tab.id, profileId = profileId)
                     dialog.dismiss()
                     attachCurrentTab()
                 }
@@ -470,8 +513,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 setOnClickListener {
                     browserController.remove(tab.id)
                     tabManager.closeTab(tab.id)
-                    if (tabManager.tabCount() == 0) {
-                        tabManager.createTab(profileId = profileManager.activeProfile().id)
+                    if (tabManager.tabCount(profileId) == 0) {
+                        tabManager.createTab(profileId = profileId)
                     }
                     dialog.dismiss()
                     attachCurrentTab()

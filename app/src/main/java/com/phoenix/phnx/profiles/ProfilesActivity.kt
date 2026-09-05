@@ -1,7 +1,6 @@
 package com.phoenix.phnx.profiles
 
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import android.view.Gravity
@@ -87,7 +86,6 @@ class ProfilesActivity : AppCompatActivity() {
             if (profile.id != activeId) {
                 actions.addView(Button(this@ProfilesActivity).apply {
                     text = getString(R.string.switch_profile)
-                    isEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
                     setOnClickListener { switchProfile(profile) }
                 })
                 actions.addView(Button(this@ProfilesActivity).apply {
@@ -101,10 +99,6 @@ class ProfilesActivity : AppCompatActivity() {
     }
 
     private fun switchProfile(profile: ProfileEntity) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            Toast.makeText(this, R.string.profile_switch_requires_android_9, Toast.LENGTH_LONG).show()
-            return
-        }
         profileManager.switchProfile(profile.id) ?: return
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         if (launchIntent == null) {
