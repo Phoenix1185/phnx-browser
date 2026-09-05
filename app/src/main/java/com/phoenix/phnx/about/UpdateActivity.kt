@@ -119,7 +119,7 @@ class UpdateActivity : AppCompatActivity() {
         textSize = size
         setTextColor(if (prominent) getColor(R.color.phnx_blue) else getColor(R.color.phnx_text))
         setPadding(0, if (prominent) 0 else dp(12), 0, 0)
-        isTextSelectable = true
+        setTextIsSelectable(true)
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

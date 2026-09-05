@@ -97,7 +97,7 @@ class LegalActivity : AppCompatActivity() {
             linksClickable = true
             movementMethod = LinkMovementMethod.getInstance()
         }
-        isTextSelectable = true
+        setTextIsSelectable(true)
     }
 
     private fun pageTitle(page: String): String = when (page) {
