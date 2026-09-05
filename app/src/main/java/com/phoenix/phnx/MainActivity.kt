@@ -52,6 +52,7 @@ import com.phoenix.phnx.browser.BrowserController
 import com.phoenix.phnx.browser.BrowserView
 import com.phoenix.phnx.browser.NavigationController
 import com.phoenix.phnx.downloads.DownloadsActivity
+import com.phoenix.phnx.identity.DevicePresets
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.network.NetworkApplyStatus
@@ -289,6 +290,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         bookmarkButton = toolbarButton("☆", "Bookmark current page")
         bookmarkButton.setOnClickListener { toggleCurrentBookmark() }
         toolbar.addView(bookmarkButton)
+        val refreshButton = toolbarButton("↻", getString(R.string.refresh))
+        refreshButton.setOnClickListener { currentBrowserView()?.reload() }
+        toolbar.addView(refreshButton)
         val menuButton = toolbarButton("⋮", "Browser menu")
         menuButton.setOnClickListener { BrowserMenu.show(menuButton, this) }
         toolbar.addView(menuButton)
@@ -895,7 +899,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     private companion object {
         const val START_PAGE_BASE = "https://phnx.local/"
-        const val DESKTOP_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
     }
 
     private fun startPageHtml(): String {
@@ -917,11 +920,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     private fun applyBrowserModes(view: WebView) {
         view.settings.apply {
-            userAgentString = if (desktopSiteEnabled) {
-                DESKTOP_USER_AGENT
-            } else {
-                WebSettings.getDefaultUserAgent(this@MainActivity)
-            }
             useWideViewPort = desktopSiteEnabled
             loadWithOverviewMode = desktopSiteEnabled
             cacheMode = if (dataSaverEnabled) WebSettings.LOAD_CACHE_ELSE_NETWORK else WebSettings.LOAD_DEFAULT
@@ -931,8 +929,12 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun applyProfileIdentity(view: WebView, profileId: String) {
-        if (!desktopSiteEnabled) {
-            identityAdapter.apply(view, deviceProfileManager.getProfileConfiguration(profileId))
+        val config = if (desktopSiteEnabled) {
+            DevicePresets.get(DevicePresets.DESKTOP)?.forProfile(profileId)
+                ?: deviceProfileManager.getProfileConfiguration(profileId)
+        } else {
+            deviceProfileManager.getProfileConfiguration(profileId)
         }
+        identityAdapter.apply(view, config)
     }
 }

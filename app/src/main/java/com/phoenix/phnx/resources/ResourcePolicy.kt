@@ -26,6 +26,7 @@ enum class ThermalLevel {
 data class ResourceSnapshot(
     val memoryPressure: MemoryPressure = MemoryPressure.NORMAL,
     val cpuPressure: CpuPressure = CpuPressure.NORMAL,
+    val cpuPercent: Double? = null,
     val thermalLevel: ThermalLevel = ThermalLevel.THERMAL_NORMAL,
     val thermalSupported: Boolean = false,
     val batteryPercent: Int = 100,

@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import com.phoenix.phnx.PhnxPreferences
 import com.phoenix.phnx.R
+import com.phoenix.phnx.about.AboutActivity
 import com.phoenix.phnx.network.NetworkActivity
 import com.phoenix.phnx.privacy.PrivacyActivity
 import com.phoenix.phnx.permissions.PermissionActivity
@@ -39,7 +40,7 @@ class SettingsActivity : AppCompatActivity() {
         addProfileSection(content)
         addNetworkSection(content)
         addPerformanceSection(content)
-        addSection(content, "About PHNX", "Open the About screen from the browser menu for version and runtime details.")
+        addAboutSection(content)
 
         setContentView(ScrollView(this).apply {
             setBackgroundColor(getColor(R.color.phnx_cream))
@@ -68,6 +69,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addPerformanceSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.performance), getString(R.string.performance_summary))
         row.setOnClickListener { startActivity(Intent(this, PerformanceActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addAboutSection(parent: LinearLayout) {
+        val row = optionRow("About PHNX", "Version, updates, privacy policy, licenses, and third-party notices.")
+        row.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
         parent.addView(row)
     }
 

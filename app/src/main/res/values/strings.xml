@@ -145,6 +145,8 @@
     <string name="battery_saver_on">Battery Saver: on</string>
     <string name="battery_saver_off">Battery Saver: off</string>
     <string name="cpu_status">CPU monitoring: unsupported by the current Android integration</string>
+    <string name="cpu_usage">CPU usage: %1$s%% (PHNX process)</string>
+    <string name="cpu_sampling">CPU usage: sampling; tap Refresh again for a reading</string>
     <string name="profile_lifecycle">Profile lifecycle</string>
     <string name="profile_state">%1$s: %2$s</string>
 </resources>

@@ -11,6 +11,7 @@ import com.phoenix.phnx.R
 import com.phoenix.phnx.profiles.ProfileStatus
 import java.text.DateFormat
 import java.util.Date
+import java.util.Locale
 
 class PerformanceActivity : AppCompatActivity() {
     private val app by lazy { application as PhnxApplication }
@@ -78,7 +79,9 @@ class PerformanceActivity : AppCompatActivity() {
         ))
         content.addView(metric(getString(R.string.battery_status, snapshot.batteryPercent)))
         content.addView(metric(if (snapshot.batterySaver) getString(R.string.battery_saver_on) else getString(R.string.battery_saver_off)))
-        content.addView(metric(getString(R.string.cpu_status)))
+        content.addView(metric(snapshot.cpuPercent?.let {
+            getString(R.string.cpu_usage, String.format(Locale.US, "%.1f", it))
+        } ?: getString(R.string.cpu_sampling)))
 
         content.addView(TextView(this).apply {
             text = getString(R.string.profile_lifecycle)
