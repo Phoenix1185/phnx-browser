@@ -15,6 +15,10 @@ class SearchEngineManager(context: Context) {
         SearchEngine("google", "Google", "https://www.google.com/search?q="),
         SearchEngine("bing", "Bing", "https://www.bing.com/search?q="),
         SearchEngine("duckduckgo", "DuckDuckGo", "https://duckduckgo.com/?q="),
+        SearchEngine("brave", "Brave Search", "https://search.brave.com/search?q="),
+        SearchEngine("startpage", "Startpage", "https://www.startpage.com/sp/search?query="),
+        SearchEngine("ecosia", "Ecosia", "https://www.ecosia.org/search?q="),
+        SearchEngine("yahoo", "Yahoo", "https://search.yahoo.com/search?p="),
     )
 
     fun current(): SearchEngine = available.firstOrNull { it.id == preferences.getString(KEY_ENGINE, null) } ?: available.first()

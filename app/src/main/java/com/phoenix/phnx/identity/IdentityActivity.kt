@@ -95,7 +95,7 @@ class IdentityActivity : AppCompatActivity() {
         actions.addView(Button(this).apply {
             text = getString(R.string.reset)
             setOnClickListener {
-                selectedPreset = DevicePresets.default()
+                selectedPreset = presets.firstOrNull { it.id == DevicePresets.SYSTEM_DEFAULT }
                 presetSpinner.setSelection(presets.indexOfFirst { it.id == selectedPreset?.id })
                 saveSelectedPreset()
             }
@@ -143,7 +143,7 @@ class IdentityActivity : AppCompatActivity() {
             "Timezone: ${config.timezone}",
             "Touch: ${config.touchSupport}; mobile mode: ${config.mobileMode}",
             "Client hints: ${config.clientHints.platform}, mobile=${config.clientHints.mobile}",
-            "WebView support: User-Agent and viewport mode supported; locale, timezone, client hints, and scale factor unavailable.",
+            "WebView support: User-Agent and viewport mode supported; page scale is approximated. Locale, timezone, and client hints are not overrideable by Android WebView.",
         ).joinToString("\n")
     }
 

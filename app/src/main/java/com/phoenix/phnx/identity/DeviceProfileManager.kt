@@ -4,19 +4,21 @@ import android.content.Context
 import androidx.room.Room
 
 class DeviceProfileManager(context: Context) {
+    private val appContext = context.applicationContext
     private val database = Room.databaseBuilder(
-        context.applicationContext,
+        appContext,
         IdentityDatabase::class.java,
         "profile_identities.db",
     ).allowMainThreadQueries().build()
     private val dao = database.identityDao()
 
-    fun getAvailablePresets(): List<DevicePreset> = DevicePresets.all()
+    fun getAvailablePresets(): List<DevicePreset> = listOf(DevicePresets.systemDefault(appContext)) + DevicePresets.all()
 
-    fun getPreset(id: String): DevicePreset? = DevicePresets.get(id)
+    fun getPreset(id: String): DevicePreset? =
+        if (id == DevicePresets.SYSTEM_DEFAULT) DevicePresets.systemDefault(appContext) else DevicePresets.get(id)
 
     fun getProfileConfiguration(profileId: String): BrowserIdentityConfig {
-        return dao.get(profileId)?.toDomain() ?: DevicePresets.default().forProfile(profileId).also(::save)
+        return dao.get(profileId)?.toDomain() ?: DevicePresets.systemDefault(appContext).forProfile(profileId).also(::save)
     }
 
     fun updateProfileConfiguration(config: BrowserIdentityConfig) {
@@ -34,7 +36,7 @@ class DeviceProfileManager(context: Context) {
         DeviceProfileValidator.validate(getProfileConfiguration(profileId))
 
     fun resetProfileConfiguration(profileId: String): BrowserIdentityConfig =
-        applyPreset(profileId, DevicePresets.default().id)
+        applyPreset(profileId, DevicePresets.SYSTEM_DEFAULT)
 
     fun clearProfileConfiguration(profileId: String) {
         dao.get(profileId)?.let(dao::delete)

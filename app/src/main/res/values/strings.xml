@@ -5,6 +5,9 @@
     <string name="new_private_tab">New private tab</string>
     <string name="bookmarks">Bookmarks</string>
     <string name="history">History</string>
+    <string name="history_retention">History retention</string>
+    <string name="history_remember">Remember history until manually cleared</string>
+    <string name="history_clear_on_close">Clear history when PHNX closes</string>
     <string name="downloads">Downloads</string>
     <string name="no_downloads">No downloads for this profile.</string>
     <string name="download_open">Open</string>
@@ -125,6 +128,7 @@
     <string name="performance_summary">View resource pressure and profile lifecycle state.</string>
     <string name="refresh">Refresh</string>
     <string name="resource_snapshot">Resource snapshot</string>
+    <string name="resource_updated">Updated: %1$s</string>
     <string name="memory_pressure">Memory pressure: %1$s</string>
     <string name="thermal_status">Thermal status: %1$s</string>
     <string name="thermal_unsupported">Thermal status: unsupported on this Android version</string>

@@ -18,6 +18,7 @@ import com.phoenix.phnx.R
 import com.phoenix.phnx.identity.IdentityActivity
 
 class ProfilesActivity : AppCompatActivity() {
+    private val app by lazy { application as PhnxApplication }
     private val profileManager by lazy { (application as PhnxApplication).profileManager }
     private lateinit var profileList: LinearLayout
 
@@ -127,7 +128,14 @@ class ProfilesActivity : AppCompatActivity() {
             .setView(input)
             .setNegativeButton(android.R.string.cancel, null)
             .setPositiveButton(R.string.create) { _, _ ->
-                profileManager.createProfile(input.text.toString())
+                val created = profileManager.createProfile(input.text.toString())
+                val selectablePresets = app.deviceProfileManager.getAvailablePresets()
+                    .filterNot { it.id == com.phoenix.phnx.identity.DevicePresets.SYSTEM_DEFAULT }
+                if (selectablePresets.isNotEmpty()) {
+                    val profileIndex = profileManager.getAllProfiles().indexOfFirst { it.id == created.id }
+                    val preset = selectablePresets[profileIndex.coerceAtLeast(0) % selectablePresets.size]
+                    app.deviceProfileManager.applyPreset(created.id, preset.id)
+                }
                 refreshProfiles()
             }
             .show()

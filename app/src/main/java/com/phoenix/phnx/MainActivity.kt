@@ -84,6 +84,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private lateinit var addressBar: EditText
     private lateinit var progressBar: ProgressBar
     private lateinit var tabCount: TextView
+    private lateinit var bookmarkButton: TextView
     private lateinit var refreshLayout: SwipeRefreshLayout
     private var errorView: View? = null
     private var desktopSiteEnabled = false
@@ -231,6 +232,11 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         reconcileResources()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        clearHistoryOnClose()
+        super.onTaskRemoved(rootIntent)
+    }
+
     private fun saveCurrentProfileSession() {
         if (!::browserContainer.isInitialized) return
         saveProfileSession(profileManager.activeProfile().id)
@@ -287,6 +293,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         toolbar.addView(addressBar, LinearLayout.LayoutParams(0, dp(48), 1f))
 
+        bookmarkButton = toolbarButton("☆", "Bookmark current page")
+        bookmarkButton.setOnClickListener { toggleCurrentBookmark() }
+        toolbar.addView(bookmarkButton)
         val menuButton = toolbarButton("⋮", "Browser menu")
         menuButton.setOnClickListener { BrowserMenu.show(menuButton, this) }
         toolbar.addView(menuButton)
@@ -609,6 +618,11 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         if (tabManager.currentTab()?.id == tab.id) {
             if (addressBar.text.toString() != tab.url && !addressBar.hasFocus()) addressBar.setText(tab.url)
             progressBar.visibility = if (tab.isLoading) View.VISIBLE else View.GONE
+            if (::bookmarkButton.isInitialized) {
+                val isBookmarked = app.bookmarkManager.getForProfile(tab.profileId).any { it.url == tab.url }
+                bookmarkButton.text = if (isBookmarked) "★" else "☆"
+                bookmarkButton.contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark current page"
+            }
         }
         tab.canGoBack = view.canGoBack()
         tab.canGoForward = view.canGoForward()
@@ -733,6 +747,23 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         })
     }
 
+    private fun toggleCurrentBookmark() {
+        val tab = tabManager.currentTab() ?: return
+        if (!tab.url.startsWith("http://") && !tab.url.startsWith("https://")) {
+            Toast.makeText(this, "Open a web page before bookmarking it.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val existing = app.bookmarkManager.getForProfile(tab.profileId).firstOrNull { it.url == tab.url }
+        if (existing == null) {
+            app.bookmarkManager.add(tab.profileId, tab.title, tab.url)
+            Toast.makeText(this, "Bookmark saved", Toast.LENGTH_SHORT).show()
+        } else {
+            app.bookmarkManager.delete(tab.profileId, existing.id)
+            Toast.makeText(this, "Bookmark removed", Toast.LENGTH_SHORT).show()
+        }
+        updateTabChrome(tab, currentBrowserView() ?: return)
+    }
+
     override fun onHistory() = startActivity(Intent(this, HistoryActivity::class.java))
 
     override fun onDownloads() = startActivity(Intent(this, DownloadsActivity::class.java))
@@ -822,8 +853,15 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     override fun onDestroy() {
+        if (isFinishing) clearHistoryOnClose()
         browserController.clear()
         super.onDestroy()
+    }
+
+    private fun clearHistoryOnClose() {
+        if (PhnxPreferences.historyRetention(this) == PhnxPreferences.HISTORY_CLEAR_ON_CLOSE) {
+            app.historyManager.clearProfile(profileManager.activeProfile().id)
+        }
     }
 
     private fun reconcileResources() {

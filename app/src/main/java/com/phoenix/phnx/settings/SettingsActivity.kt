@@ -33,6 +33,7 @@ class SettingsActivity : AppCompatActivity() {
         addDataSaverSection(content)
         addPrivacySection(content)
         addSiteSettingsSection(content)
+        addHistorySection(content)
         addSection(content, "Downloads", "Downloads use Android's Downloads provider.")
         addSearchSection(content)
         addProfileSection(content)
@@ -79,6 +80,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addSiteSettingsSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.site_permissions), getString(R.string.site_permissions_summary))
         row.setOnClickListener { startActivity(Intent(this, PermissionActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addHistorySection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.history_retention), historyRetentionLabel())
+        row.setOnClickListener { showHistoryRetentionDialog() }
         parent.addView(row)
     }
 
@@ -163,10 +170,38 @@ class SettingsActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun showHistoryRetentionDialog() {
+        val labels = arrayOf(
+            getString(R.string.history_remember),
+            getString(R.string.history_clear_on_close),
+        )
+        val values = arrayOf(
+            PhnxPreferences.HISTORY_REMEMBER,
+            PhnxPreferences.HISTORY_CLEAR_ON_CLOSE,
+        )
+        val selected = values.indexOf(PhnxPreferences.historyRetention(this)).coerceAtLeast(0)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.history_retention)
+            .setSingleChoiceItems(labels, selected) { dialog, which ->
+                PhnxPreferences.store(this).edit()
+                    .putString(PhnxPreferences.HISTORY_RETENTION, values[which])
+                    .apply()
+                dialog.dismiss()
+                recreate()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun themeLabel(): String = when (PhnxPreferences.themeMode(this)) {
         PhnxPreferences.THEME_LIGHT -> getString(R.string.theme_light)
         PhnxPreferences.THEME_DARK -> getString(R.string.theme_dark)
         else -> getString(R.string.theme_system)
+    }
+
+    private fun historyRetentionLabel(): String = when (PhnxPreferences.historyRetention(this)) {
+        PhnxPreferences.HISTORY_CLEAR_ON_CLOSE -> getString(R.string.history_clear_on_close)
+        else -> getString(R.string.history_remember)
     }
 
     private fun addSection(parent: LinearLayout, title: String, summary: String) {

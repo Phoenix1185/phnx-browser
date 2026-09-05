@@ -1,6 +1,7 @@
 package com.phoenix.phnx.identity
 
 import android.webkit.WebView
+import kotlin.math.roundToInt
 
 enum class IdentityApplyStatus {
     SUPPORTED,
@@ -24,6 +25,8 @@ class WebViewIdentityAdapter : ChromiumIdentityAdapter {
         webView.settings.userAgentString = config.userAgent
         webView.settings.useWideViewPort = config.mobileMode
         webView.settings.loadWithOverviewMode = !config.mobileMode
+        val actualScale = webView.resources.displayMetrics.density.toDouble().coerceAtLeast(0.5)
+        webView.setInitialScale((config.deviceScaleFactor / actualScale * 100.0).roundToInt().coerceIn(50, 400))
         val runtimeCheck = runtimeChecker.check(webView, config)
         if (!runtimeCheck.matchesSupportedSettings) {
             return IdentityApplyResult(
@@ -33,7 +36,7 @@ class WebViewIdentityAdapter : ChromiumIdentityAdapter {
         }
         return IdentityApplyResult(
             status = IdentityApplyStatus.PARTIALLY_SUPPORTED,
-            message = "User-Agent and viewport preferences applied. Locale, timezone, client hints, and device scale factor are not exposed by Android WebView.",
+            message = "User-Agent and viewport preferences applied. Page scale is approximated; locale, timezone, and client hints are not exposed by Android WebView.",
         )
     }
 }

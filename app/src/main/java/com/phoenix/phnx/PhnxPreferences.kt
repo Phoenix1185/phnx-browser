@@ -11,6 +11,9 @@ object PhnxPreferences {
     const val THEME_SYSTEM = "system"
     const val THEME_LIGHT = "light"
     const val THEME_DARK = "dark"
+    const val HISTORY_RETENTION = "history_retention"
+    const val HISTORY_REMEMBER = "remember"
+    const val HISTORY_CLEAR_ON_CLOSE = "clear_on_close"
 
     fun store(context: Context) = context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
 
@@ -24,6 +27,9 @@ object PhnxPreferences {
         store(context).edit().putString(THEME_MODE, mode).apply()
         AppCompatDelegate.setDefaultNightMode(themeNightMode(mode))
     }
+
+    fun historyRetention(context: Context): String =
+        store(context).getString(HISTORY_RETENTION, HISTORY_REMEMBER) ?: HISTORY_REMEMBER
 
     private fun themeNightMode(mode: String): Int = when (mode) {
         THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO

@@ -1,5 +1,12 @@
 package com.phoenix.phnx.identity
 
+import android.content.Context
+import android.content.res.Configuration
+import android.os.Build
+import android.webkit.WebSettings
+import java.util.Locale
+import java.util.TimeZone
+
 data class DevicePreset(
     val id: String,
     val name: String,
@@ -43,6 +50,7 @@ data class DevicePreset(
 }
 
 object DevicePresets {
+    const val SYSTEM_DEFAULT = "system_default"
     const val ANDROID_PHONE = "android_phone"
     const val ANDROID_TABLET = "android_tablet"
     const val DESKTOP = "desktop"
@@ -115,4 +123,34 @@ object DevicePresets {
     fun get(id: String): DevicePreset? = presets.firstOrNull { it.id == id }
 
     fun default(): DevicePreset = presets.first()
+
+    fun systemDefault(context: Context): DevicePreset {
+        val metrics = context.resources.displayMetrics
+        val languageTags = context.resources.configuration.locales.toLanguageTags()
+            .ifBlank { Locale.getDefault().toLanguageTag() }
+            .split(',')
+            .filter(String::isNotBlank)
+        val primaryLanguage = languageTags.firstOrNull() ?: Locale.getDefault().toLanguageTag()
+        val isTouch = context.resources.configuration.touchscreen != Configuration.TOUCHSCREEN_NOTOUCH
+        return DevicePreset(
+            id = SYSTEM_DEFAULT,
+            name = "System Default",
+            operatingSystem = "Android ${Build.VERSION.RELEASE}",
+            platform = "Android",
+            userAgent = WebSettings.getDefaultUserAgent(context),
+            viewportWidth = (metrics.widthPixels / metrics.density).toInt().coerceAtLeast(1),
+            viewportHeight = (metrics.heightPixels / metrics.density).toInt().coerceAtLeast(1),
+            screenWidth = metrics.widthPixels.coerceAtLeast(1),
+            screenHeight = metrics.heightPixels.coerceAtLeast(1),
+            colorDepth = 24,
+            deviceScaleFactor = metrics.density.toDouble().coerceIn(0.5, 4.0),
+            locale = primaryLanguage,
+            language = primaryLanguage,
+            languages = languageTags,
+            timezone = TimeZone.getDefault().id,
+            touchSupport = isTouch,
+            mobileMode = isTouch,
+            clientHints = ClientHintsConfig("Android", isTouch, listOf("Chromium", "Google Chrome")),
+        )
+    }
 }
