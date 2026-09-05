@@ -32,4 +32,16 @@ class TabManagerTest {
         assertNull(manager.closeTab("missing"))
         assertFalse(manager.switchTab("missing"))
     }
+
+    @Test
+    fun tabsKeepTheirProfileOwnership() {
+        val manager = TabManager()
+        val phoenix = manager.createTab(profileId = "profile_phoenix")
+        val work = manager.createTab(profileId = "profile_work")
+
+        assertEquals(1, manager.getTabs("profile_phoenix").size)
+        assertEquals(phoenix.id, manager.getTabs("profile_phoenix").single().id)
+        assertTrue(manager.switchTab(work.id, profileId = "profile_work"))
+        assertFalse(manager.switchTab(phoenix.id, profileId = "profile_work"))
+    }
 }

@@ -53,6 +53,7 @@ import kotlin.math.abs
 class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val tabManager = TabManager()
     private val browserController by lazy { BrowserController(this) }
+    private val profileManager by lazy { (application as PhnxApplication).profileManager }
 
     private lateinit var browserContainer: FrameLayout
     private lateinit var addressBar: EditText
@@ -137,7 +138,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         setContentView(layout)
         applySystemBarInsets(layout)
 
-        tabManager.createTab()
+        tabManager.createTab(profileId = profileManager.activeProfile().id)
         attachCurrentTab()
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -469,7 +470,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 setOnClickListener {
                     browserController.remove(tab.id)
                     tabManager.closeTab(tab.id)
-                    if (tabManager.tabCount() == 0) tabManager.createTab()
+                    if (tabManager.tabCount() == 0) {
+                        tabManager.createTab(profileId = profileManager.activeProfile().id)
+                    }
                     dialog.dismiss()
                     attachCurrentTab()
                 }
@@ -497,12 +500,12 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     override fun onNewTab() {
-        tabManager.createTab()
+        tabManager.createTab(profileId = profileManager.activeProfile().id)
         attachCurrentTab()
     }
 
     override fun onNewPrivateTab() {
-        tabManager.createTab(isPrivate = true)
+        tabManager.createTab(profileId = profileManager.activeProfile().id, isPrivate = true)
         attachCurrentTab()
         Toast.makeText(this, "Private tab entry point opened; private isolation is planned for Phase 6.", Toast.LENGTH_LONG).show()
     }
