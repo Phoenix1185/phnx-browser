@@ -93,6 +93,7 @@ class NetworkActivity : AppCompatActivity() {
             setPadding(0, dp(8), 0, dp(16))
         })
         content.addView(warning(getString(R.string.proxy_public_warning)))
+        content.addView(warning(getString(R.string.proxy_webview_limit)))
 
         modeGroup = RadioGroup(this).apply {
             orientation = RadioGroup.VERTICAL

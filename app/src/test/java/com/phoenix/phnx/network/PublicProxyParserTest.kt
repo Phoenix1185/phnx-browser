@@ -57,4 +57,12 @@ class PublicProxyParserTest {
         assertEquals("US", proxies.single().countryCode)
         assertEquals("Proxifly", proxies.single().source)
     }
+
+    @Test
+    fun bundledSourcesAreHttpsAndCoverTheConfiguredPublicFeeds() {
+        val ids = ProxySources.default.map(ProxySource::id)
+
+        assertTrue(ids.containsAll(listOf("hproxy", "proxyscrape", "geonode", "proxifly", "iplocate_http", "iplocate_https", "iplocate_socks5")))
+        assertTrue(ProxySources.default.all { it.endpoint.startsWith("https://") })
+    }
 }

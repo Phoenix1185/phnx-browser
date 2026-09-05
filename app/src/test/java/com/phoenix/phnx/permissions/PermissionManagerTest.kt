@@ -30,4 +30,17 @@ class PermissionManagerTest {
 
         assertEquals(SitePermissionDecision.ASK, permission.decision)
     }
+
+    @Test
+    fun notificationDecisionUsesTheSameProfileScopedStore() {
+        val permission = SitePermissionEntity(
+            profileId = "profile_a",
+            origin = "https://example.com",
+            type = SitePermissionType.NOTIFICATIONS.name,
+            decision = SitePermissionDecision.BLOCK.name,
+        ).toDomain()
+
+        assertEquals(SitePermissionType.NOTIFICATIONS, permission.type)
+        assertEquals(SitePermissionDecision.BLOCK, permission.decision)
+    }
 }

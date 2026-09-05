@@ -83,7 +83,7 @@
     <string name="proxy_enabled">Use proxy</string>
     <string name="proxy_enabled_summary">Turn proxy routing on or off without deleting the saved endpoint.</string>
     <string name="proxy_free_fallback">Use free proxy fallbacks</string>
-    <string name="proxy_free_fallback_summary">Loads fresh public proxies from HProxy after saving. Use them after a primary route or as the free-only route when the primary host is blank.</string>
+    <string name="proxy_free_fallback_summary">Loads fresh public proxies from the bundled public feeds after saving. Use them after a primary route or as the free-only route when the primary host is blank.</string>
     <string name="proxy_direct_fallback">Allow direct fallback</string>
     <string name="proxy_direct_fallback_summary">If every proxy fails, allow a direct connection. This can expose your normal IP address.</string>
     <string name="proxy_fallback_loading">Loading free proxy fallbacks...</string>
@@ -91,6 +91,7 @@
     <string name="proxy_fallback_count">Loaded %1$d free proxy fallback routes.</string>
     <string name="proxy_auth_unsupported">WebView proxy override does not support proxy authentication.</string>
     <string name="proxy_public_warning">Free public proxies are operated by third parties. They may inspect, modify, or log traffic. Never use public proxies for passwords, payments, banking, or other sensitive information.</string>
+    <string name="proxy_webview_limit">Android WebView does not expose controls to guarantee DNS or WebRTC routing through a proxy. Proxy mode is best-effort; direct fallback is only used when explicitly enabled.</string>
     <string name="test_connection">Test connection</string>
     <string name="save_network">Save network</string>
     <string name="save_proxy">Save proxy</string>
@@ -119,11 +120,12 @@
     <string name="privacy_safe_browsing">Safe Browsing</string>
     <string name="privacy_safe_browsing_summary">Use Android WebView Safe Browsing when available.</string>
     <string name="privacy_do_not_track">Do Not Track</string>
-    <string name="privacy_do_not_track_summary">Expose navigator.doNotTrack = 1 to pages. Websites may ignore this preference.</string>
+    <string name="privacy_do_not_track_summary">Store a Do Not Track preference. Android WebView does not expose a supported page signal for it.</string>
     <string name="privacy_tracking_protection">Tracking protection</string>
-    <string name="privacy_support_note">Standard and Strict are stored as profile preferences. Android WebView applies the supported third-party-cookie control, while Do Not Track is exposed to pages as a best-effort page signal that websites may ignore.</string>
+    <string name="privacy_support_note">Standard and Strict are stored as profile preferences. Android WebView applies supported cookie controls, but full tracker blocking, Do Not Track, and website notifications are not exposed by the current WebView integration.</string>
     <string name="site_permissions">Site permissions</string>
-    <string name="site_permissions_summary">Review and reset camera, microphone, location, and other saved site decisions.</string>
+    <string name="site_permissions_summary">Review and reset camera, microphone, location, and other saved site decisions. Website notifications are not exposed by Android WebView.</string>
+    <string name="site_notifications_unsupported">Website notifications are not exposed by Android System WebView, so PHNX cannot safely authorize them per site. PHNX requests Android notification permission only for app features such as download notifications.</string>
     <string name="reset_all_site_permissions">Reset all site permissions</string>
     <string name="reset_all_site_permissions_warning">This removes saved allow and block decisions for every site in the active profile.</string>
     <string name="no_site_permissions">No site permissions have been saved.</string>

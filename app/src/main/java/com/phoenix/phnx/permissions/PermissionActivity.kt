@@ -37,6 +37,12 @@ class PermissionActivity : AppCompatActivity() {
             setTextColor(getColor(R.color.phnx_muted))
             setPadding(0, dp(8), 0, dp(16))
         })
+        content.addView(TextView(this).apply {
+            text = getString(R.string.site_notifications_unsupported)
+            textSize = 13f
+            setTextColor(getColor(R.color.phnx_muted))
+            setPadding(0, 0, 0, dp(12))
+        })
         content.addView(Button(this).apply {
             text = getString(R.string.reset_all_site_permissions)
             setOnClickListener { confirmResetAll() }

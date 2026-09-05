@@ -35,6 +35,7 @@ class ProxyEndpointTest {
             latencyMs = 142,
             lastCheckedAt = 1234L,
             health = ProxyHealthStatus.HEALTHY,
+            source = "Geonode public feed",
         )
 
         assertEquals(endpoint, ProxyEndpointCodec.decode(ProxyEndpointCodec.encode(listOf(endpoint))).single())
