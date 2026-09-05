@@ -160,7 +160,15 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     ) { granted ->
         val download = pendingDownload
         pendingDownload = null
-        if (granted && download != null) enqueueDownload(download)
+        if (granted && download != null) enqueueDownloadAfterPermissions(download)
+    }
+
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) {
+        val download = pendingDownload
+        pendingDownload = null
+        if (download != null) enqueueDownload(download)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -606,7 +614,18 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             pendingDownload = request
             downloadPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         } else {
-            enqueueDownload(request)
+            enqueueDownloadAfterPermissions(request)
+        }
+    }
+
+    private fun enqueueDownloadAfterPermissions(download: PendingDownload) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            pendingDownload = download
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            enqueueDownload(download)
         }
     }
 

@@ -16,7 +16,7 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Phase 3: WebView proxy override is process-wide; DNS and WebRTC policy are not modeled or verified.
 - Phase 4: custom identity fields and real locale/timezone/client-hint control are unsupported. The app now reports those limits instead of injecting fingerprint overrides.
 - Phase 5: lifecycle/resource policy is prototype-level; crash recovery, crash-loop protection, and persisted runtime recovery state are missing.
-- Phase 6: notification permission flow, actual tracking protection, browser security-state indicators, download security, and fully profile-scoped clear-data coverage remain incomplete.
+- Phase 6: actual tracking protection, browser security-state indicators, download security, and fully profile-scoped clear-data coverage remain incomplete.
 - Phase 7: download pause/resume/progress/share, find-next/previous/count, profile/site-persisted page controls, profile-aware shortcuts, and full settings organization remain incomplete.
 - Phase 8: Room managers use main-thread queries; lazy startup, performance snapshots/configuration, startup profiling, bounded stress tests, database optimization, and crash recovery are not production-ready.
 - Phase 9: release signing, tagged release workflow, migration/instrumentation upgrade tests, network-security hardening, legal package generation, rollback documentation, and repository security controls remain.
