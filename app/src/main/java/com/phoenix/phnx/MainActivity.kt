@@ -52,6 +52,8 @@ import com.phoenix.phnx.browser.NavigationController
 import com.phoenix.phnx.downloads.DownloadsActivity
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
+import com.phoenix.phnx.network.NetworkApplyStatus
+import com.phoenix.phnx.network.WebViewNetworkAdapter
 import com.phoenix.phnx.permissions.SitePermissionDecision
 import com.phoenix.phnx.permissions.SitePermission
 import com.phoenix.phnx.permissions.SitePermissionType
@@ -85,6 +87,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var dataSaverEnabled = false
     private var activityVisible = false
     private var attachedTabId: String? = null
+    private var appliedNetworkConfigHash: Int? = null
 
     private val swipeDetector by lazy {
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -164,6 +167,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         applySystemBarInsets(layout)
 
         val activeProfileId = profileManager.activeProfile().id
+        appliedNetworkConfigHash = app.networkManager.getConfig(activeProfileId).hashCode()
         val savedTabs = profileManager.loadTabSessions(activeProfileId)
         if (savedTabs.isEmpty()) {
             tabManager.createTab(profileId = activeProfileId)
@@ -199,6 +203,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             dataSaverEnabled = savedDataSaver
             browserController.forEachView(::applyBrowserModes)
             currentBrowserView()?.reload()
+        }
+        val networkConfig = app.networkManager.getConfig(profileManager.activeProfile().id)
+        if (networkConfig.hashCode() != appliedNetworkConfigHash) {
+            val apply = app.networkManager.applyConfig(networkConfig.profileId, WebViewNetworkAdapter())
+            appliedNetworkConfigHash = networkConfig.hashCode()
+            if (apply.status == NetworkApplyStatus.APPLIED) currentBrowserView()?.reload()
+            else Toast.makeText(this, apply.message, Toast.LENGTH_LONG).show()
         }
         reconcileResources()
         attachCurrentTab()

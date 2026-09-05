@@ -14,6 +14,7 @@ import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import com.phoenix.phnx.PhnxApplication
 import com.phoenix.phnx.R
 import java.util.concurrent.ExecutorService
@@ -25,6 +26,9 @@ class NetworkActivity : AppCompatActivity() {
 
     private lateinit var modeGroup: RadioGroup
     private lateinit var proxyRadio: RadioButton
+    private lateinit var proxyEnabled: SwitchCompat
+    private lateinit var freeProxyFallback: SwitchCompat
+    private lateinit var directFallback: SwitchCompat
     private lateinit var proxyType: Spinner
     private lateinit var host: EditText
     private lateinit var port: EditText
@@ -92,6 +96,31 @@ class NetworkActivity : AppCompatActivity() {
         modeGroup.setOnCheckedChangeListener { _, _ -> updateProxyFields() }
         content.addView(modeGroup)
 
+        proxyEnabled = toggle(
+            getString(R.string.proxy_enabled),
+            getString(R.string.proxy_enabled_summary),
+        )
+        proxyEnabled.setOnCheckedChangeListener { _, _ -> updateProxyFields() }
+        content.addView(proxyEnabled)
+
+        freeProxyFallback = toggle(
+            getString(R.string.proxy_free_fallback),
+            getString(R.string.proxy_free_fallback_summary),
+        )
+        content.addView(freeProxyFallback)
+
+        directFallback = toggle(
+            getString(R.string.proxy_direct_fallback),
+            getString(R.string.proxy_direct_fallback_summary),
+        )
+        content.addView(directFallback)
+        content.addView(TextView(this).apply {
+            text = getString(R.string.proxy_public_warning)
+            textSize = 13f
+            setTextColor(getColor(R.color.phnx_muted))
+            setPadding(0, 0, 0, dp(12))
+        })
+
         proxyType = Spinner(this).apply {
             adapter = ArrayAdapter(
                 this@NetworkActivity,
@@ -149,6 +178,9 @@ class NetworkActivity : AppCompatActivity() {
         val config = app.networkManager.getConfig(profileId)
         loadedConfig = config
         modeGroup.check(if (config.mode == NetworkMode.PROXY) proxyRadio.id else modeGroup.getChildAt(0).id)
+        proxyEnabled.isChecked = config.mode == NetworkMode.PROXY && config.enabled
+        freeProxyFallback.isChecked = config.fallbackToFreeProxy
+        directFallback.isChecked = config.fallbackToDirect
         config.proxyType?.let { proxyType.setSelection(ProxyType.values().indexOf(it)) }
         host.setText(config.proxyHost)
         port.setText(config.proxyPort.takeIf { it > 0 }?.toString().orEmpty())
@@ -174,8 +206,8 @@ class NetworkActivity : AppCompatActivity() {
             } else {
                 getString(R.string.proxy_password_saved)
             }
-            val apply = app.networkManager.applyConfig(profileId, WebViewNetworkAdapter())
-            result.text = "Saved. ${apply.message}"
+            result.text = getString(R.string.proxy_fallback_loading)
+            applyNetworkAsync(config, "Saved.")
         }.onFailure { error ->
             result.text = error.message ?: "Could not save network configuration."
         }
@@ -188,10 +220,18 @@ class NetworkActivity : AppCompatActivity() {
             loadedConfig = config
             result.text = "Testing connection..."
             connectionExecutor.execute {
+                val fallbacks = if (config.fallbackToFreeProxy && config.enabled) {
+                    app.networkManager.fetchFreeProxyFallbacks()
+                } else {
+                    emptyList()
+                }
+                val appliedConfig = config.copy(freeProxyFallbacks = fallbacks)
+                app.networkManager.saveConfig(appliedConfig)
                 val test = app.networkManager.testConfig(profileId)
                 val apply = app.networkManager.applyConfig(profileId, WebViewNetworkAdapter())
                 runOnUiThread {
-                    result.text = "Test: ${test.state.name.lowercase()} ${test.message}\nApply: ${apply.message}"
+                    result.text = "Test: ${test.state.name.lowercase()} ${test.message}\n" +
+                        "Fallbacks: ${fallbacks.size}\nApply: ${apply.message}"
                 }
             }
         }.onFailure { error ->
@@ -218,7 +258,10 @@ class NetworkActivity : AppCompatActivity() {
             proxyPort = if (mode == NetworkMode.PROXY) port.text.toString().toIntOrNull() ?: 0 else 0,
             username = if (mode == NetworkMode.PROXY) currentUsername else "",
             credentialReference = provisionalReference,
-            enabled = true,
+            enabled = mode == NetworkMode.DIRECT || proxyEnabled.isChecked,
+            fallbackToFreeProxy = mode == NetworkMode.PROXY && freeProxyFallback.isChecked,
+            fallbackToDirect = mode == NetworkMode.PROXY && directFallback.isChecked,
+            freeProxyFallbacks = existing.freeProxyFallbacks,
         )
         val errors = NetworkConfigValidator.validate(provisional)
         require(errors.isEmpty()) { errors.joinToString(" ") }
@@ -232,11 +275,40 @@ class NetworkActivity : AppCompatActivity() {
 
     private fun updateProxyFields() {
         val enabled = proxyRadio.isChecked
-        proxyType.isEnabled = enabled
-        host.isEnabled = enabled
-        port.isEnabled = enabled
-        username.isEnabled = enabled
-        password.isEnabled = enabled
+        proxyEnabled.isEnabled = enabled
+        val routeEnabled = enabled && proxyEnabled.isChecked
+        freeProxyFallback.isEnabled = routeEnabled
+        directFallback.isEnabled = routeEnabled
+        proxyType.isEnabled = routeEnabled
+        host.isEnabled = routeEnabled
+        port.isEnabled = routeEnabled
+        username.isEnabled = routeEnabled
+        password.isEnabled = routeEnabled
+    }
+
+    private fun applyNetworkAsync(config: ProfileNetworkConfig, prefix: String) {
+        connectionExecutor.execute {
+            val fallbacks = if (config.fallbackToFreeProxy && config.enabled) {
+                app.networkManager.fetchFreeProxyFallbacks()
+            } else {
+                emptyList()
+            }
+            val appliedConfig = config.copy(freeProxyFallbacks = fallbacks)
+            app.networkManager.saveConfig(appliedConfig)
+            loadedConfig = appliedConfig
+            val apply = app.networkManager.applyConfig(profileId, WebViewNetworkAdapter())
+            runOnUiThread {
+                result.text = buildString {
+                    append(prefix).append(' ').append(apply.message)
+                    if (config.fallbackToFreeProxy) {
+                        append('\n').append(
+                            if (fallbacks.isEmpty()) getString(R.string.proxy_fallback_none)
+                            else getString(R.string.proxy_fallback_count, fallbacks.size),
+                        )
+                    }
+                }
+            }
+        }
     }
 
     private fun field(hintText: String, type: Int) = EditText(this).apply {
@@ -244,6 +316,13 @@ class NetworkActivity : AppCompatActivity() {
         inputType = type
         isSingleLine = true
         setPadding(0, dp(8), 0, dp(8))
+    }
+
+    private fun toggle(title: String, summary: String): SwitchCompat = SwitchCompat(this).apply {
+        text = "$title\n$summary"
+        textSize = 16f
+        setTextColor(getColor(R.color.phnx_text))
+        setPadding(0, dp(10), 0, dp(10))
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

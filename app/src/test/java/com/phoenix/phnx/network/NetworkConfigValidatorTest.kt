@@ -1,6 +1,7 @@
 package com.phoenix.phnx.network
 
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class NetworkConfigValidatorTest {
@@ -35,5 +36,17 @@ class NetworkConfigValidatorTest {
         )
 
         assertTrue(NetworkConfigValidator.validate(config).any { it.contains("credentials") })
+    }
+
+    @Test
+    fun disabledProxyCanBeSavedBeforeItsEndpointIsConfigured() {
+        val config = ProfileNetworkConfig(
+            id = "network_a",
+            profileId = "profile_a",
+            mode = NetworkMode.PROXY,
+            enabled = false,
+        )
+
+        assertFalse(NetworkConfigValidator.validate(config).isNotEmpty())
     }
 }

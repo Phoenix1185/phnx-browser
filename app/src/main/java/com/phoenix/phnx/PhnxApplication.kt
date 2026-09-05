@@ -8,6 +8,7 @@ import com.phoenix.phnx.history.HistoryManager
 import com.phoenix.phnx.identity.DeviceProfileManager
 import com.phoenix.phnx.downloads.DownloadManager
 import com.phoenix.phnx.network.NetworkManager
+import com.phoenix.phnx.network.WebViewNetworkAdapter
 import com.phoenix.phnx.permissions.PermissionManager
 import com.phoenix.phnx.profiles.ProfileManager
 import com.phoenix.phnx.privacy.ClearDataManager
@@ -68,5 +69,6 @@ class PhnxApplication : Application() {
             lifecycleAdapter = profileViewPool::apply,
         )
         WebView.setDataDirectorySuffix(activeProfile.id)
+        networkManager.applyConfig(activeProfile.id, WebViewNetworkAdapter())
     }
 }

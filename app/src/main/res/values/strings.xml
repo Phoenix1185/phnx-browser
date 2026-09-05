@@ -59,6 +59,17 @@
     <string name="proxy_username">Username (optional)</string>
     <string name="proxy_password">Password (optional)</string>
     <string name="proxy_password_saved">Password saved; leave blank to keep it</string>
+    <string name="proxy_enabled">Use proxy</string>
+    <string name="proxy_enabled_summary">Turn proxy routing on or off without deleting the saved endpoint.</string>
+    <string name="proxy_free_fallback">Use free proxy fallbacks</string>
+    <string name="proxy_free_fallback_summary">Loads fresh public proxies from HProxy and adds them after the primary route. Public proxies are untrusted; do not use them for sensitive accounts.</string>
+    <string name="proxy_direct_fallback">Allow direct fallback</string>
+    <string name="proxy_direct_fallback_summary">If every proxy fails, allow a direct connection. This can expose your normal IP address.</string>
+    <string name="proxy_fallback_loading">Loading free proxy fallbacks...</string>
+    <string name="proxy_fallback_none">No free proxy fallback was available; the primary route remains active.</string>
+    <string name="proxy_fallback_count">Loaded %1$d free proxy fallback routes.</string>
+    <string name="proxy_auth_unsupported">WebView proxy override does not support proxy authentication.</string>
+    <string name="proxy_public_warning">Free public proxies can inspect or modify traffic. Use HTTPS and never enter passwords, payment details, or private data while using them.</string>
     <string name="test_connection">Test connection</string>
     <string name="save_network">Save network</string>
     <string name="identity">Device &amp; Browser</string>

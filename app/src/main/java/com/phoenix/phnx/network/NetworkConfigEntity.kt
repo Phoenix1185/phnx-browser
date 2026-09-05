@@ -14,6 +14,9 @@ data class NetworkConfigEntity(
     val username: String,
     val credentialReference: String?,
     val enabled: Boolean,
+    val fallbackToFreeProxy: Boolean,
+    val fallbackToDirect: Boolean,
+    val freeProxyFallbacks: String,
 )
 
 fun NetworkConfigEntity.toDomain(): ProfileNetworkConfig = ProfileNetworkConfig(
@@ -26,6 +29,9 @@ fun NetworkConfigEntity.toDomain(): ProfileNetworkConfig = ProfileNetworkConfig(
     username = username,
     credentialReference = credentialReference,
     enabled = enabled,
+    fallbackToFreeProxy = fallbackToFreeProxy,
+    fallbackToDirect = fallbackToDirect,
+    freeProxyFallbacks = ProxyEndpointCodec.decode(freeProxyFallbacks),
 )
 
 fun ProfileNetworkConfig.toEntity() = NetworkConfigEntity(
@@ -38,4 +44,7 @@ fun ProfileNetworkConfig.toEntity() = NetworkConfigEntity(
     username = username,
     credentialReference = credentialReference,
     enabled = enabled,
+    fallbackToFreeProxy = fallbackToFreeProxy,
+    fallbackToDirect = fallbackToDirect,
+    freeProxyFallbacks = ProxyEndpointCodec.encode(freeProxyFallbacks),
 )

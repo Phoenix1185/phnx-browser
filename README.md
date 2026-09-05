@@ -20,6 +20,7 @@ Phase 1 now has a buildable native Kotlin Android shell in `app/`. It includes:
 - GitHub Actions builds for tests, debug/release APKs, and the release AAB.
 - Profile metadata, profile-owned tab sessions, and a disposable per-profile WebView pool. Profile switching preserves Android WebView data-directory isolation by restarting the process.
 - Profile-scoped network configuration persistence, secure proxy credentials, connection testing, and connectivity monitoring.
+- WebView proxy override with an explicit on/off switch, profile-persisted proxy routes, optional HProxy free-public-proxy fallbacks, and an opt-in direct fallback that is clearly warned as an IP exposure.
 - Profile-scoped identity presets, consistency validation, persistence, and a WebView capability-reporting editor.
 - Resource-pressure policy, profile-priority scheduling, Android memory/battery/thermal snapshots, and a real per-profile view lifecycle (`ACTIVE` → `IDLE` → `FROZEN` → `SUSPENDED` → `RECREATING` → `ACTIVE`). CPU monitoring remains unsupported by the current Android integration.
 - Phase 6 privacy settings persisted per profile for JavaScript, third-party cookies, pop-ups, Safe Browsing, and stored tracking preferences; unsupported Do Not Track and full tracker blocking are reported honestly.
@@ -28,7 +29,7 @@ Phase 1 now has a buildable native Kotlin Android shell in `app/`. It includes:
 - Profile-aware history and bookmarks are persisted, private visits are excluded from history, private tabs are not restored into saved sessions, and both are available from the browser menu.
 - Address-bar searches use a selectable Google, Bing, or DuckDuckGo engine while direct URL detection remains unchanged.
 
-The browser engine is isolated behind `BrowserController`, `ProfileViewPool`, and `BrowserView`; the current adapter uses the Android system's Chromium-backed WebView runtime. A separately embeddable Chromium distribution is not committed to this repository. Android WebView does not expose the per-profile proxy routing required by the Phase 3 blueprint, so proxy configuration is persisted, testable, and reported as unsupported at application time rather than silently claimed as applied. Profile session metadata survives view destruction and recreation; private tabs currently provide session/history hygiene but not a separate WebView cookie partition, and later blueprint phases still require further implementation and testing.
+The browser engine is isolated behind `BrowserController`, `ProfileViewPool`, and `BrowserView`; the current adapter uses the Android system's Chromium-backed WebView runtime. A separately embeddable Chromium distribution is not committed to this repository. AndroidX WebKit proxy override applies to all WebViews in the app process, so PHNX applies the active profile's route and restarts the process when switching profile data directories rather than claiming simultaneous per-profile proxy partitions. Public fallback proxies are untrusted and must not be used for credentials, payments, or private data. Profile session metadata survives view destruction and recreation; private tabs currently provide session/history hygiene but not a separate WebView cookie partition, and later blueprint phases still require further implementation and testing.
 
 ## Development rule
 

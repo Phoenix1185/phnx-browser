@@ -8,11 +8,12 @@ class NetworkManager(context: Context) {
         context.applicationContext,
         NetworkDatabase::class.java,
         "network_configs.db",
-    ).allowMainThreadQueries().build()
+    ).addMigrations(NetworkDatabase.MIGRATION_1_2).allowMainThreadQueries().build()
     private val dao = database.configDao()
     private val credentials = SecureCredentialStore(context)
     private val monitor = NetworkMonitor(context)
     private val connectionTester = ConnectionTester(credentials::getCredential)
+    private val freeProxyProvider = FreeProxyProvider()
 
     fun getConfig(profileId: String): ProfileNetworkConfig {
         return dao.getForProfile(profileId)?.toDomain() ?: directConfig(profileId).also { dao.upsert(it.toEntity()) }
@@ -40,6 +41,9 @@ class NetworkManager(context: Context) {
 
     fun applyConfig(profileId: String, adapter: ChromiumNetworkAdapter): NetworkApplyResult =
         adapter.apply(getConfig(profileId))
+
+    fun fetchFreeProxyFallbacks(limit: Int = FreeProxyProvider.DEFAULT_LIMIT): List<ProxyEndpoint> =
+        freeProxyProvider.fetch(limit)
 
     fun observeConnection(listener: NetworkStateListener): NetworkState =
         monitor.observeConnection(listener)
