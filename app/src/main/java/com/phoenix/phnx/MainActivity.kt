@@ -232,11 +232,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         reconcileResources()
     }
 
-    override fun onTaskRemoved(rootIntent: Intent?) {
-        clearHistoryOnClose()
-        super.onTaskRemoved(rootIntent)
-    }
-
     private fun saveCurrentProfileSession() {
         if (!::browserContainer.isInitialized) return
         saveProfileSession(profileManager.activeProfile().id)
