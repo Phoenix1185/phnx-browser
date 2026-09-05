@@ -69,10 +69,12 @@ class NetworkMonitor(context: Context) {
     }
 
     private fun currentState(): NetworkState {
-        val capabilities = connectivityManager
-            .getNetworkCapabilities(connectivityManager.activeNetwork)
-            ?: return NetworkState.DISCONNECTED
-        return stateFor(capabilities)
+        return runCatching {
+            val capabilities = connectivityManager
+                .getNetworkCapabilities(connectivityManager.activeNetwork)
+                ?: return@runCatching NetworkState.DISCONNECTED
+            stateFor(capabilities)
+        }.getOrDefault(NetworkState.DISCONNECTED)
     }
 
     private fun stateFor(capabilities: NetworkCapabilities): NetworkState =
