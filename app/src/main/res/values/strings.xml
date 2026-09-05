@@ -72,4 +72,9 @@
     <string name="privacy_do_not_track_summary">Not exposed by the current Android WebView integration.</string>
     <string name="privacy_tracking_protection">Tracking protection</string>
     <string name="privacy_support_note">Standard and Strict are stored as profile preferences. Android WebView applies the supported third-party-cookie control but does not expose a complete tracker-blocking engine or Do Not Track.</string>
+    <string name="site_permissions">Site permissions</string>
+    <string name="site_permissions_summary">Review and reset camera, microphone, location, and other saved site decisions.</string>
+    <string name="reset_all_site_permissions">Reset all site permissions</string>
+    <string name="reset_all_site_permissions_warning">This removes saved allow and block decisions for every site in the active profile.</string>
+    <string name="no_site_permissions">No site permissions have been saved.</string>
 </resources>

@@ -28,6 +28,9 @@
             android:name=".privacy.PrivacyActivity"
             android:exported="false" />
         <activity
+            android:name=".permissions.PermissionActivity"
+            android:exported="false" />
+        <activity
             android:name=".identity.IdentityActivity"
             android:exported="false" />
         <activity

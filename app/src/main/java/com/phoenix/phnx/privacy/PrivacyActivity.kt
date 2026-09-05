@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import com.phoenix.phnx.PhnxApplication
 import com.phoenix.phnx.R
+import com.phoenix.phnx.permissions.PermissionActivity
 
 class PrivacyActivity : AppCompatActivity() {
     private val app by lazy { application as PhnxApplication }
@@ -51,6 +52,9 @@ class PrivacyActivity : AppCompatActivity() {
             save()
         }
         addSwitch(content, getString(R.string.privacy_do_not_track), getString(R.string.privacy_do_not_track_summary), settings.doNotTrack, enabled = false) {}
+        content.addView(optionRow(getString(R.string.site_permissions), getString(R.string.site_permissions_summary)).apply {
+            setOnClickListener { startActivity(android.content.Intent(this@PrivacyActivity, PermissionActivity::class.java)) }
+        })
         addTrackingProtection(content)
         content.addView(TextView(this).apply {
             text = getString(R.string.privacy_support_note)
