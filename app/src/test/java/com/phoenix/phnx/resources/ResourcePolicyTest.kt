@@ -28,6 +28,16 @@ class ResourcePolicyTest {
     }
 
     @Test
+    fun managerCanEvaluateUsingSnapshotProvider() {
+        val profile = profile("background", foreground = false, state = ProfileLifecycleState.IDLE)
+        val decision = ResourceManager(
+            snapshotProvider = { ResourceSnapshot(memoryPressure = MemoryPressure.CRITICAL) },
+        ).evaluate(listOf(profile)).single()
+
+        assertEquals(ProfileLifecycleState.SUSPENDED, decision.to)
+    }
+
+    @Test
     fun schedulerSelectsLowestPriorityProfileFirst() {
         val foreground = profile("foreground", foreground = true, state = ProfileLifecycleState.ACTIVE)
         val pinned = profile("pinned", pinned = true, state = ProfileLifecycleState.IDLE)
