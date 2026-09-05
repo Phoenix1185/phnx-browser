@@ -50,9 +50,15 @@ jobs:
       - name: Stage artifacts
         run: |
           mkdir -p artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk artifacts/PHNX-debug.apk
-          cp app/build/outputs/apk/release/app-release-unsigned.apk artifacts/PHNX-release.apk
-          cp app/build/outputs/bundle/release/app-release.aab artifacts/PHNX-release.aab
+          VERSION_NAME=$(python3 -c "import re; print(re.search(r'versionName = (.+)', open('app/build.gradle.kts').read()).group(1).strip().strip(chr(34)))")
+          VERSION_CODE=$(python3 -c "import re; print(re.search(r'versionCode = (\\d+)', open('app/build.gradle.kts').read()).group(1))")
+          AAPT="$ANDROID_HOME/build-tools/35.0.1/aapt"
+          test "$($AAPT dump badging app/build/outputs/apk/debug/app-debug.apk | python3 -c "import re,sys; print(re.search(r\"name='([^']+)'\", sys.stdin.read()).group(1))")" = "com.phoenix.phnx.debug"
+          test "$($AAPT dump badging app/build/outputs/apk/release/app-release-unsigned.apk | python3 -c "import re,sys; print(re.search(r\"name='([^']+)'\", sys.stdin.read()).group(1))")" = "com.phoenix.phnx"
+          cp app/build/outputs/apk/debug/app-debug.apk "artifacts/phnx-browser-${VERSION_NAME}-debug.apk"
+          cp app/build/outputs/apk/release/app-release-unsigned.apk "artifacts/phnx-browser-${VERSION_NAME}-release-unsigned.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "artifacts/phnx-browser-${VERSION_NAME}-release-unsigned.aab"
+          printf 'applicationId=com.phoenix.phnx\nversionName=%s\nversionCode=%s\nreleaseSigning=unsigned\n' "$VERSION_NAME" "$VERSION_CODE" > artifacts/build-metadata.txt
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
