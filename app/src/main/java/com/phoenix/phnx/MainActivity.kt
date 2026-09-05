@@ -576,7 +576,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     private fun navigateFromAddressBar() {
         val tab = tabManager.currentTab() ?: return
-        val destination = NavigationController.resolveInput(addressBar.text.toString())
+        val destination = NavigationController.resolveInput(
+            addressBar.text.toString(),
+            app.searchEngineManager.current().searchUrl,
+        )
         tab.url = destination
         tab.title = destination
         tab.isLoading = true

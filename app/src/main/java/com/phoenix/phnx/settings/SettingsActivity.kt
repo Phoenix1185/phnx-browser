@@ -14,6 +14,7 @@ import com.phoenix.phnx.R
 import com.phoenix.phnx.network.NetworkActivity
 import com.phoenix.phnx.privacy.PrivacyActivity
 import com.phoenix.phnx.profiles.ProfilesActivity
+import com.phoenix.phnx.search.SearchEngineActivity
 
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,7 +32,7 @@ class SettingsActivity : AppCompatActivity() {
         addPrivacySection(content)
         addSection(content, "Site Settings", "JavaScript is enabled by default for modern websites. Per-site controls are planned.")
         addSection(content, "Downloads", "Downloads use Android's Downloads provider.")
-        addSection(content, "Language and Search", "The default search engine is Google. Search-engine selection is planned.")
+        addSearchSection(content)
         addProfileSection(content)
         addNetworkSection(content)
         addSection(content, "Performance", "Automatic resource lifecycle management is active; the advanced dashboard is still planned.")
@@ -64,6 +65,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addPrivacySection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.privacy_security), getString(R.string.privacy_security_summary))
         row.setOnClickListener { startActivity(Intent(this, PrivacyActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addSearchSection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.search_engine), getString(R.string.search_engine_summary))
+        row.setOnClickListener { startActivity(Intent(this, SearchEngineActivity::class.java)) }
         parent.addView(row)
     }
 

@@ -13,6 +13,7 @@ import com.phoenix.phnx.privacy.ClearDataManager
 import com.phoenix.phnx.privacy.PrivacyManager
 import com.phoenix.phnx.resources.AndroidResourceMonitor
 import com.phoenix.phnx.resources.ResourceManager
+import com.phoenix.phnx.search.SearchEngineManager
 
 class PhnxApplication : Application() {
     lateinit var profileManager: ProfileManager
@@ -37,6 +38,8 @@ class PhnxApplication : Application() {
         private set
     lateinit var bookmarkManager: BookmarkManager
         private set
+    lateinit var searchEngineManager: SearchEngineManager
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -51,6 +54,7 @@ class PhnxApplication : Application() {
         clearDataManager = ClearDataManager(this)
         historyManager = HistoryManager(this)
         bookmarkManager = BookmarkManager(this)
+        searchEngineManager = SearchEngineManager(this)
         deviceProfileManager = DeviceProfileManager(this)
         deviceProfileManager.getProfileConfiguration(activeProfile.id)
         resourceMonitor = AndroidResourceMonitor(this)
