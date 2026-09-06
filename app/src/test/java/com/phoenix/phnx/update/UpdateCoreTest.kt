@@ -44,6 +44,21 @@ class UpdateCoreTest {
     }
 
     @Test
+    fun verifiesSignedArtifactChecksumAndRejectsChangedBytes() {
+        val keyPair = KeyPairGenerator.getInstance("EC").apply { initialize(256) }.generateKeyPair()
+        val payload = "signed PHNX artifact".toByteArray()
+        val checksum = "4991d3e8df8e3262600232a5d20e9b25f50b660abce1bd88e31f15f21c7b1764"
+        val signer = Signature.getInstance("SHA256withECDSA").apply {
+            initSign(keyPair.private)
+            update(payload)
+        }
+        val signature = Base64.getEncoder().encodeToString(signer.sign())
+
+        assertTrue(ArtifactVerifier.verify(ByteArrayInputStream(payload), checksum, signature, keyPair.public))
+        assertFalse(ArtifactVerifier.verify(ByteArrayInputStream("changed".toByteArray()), checksum, signature, keyPair.public))
+    }
+
+    @Test
     fun parsesEncodedEcPublicKey() {
         val keyPair = KeyPairGenerator.getInstance("EC").apply { initialize(256) }.generateKeyPair()
         val encoded = Base64.getEncoder().encodeToString(keyPair.public.encoded)

@@ -14,14 +14,17 @@ import com.phoenix.phnx.profiles.ProfileStatus
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class PerformanceActivity : AppCompatActivity() {
     private val app by lazy { application as PhnxApplication }
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val refreshHandler = Handler(Looper.getMainLooper())
     private val refreshTask = object : Runnable {
         override fun run() {
             if (!isFinishing) {
-                refresh()
+                refreshAsync()
                 refreshHandler.postDelayed(this, 1000L)
             }
         }
@@ -40,7 +43,7 @@ class PerformanceActivity : AppCompatActivity() {
             setBackgroundColor(getColor(R.color.phnx_cream))
             addView(content)
         })
-        refresh()
+        refreshAsync()
     }
 
     override fun onStart() {
@@ -53,30 +56,38 @@ class PerformanceActivity : AppCompatActivity() {
         super.onStop()
     }
 
-    private fun refresh() {
-        val profiles = app.profileManager.getAllProfiles()
-        val activeProfileId = app.profileManager.activeProfile().id
-        val states = profiles.map { profile ->
-            ProfileResourceState(
-                profileId = profile.id,
-                lifecycleState = profile.status.toLifecycleState(),
-                lastActiveTime = profile.lastUsedAt,
-                activeTabCount = if (profile.id == activeProfileId) 1 else 0,
-                foreground = profile.id == activeProfileId,
-                userPinned = false,
-            )
-        }
-        app.resourceManager.evaluate(states).forEach { decision ->
-            val status = when (decision.to) {
-                ProfileLifecycleState.ACTIVE -> ProfileStatus.ACTIVE
-                ProfileLifecycleState.IDLE -> ProfileStatus.IDLE
-                ProfileLifecycleState.FROZEN -> ProfileStatus.FROZEN
-                ProfileLifecycleState.SUSPENDED -> ProfileStatus.SUSPENDED
-                ProfileLifecycleState.RECREATING -> ProfileStatus.RECREATING
-                ProfileLifecycleState.CLOSED -> ProfileStatus.CLOSED
+    override fun onDestroy() {
+        executor.shutdownNow()
+        super.onDestroy()
+    }
+
+    private fun refreshAsync() {
+        executor.execute {
+            val profiles = app.profileManager.getAllProfiles()
+            val activeProfileId = app.profileManager.activeProfile().id
+            val states = profiles.map { profile ->
+                ProfileResourceState(
+                    profileId = profile.id,
+                    lifecycleState = profile.status.toLifecycleState(),
+                    lastActiveTime = profile.lastUsedAt,
+                    activeTabCount = if (profile.id == activeProfileId) 1 else 0,
+                    foreground = profile.id == activeProfileId,
+                    userPinned = false,
+                )
             }
-            app.profileManager.updateStatus(decision.profileId, status)
+            val decisions = app.resourceManager.evaluate(states)
+            decisions.forEach { decision ->
+                app.profileManager.updateStatus(decision.profileId, decision.to.toProfileStatus())
+            }
+            val snapshot = app.resourceMonitor.currentSnapshot()
+            val profileStatuses = app.profileManager.getAllProfiles().map { it.name to it.status }
+            runOnUiThread {
+                if (!isFinishing) renderSnapshot(snapshot, profileStatuses)
+            }
         }
+    }
+
+    private fun renderSnapshot(snapshot: ResourceSnapshot, profileStatuses: List<Pair<String, ProfileStatus>>) {
         content.removeAllViews()
         content.addView(TextView(this).apply {
             text = getString(R.string.resource_snapshot)
@@ -89,7 +100,6 @@ class PerformanceActivity : AppCompatActivity() {
         })
         content.addView(metric(getString(R.string.resource_updated, DateFormat.getTimeInstance().format(Date()))))
 
-        val snapshot = app.resourceMonitor.currentSnapshot()
         content.addView(metric(getString(R.string.memory_pressure, snapshot.memoryPressure)))
         content.addView(metric(
             if (snapshot.thermalSupported) {
@@ -110,9 +120,18 @@ class PerformanceActivity : AppCompatActivity() {
             setTextColor(getColor(R.color.phnx_blue))
             setPadding(0, dp(24), 0, dp(6))
         })
-        app.profileManager.getAllProfiles().forEach { profile ->
-            content.addView(metric(getString(R.string.profile_state, profile.name, profile.status)))
+        profileStatuses.forEach { (name, status) ->
+            content.addView(metric(getString(R.string.profile_state, name, status)))
         }
+    }
+
+    private fun ProfileLifecycleState.toProfileStatus(): ProfileStatus = when (this) {
+        ProfileLifecycleState.ACTIVE -> ProfileStatus.ACTIVE
+        ProfileLifecycleState.IDLE -> ProfileStatus.IDLE
+        ProfileLifecycleState.FROZEN -> ProfileStatus.FROZEN
+        ProfileLifecycleState.SUSPENDED -> ProfileStatus.SUSPENDED
+        ProfileLifecycleState.RECREATING -> ProfileStatus.RECREATING
+        ProfileLifecycleState.CLOSED -> ProfileStatus.CLOSED
     }
 
     private fun ProfileStatus.toLifecycleState(): ProfileLifecycleState = when (this) {

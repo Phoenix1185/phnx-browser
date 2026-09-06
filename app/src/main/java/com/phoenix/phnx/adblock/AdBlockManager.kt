@@ -1,6 +1,8 @@
 package com.phoenix.phnx.adblock
 
 import android.content.Context
+import com.phoenix.phnx.update.ChecksumVerifier
+import java.io.ByteArrayInputStream
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
@@ -8,6 +10,7 @@ class AdBlockManager(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
     private val ruleEngine = AdBlockRuleEngine()
     private val counters = ConcurrentHashMap<String, Counters>()
+    private val rulesCache = ConcurrentHashMap<String, List<AdBlockRule>>()
 
     fun getSettings(profileId: String): AdBlockSettings = AdBlockSettings(
         profileId = profileId,
@@ -29,9 +32,9 @@ class AdBlockManager(context: Context) {
     }
 
     fun evaluate(profileId: String, url: String, firstPartyUrl: String): BlockDecision {
-        val profileCounters = counters.getOrPut(profileId) { Counters() }
+        val profileCounters = counters.getOrPut(profileId) { Counters(readStats(profileId)) }
         profileCounters.evaluatedRequests.incrementAndGet()
-        val decision = ruleEngine.evaluate(url, firstPartyUrl, getSettings(profileId))
+        val decision = ruleEngine.evaluate(url, firstPartyUrl, getSettings(profileId), getRules(profileId))
         if (decision.blocked) {
             profileCounters.blockedRequests.incrementAndGet()
             when (decision.category) {
@@ -41,8 +44,20 @@ class AdBlockManager(context: Context) {
                 null -> Unit
             }
         }
+        if (profileCounters.evaluatedRequests.get() % PERSIST_STATS_EVERY == 0L) persistStats(profileId, profileCounters.snapshot())
         return decision
     }
+
+    fun installRuleset(profileId: String, payload: String, expectedSha256: String): Boolean {
+        if (!ChecksumVerifier.verify(ByteArrayInputStream(payload.toByteArray()), expectedSha256)) return false
+        val rules = AdBlockFilterParser.parse(payload)
+        if (rules.isEmpty()) return false
+        preferences.edit().putString(key(profileId, RULESET), payload).apply()
+        rulesCache[profileId] = rules
+        return true
+    }
+
+    fun rulesetRuleCount(profileId: String): Int = getRules(profileId).size
 
     fun addSiteException(profileId: String, host: String): Boolean {
         val canonicalHost = ruleEngine.canonicalHost(host) ?: return false
@@ -56,29 +71,58 @@ class AdBlockManager(context: Context) {
         saveSettings(settings.copy(siteExceptions = settings.siteExceptions - host.lowercase().trim('.')))
     }
 
-    fun stats(profileId: String): BlockedRequestStats = BlockedRequestStats(
-        evaluatedRequests = counters[profileId]?.evaluatedRequests?.get() ?: 0,
-        blockedRequests = counters[profileId]?.blockedRequests?.get() ?: 0,
-        blockedAds = counters[profileId]?.blockedAds?.get() ?: 0,
-        blockedTrackers = counters[profileId]?.blockedTrackers?.get() ?: 0,
-        blockedMaliciousAds = counters[profileId]?.blockedMaliciousAds?.get() ?: 0,
-    )
+    fun stats(profileId: String): BlockedRequestStats {
+        val stats = counters[profileId]?.snapshot() ?: readStats(profileId)
+        persistStats(profileId, stats)
+        return stats
+    }
 
     fun clearProfile(profileId: String) {
         val editor = preferences.edit()
         KEYS.forEach { editor.remove(key(profileId, it)) }
         editor.apply()
         counters.remove(profileId)
+        rulesCache.remove(profileId)
     }
 
     private fun key(profileId: String, field: String): String = "$field:$profileId"
 
-    private class Counters {
-        val evaluatedRequests = AtomicLong()
-        val blockedRequests = AtomicLong()
-        val blockedAds = AtomicLong()
-        val blockedTrackers = AtomicLong()
-        val blockedMaliciousAds = AtomicLong()
+    private fun getRules(profileId: String): List<AdBlockRule> = rulesCache.getOrPut(profileId) {
+        AdBlockFilterParser.parse(preferences.getString(key(profileId, RULESET), "").orEmpty())
+    }
+
+    private fun readStats(profileId: String): BlockedRequestStats = BlockedRequestStats(
+        evaluatedRequests = preferences.getLong(key(profileId, EVALUATED), 0),
+        blockedRequests = preferences.getLong(key(profileId, BLOCKED), 0),
+        blockedAds = preferences.getLong(key(profileId, ADS), 0),
+        blockedTrackers = preferences.getLong(key(profileId, TRACKERS), 0),
+        blockedMaliciousAds = preferences.getLong(key(profileId, MALICIOUS_ADS), 0),
+    )
+
+    private fun persistStats(profileId: String, stats: BlockedRequestStats) {
+        preferences.edit()
+            .putLong(key(profileId, EVALUATED), stats.evaluatedRequests)
+            .putLong(key(profileId, BLOCKED), stats.blockedRequests)
+            .putLong(key(profileId, ADS), stats.blockedAds)
+            .putLong(key(profileId, TRACKERS), stats.blockedTrackers)
+            .putLong(key(profileId, MALICIOUS_ADS), stats.blockedMaliciousAds)
+            .apply()
+    }
+
+    private class Counters(initial: BlockedRequestStats) {
+        val evaluatedRequests = AtomicLong(initial.evaluatedRequests)
+        val blockedRequests = AtomicLong(initial.blockedRequests)
+        val blockedAds = AtomicLong(initial.blockedAds)
+        val blockedTrackers = AtomicLong(initial.blockedTrackers)
+        val blockedMaliciousAds = AtomicLong(initial.blockedMaliciousAds)
+
+        fun snapshot() = BlockedRequestStats(
+            evaluatedRequests = evaluatedRequests.get(),
+            blockedRequests = blockedRequests.get(),
+            blockedAds = blockedAds.get(),
+            blockedTrackers = blockedTrackers.get(),
+            blockedMaliciousAds = blockedMaliciousAds.get(),
+        )
     }
 
     private companion object {
@@ -88,12 +132,25 @@ class AdBlockManager(context: Context) {
         const val BLOCK_TRACKERS = "block_trackers"
         const val BLOCK_MALICIOUS_ADS = "block_malicious_ads"
         const val SITE_EXCEPTIONS = "site_exceptions"
+        const val RULESET = "ruleset"
+        const val EVALUATED = "evaluated"
+        const val BLOCKED = "blocked"
+        const val ADS = "ads"
+        const val TRACKERS = "trackers"
+        const val MALICIOUS_ADS = "malicious_ads"
+        const val PERSIST_STATS_EVERY = 25L
         val KEYS = setOf(
             ENABLED,
             BLOCK_ADS,
             BLOCK_TRACKERS,
             BLOCK_MALICIOUS_ADS,
             SITE_EXCEPTIONS,
+            RULESET,
+            EVALUATED,
+            BLOCKED,
+            ADS,
+            TRACKERS,
+            MALICIOUS_ADS,
         )
     }
 }

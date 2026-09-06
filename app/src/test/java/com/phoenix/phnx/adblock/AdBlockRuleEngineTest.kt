@@ -35,4 +35,39 @@ class AdBlockRuleEngineTest {
 
         assertFalse(engine.evaluate("https://notdoubleclick.net/ad.js", "https://site.example", settings).blocked)
     }
+
+    @Test
+    fun parsesFilterListsAndHonorsExceptions() {
+        val rules = AdBlockFilterParser.parse(
+            """
+            ! comment
+            ||ads.example.com^
+            @@||allowed.ads.example.com^
+            0.0.0.0 tracker.example.net
+            example.com##.ad
+            """.trimIndent(),
+        )
+
+        assertTrue(rules.contains(AdBlockRule("ads.example.com")))
+        assertTrue(rules.contains(AdBlockRule("allowed.ads.example.com", exception = true)))
+        assertTrue(rules.contains(AdBlockRule("tracker.example.net")))
+        assertFalse(rules.any { it.host == "example.com" })
+    }
+
+    @Test
+    fun customRulesBlockMatchingHostsButNotLookalikes() {
+        val settings = AdBlockSettings("profile")
+        val rules = listOf(AdBlockRule("ads.example.com"))
+
+        assertTrue(engine.evaluate("https://cdn.ads.example.com/script.js", "https://site.example", settings, rules).blocked)
+        assertFalse(engine.evaluate("https://ads.example.co/script.js", "https://site.example", settings, rules).blocked)
+        assertFalse(
+            engine.evaluate(
+                "https://cdn.ads.example.com/script.js",
+                "https://site.example",
+                settings,
+                rules + AdBlockRule("cdn.ads.example.com", exception = true),
+            ).blocked,
+        )
+    }
 }

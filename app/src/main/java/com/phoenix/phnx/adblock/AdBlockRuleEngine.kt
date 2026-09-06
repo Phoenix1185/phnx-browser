@@ -14,7 +14,12 @@ data class BlockDecision(
 )
 
 class AdBlockRuleEngine {
-    fun evaluate(url: String, firstPartyUrl: String, settings: AdBlockSettings): BlockDecision {
+    fun evaluate(
+        url: String,
+        firstPartyUrl: String,
+        settings: AdBlockSettings,
+        additionalRules: List<AdBlockRule> = emptyList(),
+    ): BlockDecision {
         if (!settings.enabled) return BlockDecision(blocked = false)
         val requestHost = host(url) ?: return BlockDecision(blocked = false)
         val firstPartyHost = host(firstPartyUrl)
@@ -22,10 +27,15 @@ class AdBlockRuleEngine {
             return BlockDecision(blocked = false)
         }
 
+        if (additionalRules.any { it.exception && matchesDomain(requestHost, it.host) }) {
+            return BlockDecision(blocked = false)
+        }
+
         val category = when {
             settings.blockMaliciousAds && matchesAny(requestHost, MALICIOUS_AD_DOMAINS) -> BlockCategory.MALICIOUS_AD
             settings.blockAds && matchesAny(requestHost, AD_DOMAINS) -> BlockCategory.AD
             settings.blockTrackers && matchesAny(requestHost, TRACKER_DOMAINS) -> BlockCategory.TRACKER
+            settings.blockAds && additionalRules.any { !it.exception && matchesDomain(requestHost, it.host) } -> BlockCategory.AD
             else -> null
         }
         return BlockDecision(blocked = category != null, category = category)
