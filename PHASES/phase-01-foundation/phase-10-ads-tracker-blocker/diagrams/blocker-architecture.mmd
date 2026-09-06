@@ -1,0 +1,22 @@
+flowchart TB
+    Settings[Privacy & Security settings] --> Manager[AdBlockManager]
+    Manager --> Config[Profile-scoped AdBlockSettings]
+    Manager --> Engine[AdBlockRuleEngine]
+    Manager --> Stats[BlockStatistics]
+    Manager --> Exceptions[SiteExceptionManager]
+    Adapter[ChromiumAdBlockAdapter] --> Manager
+    Engine --> Rules[Validated compiled rules]
+    Rules --> Match[URL • domain • resource • context]
+    Manager --> Privacy[PrivacyManager]
+    Privacy --> Tracking[TrackingProtectionManager]
+    Manager --> Resource[ResourceManager / PerformanceManager]
+    Adapter --> Chromium[Supported Chromium interception]
+
+    classDef ui fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef manager fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef control fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef platform fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class Settings ui
+    class Manager,Config,Engine,Stats,Exceptions,Adapter manager
+    class Rules,Match,Privacy,Tracking,Resource control
+    class Chromium platform

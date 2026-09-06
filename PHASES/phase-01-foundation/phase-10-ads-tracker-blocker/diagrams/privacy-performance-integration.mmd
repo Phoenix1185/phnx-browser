@@ -1,0 +1,17 @@
+flowchart TB
+    Privacy[PrivacyManager] --> Tracking[TrackingProtectionManager]
+    Privacy --> Blocker[AdBlockManager]
+    Network[Phase 3 network profile] --> Blocker
+    Resource[Phase 5 ResourceManager] --> Blocker
+    Performance[Phase 8 PerformanceManager] --> Blocker
+    Blocker --> Compiled[Compiled rules and cached decisions]
+    Compiled --> Efficient[Controlled RAM, CPU, and thermal use]
+    Blocker --> Browser[Phase 7 browser features]
+    Blocker --> Release[Phase 9 CI and release tests]
+
+    classDef phase fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef blocker fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:2px
+    classDef output fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Privacy,Tracking,Network,Resource,Performance,Browser,Release phase
+    class Blocker blocker
+    class Compiled,Efficient output

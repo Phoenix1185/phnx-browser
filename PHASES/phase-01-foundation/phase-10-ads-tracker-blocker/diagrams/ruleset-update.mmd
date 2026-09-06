@@ -1,0 +1,18 @@
+flowchart TB
+    Old[Working ruleset remains active] --> Download[Download new ruleset]
+    Download --> Validate[Validate format, size, integrity, parser safety]
+    Validate --> Valid{Valid and safe?}
+    Valid -->|Yes| Store[Store versioned ruleset]
+    Store --> Activate[Activate new ruleset]
+    Valid -->|No| Keep[Keep old ruleset]
+    Activate --> Offline[Local rules operate offline]
+    Keep --> Offline
+
+    classDef stable fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef action fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef decision fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef failure fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Old,Offline stable
+    class Download,Validate,Store,Activate action
+    class Valid decision
+    class Keep failure

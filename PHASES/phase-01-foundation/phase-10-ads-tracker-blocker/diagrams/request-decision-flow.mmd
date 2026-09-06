@@ -1,0 +1,22 @@
+flowchart TB
+    Request[Web request] --> Adapter[ChromiumAdBlockAdapter]
+    Adapter --> Manager[AdBlockManager]
+    Manager --> Exception{Site exception?}
+    Exception -->|Yes| Allow[ALLOW]
+    Exception -->|No| Engine[Rule engine]
+    Engine --> Match{Rule match?}
+    Match -->|No| Allow
+    Match -->|Yes| Type{Ads, tracker, or malicious ad?}
+    Type -->|Enabled policy| Block[BLOCK request]
+    Type -->|Disabled policy| Allow
+    Block --> Counter[Requests blocked counter]
+    Allow --> Continue[Request continues]
+
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef decision fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef block fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    classDef allow fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Request,Adapter,Manager,Engine input
+    class Exception,Match,Type decision
+    class Block,Counter block
+    class Allow,Continue allow

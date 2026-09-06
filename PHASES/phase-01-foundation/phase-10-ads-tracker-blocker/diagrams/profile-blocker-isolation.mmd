@@ -1,0 +1,15 @@
+flowchart LR
+    A[Profile A] --> AConfig[Blocker ON]
+    A --> AExceptions[Exceptions A]
+    A --> AStats[Statistics A]
+    B[Profile B] --> BConfig[Blocker OFF]
+    B --> BExceptions[Exceptions B]
+    B --> BStats[Statistics B]
+    AConfig -. isolated from .-> BConfig
+    AExceptions -. isolated from .-> BExceptions
+    AStats -. isolated from .-> BStats
+
+    classDef profile fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef data fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    class A,B profile
+    class AConfig,AExceptions,AStats,BConfig,BExceptions,BStats data
