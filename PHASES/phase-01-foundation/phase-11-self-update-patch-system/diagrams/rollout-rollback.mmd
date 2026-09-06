@@ -1,0 +1,24 @@
+flowchart TB
+    Release[Release version 1.1.0] --> Five[5% rollout]
+    Five --> Monitor1[Monitor failures and startup health]
+    Monitor1 --> Expand1{Healthy?}
+    Expand1 -->|Yes| TwentyFive[25% rollout]
+    Expand1 -->|No| Pause[Pause or disable release]
+    TwentyFive --> Monitor2[Monitor]
+    Monitor2 --> Expand2{Healthy?}
+    Expand2 -->|Yes| Fifty[50% rollout]
+    Expand2 -->|No| Pause
+    Fifty --> Hundred[100% rollout]
+    Compromised[Compromised or failed version] --> Recovery[Recovery / rollback path]
+    Pause --> Recovery
+    Recovery --> Previous[Previous working version]
+    Recovery --> Hotfix[Prepare and test hotfix]
+
+    classDef release fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef monitor fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef success fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef danger fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Release,Five,TwentyFive,Fifty,Hundred release
+    class Monitor1,Monitor2,Expand1,Expand2 monitor
+    class Previous,Hotfix success
+    class Pause,Compromised,Recovery danger

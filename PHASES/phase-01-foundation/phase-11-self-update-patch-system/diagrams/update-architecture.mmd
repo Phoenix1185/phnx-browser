@@ -1,0 +1,22 @@
+flowchart TB
+    GitHub[GitHub source and Actions] --> Build[Build, sign, generate metadata]
+    Build --> Server[Patch and release server]
+    Server --> Metadata[Signed metadata]
+    Server --> APK[Full APK]
+    Server --> Delta[Delta patches]
+    App[Installed PHNX] --> Checker[UpdateManager and checker]
+    Checker --> Metadata
+    Checker --> Download[DownloadManager]
+    Download --> Verify[VerificationEngine]
+    Verify --> Patch[Patch / install engine]
+    Patch --> Restart[Restart and startup validation]
+    Restart --> Updated[Updated PHNX]
+
+    classDef source fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef server fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef app fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef verify fill:#f3e8ff,stroke:#9333ea,color:#581c87,stroke-width:1.5px
+    class GitHub,Build source
+    class Server,Metadata,APK,Delta server
+    class App,Checker,Download,Restart,Updated app
+    class Verify,Patch verify

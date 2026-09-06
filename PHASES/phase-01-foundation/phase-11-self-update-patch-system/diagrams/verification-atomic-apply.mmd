@@ -1,0 +1,21 @@
+flowchart TB
+    Artifact[Downloaded artifact] --> Hash[SHA-256 verification]
+    Hash --> Signature[Cryptographic signature verification]
+    Signature --> Version[Version and package identity validation]
+    Version --> Valid{All checks pass?}
+    Valid -->|No| Reject[Reject and delete invalid artifact]
+    Valid -->|Yes| Workspace[Temporary patch workspace]
+    Workspace --> Apply[Apply patch or install APK]
+    Apply --> Startup[Startup validation]
+    Startup --> Success{New version starts correctly?}
+    Success -->|Yes| Commit[Commit new version]
+    Success -->|No| Rollback[Keep previous version / rollback]
+
+    classDef artifact fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef verify fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef safe fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef reject fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Artifact,Workspace,Apply,Startup artifact
+    class Hash,Signature,Version,Valid verify
+    class Commit safe
+    class Reject,Rollback reject

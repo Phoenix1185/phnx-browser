@@ -1,0 +1,22 @@
+flowchart TB
+    Available[Update available] --> Delta[Compatible delta patch available?]
+    Delta -->|Yes| DownloadDelta[Download delta]
+    Delta -->|No| DownloadFull[Download full APK]
+    DownloadDelta --> VerifyDelta[Verify hash, signature, base version]
+    VerifyDelta --> DeltaValid{Patch valid and applicable?}
+    DeltaValid -->|Yes| ApplyDelta[Apply delta in temporary workspace]
+    DeltaValid -->|No| DownloadFull
+    ApplyDelta --> Result{Application succeeds?}
+    Result -->|Yes| Restart[Restart into new version]
+    Result -->|No| DownloadFull
+    DownloadFull --> VerifyFull[Verify full APK]
+    VerifyFull --> Install[Install full APK]
+    Install --> Restart
+
+    classDef input fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef choice fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef safe fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    classDef fallback fill:#fee2e2,stroke:#dc2626,color:#7f1d1d,stroke-width:1.5px
+    class Available,DownloadDelta,VerifyDelta,ApplyDelta,Result,Restart input
+    class Delta,DeltaValid choice
+    class DownloadFull,VerifyFull,Install fallback
