@@ -7,10 +7,10 @@ object UpdateManifestParser {
 
     internal fun parseOrThrow(payload: String): UpdateManifest {
         val json = JSONObject(payload)
-        val channel = UpdateChannel.fromValue(json.getString("channel")) ?: return null
+        val channel = requireNotNull(UpdateChannel.fromValue(json.getString("channel"))) { "Unsupported update channel" }
         val updateType = runCatching {
             UpdateType.valueOf(json.getString("updateType").uppercase())
-        }.getOrNull() ?: return null
+        }.getOrNull() ?: error("Unsupported update type")
         val manifest = UpdateManifest(
             product = json.getString("product"),
             platform = json.getString("platform"),
