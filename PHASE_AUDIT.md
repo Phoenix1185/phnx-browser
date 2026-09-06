@@ -11,7 +11,7 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Profile scheduling now exposes explicit freeze, suspend, and close selection with lifecycle-aware eligibility and unit coverage.
 - A reviewable `legal/` package now documents the current privacy behavior, terms, dependency license families, and third-party services.
 - Phase 10 now has profile-scoped baseline ad/tracker request interception, site exceptions, and accurate in-process request statistics. It blocks intercepted WebView requests rather than claiming visual ad removal.
-- Phase 11 now has typed manifest validation, numeric version comparison, SHA-256 artifact verification, and ECDSA signature verification primitives; the existing UI remains discovery-only.
+- Phase 11 now has typed manifest validation, numeric version comparison, SHA-256 artifact verification, ECDSA signature verification, and an explicit guarded update state machine; the existing UI remains discovery-only.
 - Phase 12 now registers safe HTTP/HTTPS browser intents, validates external URLs, exposes Android browser-role status/requesting, and provides system settings links.
 - Phase 13 now has a responsive static website, official icon asset, accurate product/legal copy, and a GitHub Pages deployment workflow; the live Pages URL still requires repository Pages configuration and a successful deployment.
 - Release R8/resource shrinking is enabled and verified by the latest debug/release APK and AAB build.

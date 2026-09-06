@@ -52,6 +52,19 @@ class UpdateCoreTest {
         assertEquals(null, SignatureVerifier.parseEcPublicKey("not-base64"))
     }
 
+    @Test
+    fun enforcesSafeUpdateStateTransitions() {
+        assertEquals(UpdateState.CHECKING, UpdateStateMachine.transition(UpdateState.IDLE, UpdateState.CHECKING))
+        assertEquals(UpdateState.VERIFIED, UpdateStateMachine.transition(UpdateState.VERIFYING, UpdateState.VERIFIED))
+        assertTrue(UpdateStateMachine.canTransition(UpdateState.RESTARTING, UpdateState.ROLLBACK_REQUIRED))
+        assertFalse(UpdateStateMachine.canTransition(UpdateState.IDLE, UpdateState.APPLYING))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsUnsafeUpdateStateTransitions() {
+        UpdateStateMachine.transition(UpdateState.IDLE, UpdateState.APPLYING)
+    }
+
     private fun sampleManifest() = UpdateManifest(
         product = "phnx-browser",
         platform = "android",
