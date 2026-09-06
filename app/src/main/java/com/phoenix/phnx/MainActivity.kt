@@ -473,10 +473,11 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+                // WebView invokes this callback off the main thread; never read WebView state here.
                 val decision = adBlockManager.evaluate(
                     profileId = tab.profileId,
                     url = request.url.toString(),
-                    firstPartyUrl = view.url ?: tab.url,
+                    firstPartyUrl = tab.url,
                 )
                 if (!decision.blocked) return super.shouldInterceptRequest(view, request)
                 return WebResourceResponse(
@@ -1253,7 +1254,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val shortcut = ShortcutInfo.Builder(this, "page_${tab.profileId}_${tab.url.hashCode()}")
             .setShortLabel(label.take(25))
             .setLongLabel(label)
-            .setIcon(Icon.createWithResource(this, R.drawable.ic_launcher))
+            .setIcon(Icon.createWithResource(this, R.drawable.phnx_browser_icon))
             .setIntent(Intent(Intent.ACTION_VIEW, Uri.parse(tab.url)).apply {
                 setClass(this@MainActivity, MainActivity::class.java)
                 putExtra(EXTRA_PROFILE_ID, tab.profileId)
