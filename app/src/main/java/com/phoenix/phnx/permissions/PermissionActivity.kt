@@ -1,6 +1,9 @@
 package com.phoenix.phnx.permissions
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.widget.Button
@@ -42,6 +45,12 @@ class PermissionActivity : AppCompatActivity() {
             textSize = 13f
             setTextColor(getColor(R.color.phnx_muted))
             setPadding(0, 0, 0, dp(12))
+        })
+        content.addView(Button(this).apply {
+            text = getString(R.string.open_app_settings)
+            setOnClickListener {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$packageName")))
+            }
         })
         content.addView(Button(this).apply {
             text = getString(R.string.reset_all_site_permissions)

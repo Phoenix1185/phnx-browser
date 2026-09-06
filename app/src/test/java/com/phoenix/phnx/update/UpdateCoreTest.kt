@@ -71,21 +71,18 @@ class UpdateCoreTest {
 
     @Test
     fun validatesManifestShapeBeforeUse() {
-        val valid = """
-            {
-              "product":"phnx-browser",
-              "platform":"android",
-              "architecture":"arm64-v8a",
-              "channel":"stable",
-              "latestVersion":"1.1.0",
-              "latestVersionCode":2,
-              "minimumSupportedVersionCode":1,
-              "updateType":"full",
-              "mandatory":false,
-              "fullApkUrl":"https://example.com/phnx.apk",
-              "fullApkSha256":"${"a".repeat(64)}"
-            }
-        """.trimIndent()
+        val valid = "{" +
+            "\"product\":\"phnx-browser\"," +
+            "\"platform\":\"android\"," +
+            "\"architecture\":\"arm64-v8a\"," +
+            "\"channel\":\"stable\"," +
+            "\"latestVersion\":\"1.1.0\"," +
+            "\"latestVersionCode\":2," +
+            "\"minimumSupportedVersionCode\":1," +
+            "\"updateType\":\"full\"," +
+            "\"mandatory\":false," +
+            "\"fullApkUrl\":\"https://example.com/phnx.apk\"," +
+            "\"fullApkSha256\":\"${"a".repeat(64)}\"}"
 
         assertNotNull(UpdateManifestParser.parse(valid))
         assertNull(UpdateManifestParser.parse(valid.replace("\"minimumSupportedVersionCode\":1", "\"minimumSupportedVersionCode\":3")))
