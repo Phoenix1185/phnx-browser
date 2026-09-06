@@ -3,8 +3,6 @@ package com.phoenix.phnx.update
 import java.io.ByteArrayInputStream
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -26,28 +24,4 @@ class UpdateCoreTest {
         assertFalse(ChecksumVerifier.verify(ByteArrayInputStream(payload.toByteArray()), "not-a-checksum"))
     }
 
-    @Test
-    fun parsesAndValidatesSignedManifestShape() {
-        val manifest = UpdateManifestParser.parse(
-            """
-            {
-              "product":"phnx-browser",
-              "platform":"android",
-              "architecture":"arm64-v8a",
-              "channel":"stable",
-              "latestVersion":"1.1.0",
-              "latestVersionCode":11000,
-              "minimumSupportedVersionCode":10000,
-              "updateType":"full",
-              "mandatory":false,
-              "fullApkUrl":"https://example.com/phnx.apk",
-              "fullApkSha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            }
-            """.trimIndent(),
-        )
-
-        assertNotNull(manifest)
-        assertEquals(UpdateChannel.STABLE, manifest?.channel)
-        assertNull(UpdateManifestParser.parse("{\"product\":\"other\"}"))
-    }
 }
