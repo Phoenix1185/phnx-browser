@@ -96,7 +96,7 @@ class PerformanceActivity : AppCompatActivity() {
         })
         content.addView(Button(this).apply {
             text = getString(R.string.refresh)
-            setOnClickListener { refresh() }
+            setOnClickListener { refreshAsync() }
         })
         content.addView(metric(getString(R.string.resource_updated, DateFormat.getTimeInstance().format(Date()))))
 
