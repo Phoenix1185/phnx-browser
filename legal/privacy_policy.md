@@ -14,7 +14,7 @@ Private tabs are excluded from saved history and session restoration. Android Sy
 
 ## Information sent to other services
 
-PHNX does not operate an analytics or advertising service in this build. Browsing a website sends information to that website. The update checker reads public release metadata from GitHub. Free proxy mode reads public proxy candidates from HProxy. A public proxy may inspect, modify, or record traffic and is not suitable for passwords, payments, or confidential information.
+PHNX does not operate an analytics or advertising service in this build. Browsing a website sends information to that website. The update checker reads public release metadata from GitHub. Free proxy mode reads public proxy candidates from HProxy, ProxyScrape, Geonode, Proxifly, and IPLocate public feeds. These feeds are third-party services and may receive the device's network request metadata. A public proxy may inspect, modify, or record traffic and is not suitable for passwords, payments, or confidential information.
 
 ## Permissions
 

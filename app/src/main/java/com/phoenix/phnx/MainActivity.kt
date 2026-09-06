@@ -12,6 +12,7 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Message
 import android.os.Environment
 import android.os.Process
 import android.text.Editable
@@ -24,6 +25,7 @@ import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
 import android.webkit.URLUtil
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebChromeClient.CustomViewCallback
 import android.webkit.WebResourceError
@@ -152,6 +154,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
     private var pendingDownload: PendingDownload? = null
+    private var pendingFilePathCallback: ValueCallback<Array<Uri>>? = null
 
     private val webPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
@@ -189,6 +192,14 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val download = pendingDownload
         pendingDownload = null
         if (download != null) enqueueDownload(download)
+    }
+
+    private val fileChooserLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments(),
+    ) { uris ->
+        val callback = pendingFilePathCallback
+        pendingFilePathCallback = null
+        callback?.onReceiveValue(uris.toTypedArray().takeIf { it.isNotEmpty() })
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -267,6 +278,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (restartForShortcutProfile(intent)) return
         setIntent(intent)
         openIncomingPage(intent)
     }
@@ -569,6 +581,38 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             }
 
             override fun onHideCustomView() = hideCustomView()
+
+            override fun onCreateWindow(
+                view: WebView,
+                isDialog: Boolean,
+                isUserGesture: Boolean,
+                resultMsg: Message,
+            ): Boolean {
+                if (!isUserGesture) return false
+                val transport = resultMsg.obj as? WebView.WebViewTransport ?: return false
+                val popupTab = tabManager.createTab(profileId = tab.profileId)
+                val popupView = browserController.getOrCreate(popupTab)
+                configureWebView(popupView, popupTab)
+                transport.webView = popupView
+                resultMsg.sendToTarget()
+                attachCurrentTab()
+                return true
+            }
+
+            override fun onShowFileChooser(
+                webView: WebView,
+                filePathCallback: ValueCallback<Array<Uri>>,
+                fileChooserParams: FileChooserParams,
+            ): Boolean {
+                pendingFilePathCallback?.onReceiveValue(null)
+                pendingFilePathCallback = filePathCallback
+                val acceptTypes = fileChooserParams.acceptTypes
+                    .filter { it.isNotBlank() }
+                    .ifEmpty { listOf("*/*") }
+                    .toTypedArray()
+                fileChooserLauncher.launch(acceptTypes)
+                return true
+            }
 
             override fun onPermissionRequest(request: PermissionRequest) {
                 runOnUiThread { handleWebPermissionRequest(request, tab.profileId) }
