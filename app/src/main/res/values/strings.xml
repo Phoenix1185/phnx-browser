@@ -126,9 +126,9 @@
     <string name="privacy_ad_blocking">Block ads and trackers</string>
     <string name="privacy_ad_blocking_summary">Block supported advertising and tracking requests before WebView loads them.</string>
     <string name="privacy_block_ads">Advertising requests</string>
-    <string name="privacy_block_ads_summary">Use PHNX's built-in baseline advertising rules.</string>
+    <string name="privacy_block_ads_summary">Use the PHNX built-in baseline advertising rules.</string>
     <string name="privacy_block_trackers">Tracking requests</string>
-    <string name="privacy_block_trackers_summary">Use PHNX's built-in baseline tracker rules.</string>
+    <string name="privacy_block_trackers_summary">Use the PHNX built-in baseline tracker rules.</string>
     <string name="privacy_block_malicious_ads">Known malicious-ad requests</string>
     <string name="privacy_block_malicious_ads_summary">Keep the malicious-ad rule category enabled when rules are available.</string>
     <string name="privacy_site_exceptions">Site exceptions</string>
@@ -184,7 +184,7 @@
     <string name="performance">Performance</string>
     <string name="performance_summary">View resource pressure and profile lifecycle state.</string>
     <string name="default_browser">Default browser</string>
-    <string name="default_browser_summary">Choose whether PHNX handles web links through Android's browser role.</string>
+    <string name="default_browser_summary">Choose whether PHNX handles web links through the Android browser role.</string>
     <string name="default_browser_status_default">Status: PHNX is your default browser.</string>
     <string name="default_browser_status_not_default">Status: PHNX is not the default browser.</string>
     <string name="default_browser_status_unknown">Status: Android cannot report the browser role on this version.</string>
