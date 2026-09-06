@@ -11,7 +11,7 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Profile scheduling now exposes explicit freeze, suspend, and close selection with lifecycle-aware eligibility and unit coverage.
 - A reviewable `legal/` package now documents the current privacy behavior, terms, dependency license families, and third-party services.
 - Phase 10 now has profile-scoped baseline ad/tracker request interception, site exceptions, and accurate in-process request statistics. It blocks intercepted WebView requests rather than claiming visual ad removal.
-- Phase 11 now has typed manifest validation, numeric version comparison, and SHA-256 artifact verification primitives; the existing UI remains discovery-only.
+- Phase 11 now has typed manifest validation, numeric version comparison, SHA-256 artifact verification, and ECDSA signature verification primitives; the existing UI remains discovery-only.
 - Phase 12 now registers safe HTTP/HTTPS browser intents, validates external URLs, exposes Android browser-role status/requesting, and provides system settings links.
 - Phase 13 now has a responsive static website, official icon asset, accurate product/legal copy, and a GitHub Pages deployment workflow; the live Pages URL still requires repository Pages configuration and a successful deployment.
 - Release R8/resource shrinking is enabled and verified by the latest debug/release APK and AAB build.
@@ -28,7 +28,7 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Phase 8: Room managers use main-thread queries; lazy startup, performance snapshots/configuration, startup profiling, bounded stress tests, and database optimization are not production-ready.
 - Phase 9: release signing, tagged release workflow, migration/instrumentation upgrade tests, network-security hardening, exact generated license notices, rollback documentation, and repository security controls remain.
 - Phase 10: maintained filter-list ingestion, signed ruleset updates, malicious-ad coverage, richer resource-type/context matching, and long-term statistics persistence remain.
-- Phase 11: signed manifest keys, signature verification, delta/full-APK download fallback, atomic apply, rollback, staged rollout, and background policy remain.
+- Phase 11: production key embedding/rotation, delta/full-APK download fallback, atomic apply, rollback, staged rollout, and background policy remain; the verifier uses a deterministic canonical manifest payload but is not wired to a release key or installer yet.
 - Phase 12: browser-role and HTTP/HTTPS intent integration are implemented; external-profile routing, full Android permission-center controls, file-picker policy, and device validation remain.
 - Phase 13: the website source and deployment workflow are present; Pages activation, live-domain verification, generated release metadata, and the full documentation sitemap remain.
 

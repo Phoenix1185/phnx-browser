@@ -1,6 +1,9 @@
 package com.phoenix.phnx.update
 
 import java.io.ByteArrayInputStream
+import java.security.KeyPairGenerator
+import java.security.Signature
+import java.util.Base64
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -23,5 +26,44 @@ class UpdateCoreTest {
         assertTrue(ChecksumVerifier.verify(ByteArrayInputStream(payload.toByteArray()), checksum))
         assertFalse(ChecksumVerifier.verify(ByteArrayInputStream(payload.toByteArray()), "not-a-checksum"))
     }
+
+    @Test
+    fun verifiesSignedManifestAndRejectsTampering() {
+        val keyPair = KeyPairGenerator.getInstance("EC").apply { initialize(256) }.generateKeyPair()
+        val unsigned = sampleManifest()
+        val signer = Signature.getInstance("SHA256withECDSA").apply {
+            initSign(keyPair.private)
+            update(unsigned.canonicalPayload())
+        }
+        val signature = Base64.getEncoder().encodeToString(signer.sign())
+        val signed = unsigned.copy(signature = signature)
+
+        assertTrue(SignatureVerifier.verify(signed, keyPair.public))
+        assertFalse(SignatureVerifier.verify(signed.copy(latestVersionCode = 2), keyPair.public))
+        assertFalse(SignatureVerifier.verify(signed.copy(signature = "not-base64"), keyPair.public))
+    }
+
+    @Test
+    fun parsesEncodedEcPublicKey() {
+        val keyPair = KeyPairGenerator.getInstance("EC").apply { initialize(256) }.generateKeyPair()
+        val encoded = Base64.getEncoder().encodeToString(keyPair.public.encoded)
+
+        assertEquals(keyPair.public, SignatureVerifier.parseEcPublicKey(encoded))
+        assertEquals(null, SignatureVerifier.parseEcPublicKey("not-base64"))
+    }
+
+    private fun sampleManifest() = UpdateManifest(
+        product = "phnx-browser",
+        platform = "android",
+        architecture = "arm64-v8a",
+        channel = UpdateChannel.STABLE,
+        latestVersion = "1.1.0",
+        latestVersionCode = 1,
+        minimumSupportedVersionCode = 1,
+        updateType = UpdateType.FULL,
+        mandatory = false,
+        fullApkUrl = "https://example.com/phnx.apk",
+        fullApkSha256 = "a".repeat(64),
+    )
 
 }

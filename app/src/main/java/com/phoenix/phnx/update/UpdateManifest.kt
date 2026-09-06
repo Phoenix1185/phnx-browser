@@ -1,5 +1,7 @@
 package com.phoenix.phnx.update
 
+import java.nio.charset.StandardCharsets
+
 enum class UpdateChannel {
     STABLE,
     BETA,
@@ -33,4 +35,28 @@ data class UpdateManifest(
     val deltaUrl: String? = null,
     val deltaSha256: String? = null,
     val signature: String? = null,
-)
+) {
+    /** Stable, signature-independent representation of the manifest fields. */
+    fun canonicalPayload(): ByteArray = canonicalPayloadString().toByteArray(StandardCharsets.UTF_8)
+
+    private fun canonicalPayloadString(): String = listOf(
+        "product" to product,
+        "platform" to platform,
+        "architecture" to architecture,
+        "channel" to channel.name.lowercase(),
+        "latestVersion" to latestVersion,
+        "latestVersionCode" to latestVersionCode.toString(),
+        "minimumSupportedVersionCode" to minimumSupportedVersionCode.toString(),
+        "updateType" to updateType.name.lowercase(),
+        "mandatory" to mandatory.toString(),
+        "fullApkUrl" to fullApkUrl,
+        "fullApkSha256" to fullApkSha256,
+        "deltaUrl" to (deltaUrl ?: ""),
+        "deltaSha256" to (deltaSha256 ?: ""),
+    ).joinToString("\n") { (key, value) -> "$key=${escape(value)}" }
+
+    private fun escape(value: String): String = value
+        .replace("\\", "\\\\")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+}
