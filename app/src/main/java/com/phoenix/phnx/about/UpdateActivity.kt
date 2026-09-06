@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.phoenix.phnx.BuildConfig
 import com.phoenix.phnx.R
+import com.phoenix.phnx.update.VersionComparator
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -102,7 +103,7 @@ class UpdateActivity : AppCompatActivity() {
         val current = BuildConfig.VERSION_NAME.removeSuffix("-debug").removePrefix("v")
         val latest = release.tag.removePrefix("v")
         releaseButton.text = "Open official release page"
-        status.text = if (latest == current) {
+        status.text = if (!VersionComparator.isNewer(latest, current)) {
             "You are up to date (${release.name})."
         } else {
             "Latest published release: ${release.name}\nA different release is available for review."

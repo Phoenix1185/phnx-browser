@@ -11,6 +11,7 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Profile scheduling now exposes explicit freeze, suspend, and close selection with lifecycle-aware eligibility and unit coverage.
 - A reviewable `legal/` package now documents the current privacy behavior, terms, dependency license families, and third-party services.
 - Phase 10 now has profile-scoped baseline ad/tracker request interception, site exceptions, and accurate in-process request statistics. It blocks intercepted WebView requests rather than claiming visual ad removal.
+- Phase 11 now has typed manifest validation, numeric version comparison, and SHA-256 artifact verification primitives; the existing UI remains discovery-only.
 - Phase 12 now registers safe HTTP/HTTPS browser intents, validates external URLs, exposes Android browser-role status/requesting, and provides system settings links.
 - Release R8/resource shrinking is enabled and verified by the latest debug/release APK and AAB build.
 
@@ -26,8 +27,9 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Phase 8: Room managers use main-thread queries; lazy startup, performance snapshots/configuration, startup profiling, bounded stress tests, and database optimization are not production-ready.
 - Phase 9: release signing, tagged release workflow, migration/instrumentation upgrade tests, network-security hardening, exact generated license notices, rollback documentation, and repository security controls remain.
 - Phase 10: maintained filter-list ingestion, signed ruleset updates, malicious-ad coverage, richer resource-type/context matching, and long-term statistics persistence remain.
-- Phase 11: only the existing read-only GitHub release checker is implemented; signed manifests, artifact verification, delta/full-APK fallback, atomic apply, rollback, and staged rollout remain.
+- Phase 11: signed manifest keys, signature verification, delta/full-APK download fallback, atomic apply, rollback, staged rollout, and background policy remain.
 - Phase 12: browser-role and HTTP/HTTPS intent integration are implemented; external-profile routing, full Android permission-center controls, file-picker policy, and device validation remain.
+- Phase 13: the official website and GitHub Pages workflow are not built; the repository contains only the blueprint and branding asset.
 
 ## Policy Notes
 
