@@ -34,8 +34,12 @@ object UpdateManifestParser {
         require(manifest.architecture.isNotBlank())
         require(manifest.fullApkUrl.startsWith("https://"))
         require(SHA256_PATTERN.matches(manifest.fullApkSha256))
-        require(manifest.deltaUrl == null || manifest.deltaUrl.startsWith("https://"))
-        require(manifest.deltaSha256 == null || SHA256_PATTERN.matches(manifest.deltaSha256))
+        if (manifest.updateType == UpdateType.DELTA) {
+            require(manifest.deltaUrl?.startsWith("https://") == true)
+            require(manifest.deltaSha256?.let(SHA256_PATTERN::matches) == true)
+        } else {
+            require(manifest.deltaUrl == null && manifest.deltaSha256 == null)
+        }
         manifest
     }.getOrNull()
 

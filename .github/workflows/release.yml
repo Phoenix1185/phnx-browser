@@ -37,6 +37,14 @@ jobs:
           test -n "$PHNX_KEY_ALIAS" || { echo "PHNX_KEY_ALIAS is not configured" >&2; exit 1; }
           test -n "$PHNX_KEY_PASSWORD" || { echo "PHNX_KEY_PASSWORD is not configured" >&2; exit 1; }
 
+      - name: Require version-matched tag
+        run: |
+          VERSION_NAME=$(python3 -c "import re; print(re.search(r'versionName = (.+)', open('app/build.gradle.kts').read()).group(1).strip().strip(chr(34)))")
+          test "$RELEASE_TAG" = "v$VERSION_NAME" || {
+            echo "Release tag $RELEASE_TAG does not match app version $VERSION_NAME" >&2
+            exit 1
+          }
+
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:

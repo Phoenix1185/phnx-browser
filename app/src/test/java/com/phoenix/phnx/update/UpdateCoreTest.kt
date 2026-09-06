@@ -70,6 +70,34 @@ class UpdateCoreTest {
     }
 
     @Test
+    fun requiresDeltaMetadataOnlyForDeltaUpdates() {
+        val full = """
+            {
+              "product":"phnx-browser",
+              "platform":"android",
+              "architecture":"arm64-v8a",
+              "channel":"stable",
+              "latestVersion":"1.1.0",
+              "latestVersionCode":2,
+              "minimumSupportedVersionCode":1,
+              "updateType":"full",
+              "mandatory":false,
+              "fullApkUrl":"https://example.com/phnx.apk",
+              "fullApkSha256":"${"a".repeat(64)}"
+            }
+        """.trimIndent()
+        val deltaWithoutMetadata = full.replace("\"full\"", "\"delta\"")
+        val delta = deltaWithoutMetadata.replace(
+            "\"fullApkSha256\":\"${"a".repeat(64)}\"",
+            "\"fullApkSha256\":\"${"a".repeat(64)}\",\"deltaUrl\":\"https://example.com/phnx.patch\",\"deltaSha256\":\"${"b".repeat(64)}\"",
+        )
+
+        assertNotNull(UpdateManifestParser.parse(full))
+        assertEquals(null, UpdateManifestParser.parse(deltaWithoutMetadata))
+        assertNotNull(UpdateManifestParser.parse(delta))
+    }
+
+    @Test
     fun enforcesSafeUpdateStateTransitions() {
         assertEquals(UpdateState.CHECKING, UpdateStateMachine.transition(UpdateState.IDLE, UpdateState.CHECKING))
         assertEquals(UpdateState.VERIFIED, UpdateStateMachine.transition(UpdateState.VERIFYING, UpdateState.VERIFIED))
