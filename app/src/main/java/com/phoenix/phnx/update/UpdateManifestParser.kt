@@ -3,7 +3,9 @@ package com.phoenix.phnx.update
 import org.json.JSONObject
 
 object UpdateManifestParser {
-    fun parse(payload: String): UpdateManifest? = runCatching {
+    fun parse(payload: String): UpdateManifest? = runCatching { parseOrThrow(payload) }.getOrNull()
+
+    internal fun parseOrThrow(payload: String): UpdateManifest {
         val json = JSONObject(payload)
         val channel = UpdateChannel.fromValue(json.getString("channel")) ?: return null
         val updateType = runCatching {
@@ -36,8 +38,8 @@ object UpdateManifestParser {
         require(SHA256_PATTERN.matches(manifest.fullApkSha256))
         require(manifest.deltaUrl == null || manifest.deltaUrl.startsWith("https://"))
         require(manifest.deltaSha256 == null || SHA256_PATTERN.matches(manifest.deltaSha256))
-        manifest
-    }.getOrNull()
+        return manifest
+    }
 
     private const val PRODUCT = "phnx-browser"
     private const val PLATFORM = "android"

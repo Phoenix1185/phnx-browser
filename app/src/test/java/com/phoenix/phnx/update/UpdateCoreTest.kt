@@ -84,7 +84,7 @@ class UpdateCoreTest {
             "\"fullApkUrl\":\"https://example.com/phnx.apk\"," +
             "\"fullApkSha256\":\"${"a".repeat(64)}\"}"
 
-        assertNotNull(UpdateManifestParser.parse(valid))
+        assertNotNull(UpdateManifestParser.parseOrThrow(valid))
         assertNull(UpdateManifestParser.parse(valid.replace("\"minimumSupportedVersionCode\":1", "\"minimumSupportedVersionCode\":3")))
         assertNull(UpdateManifestParser.parse(valid.replace("https://example.com", "http://example.com")))
     }
