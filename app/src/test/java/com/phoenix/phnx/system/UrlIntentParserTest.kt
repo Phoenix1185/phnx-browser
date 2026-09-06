@@ -22,6 +22,6 @@ class UrlIntentParserTest {
 
     @Test
     fun ignoresNonViewIntents() {
-        assertNull(UrlIntentParser.parse(Intent(Intent.ACTION_SEND, Uri.parse("https://example.com"))))
+        assertNull(UrlIntentParser.parse(Intent(Intent.ACTION_SEND)))
     }
 }
