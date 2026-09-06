@@ -40,30 +40,8 @@ jobs:
           profile: pixel_2
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
-          script: |
-            set +e
-            mkdir -p "$GITHUB_WORKSPACE/instrumentation-diagnostics"
-            ready=1
-            for attempt in $(seq 1 60); do
-              if adb -s emulator-5554 shell cmd package list packages >/dev/null 2>&1 && \
-                adb -s emulator-5554 shell cmd activity get-config >/dev/null 2>&1; then
-                ready=0
-                break
-              fi
-              sleep 5
-            done
-            if [ "$ready" -ne 0 ]; then
-              echo "Android framework services did not become ready." >&2
-              adb -s emulator-5554 shell getprop > "$GITHUB_WORKSPACE/instrumentation-diagnostics/getprop.txt" 2>&1 || true
-              status=1
-            else
-              ./gradlew connectedDebugAndroidTest --stacktrace
-              status=$?
-            fi
-            adb -s emulator-5554 logcat -d -v threadtime > "$GITHUB_WORKSPACE/instrumentation-diagnostics/logcat.txt" || true
-            cp -R app/build/reports/androidTests "$GITHUB_WORKSPACE/instrumentation-diagnostics/reports" || true
-            cp -R app/build/outputs/androidTest-results "$GITHUB_WORKSPACE/instrumentation-diagnostics/results" || true
-            exit $status
+          script: >-
+            set +e; mkdir -p "$GITHUB_WORKSPACE/instrumentation-diagnostics"; ready=1; for attempt in $(seq 1 60); do if adb -s emulator-5554 shell cmd package list packages >/dev/null 2>&1 && adb -s emulator-5554 shell cmd activity get-config >/dev/null 2>&1; then ready=0; break; fi; sleep 5; done; if [ "$ready" -ne 0 ]; then echo "Android framework services did not become ready." >&2; adb -s emulator-5554 shell getprop > "$GITHUB_WORKSPACE/instrumentation-diagnostics/getprop.txt" 2>&1 || true; status=1; else ./gradlew connectedDebugAndroidTest --stacktrace; status=$?; fi; adb -s emulator-5554 logcat -d -v threadtime > "$GITHUB_WORKSPACE/instrumentation-diagnostics/logcat.txt" || true; cp -R app/build/reports/androidTests "$GITHUB_WORKSPACE/instrumentation-diagnostics/reports" || true; cp -R app/build/outputs/androidTest-results "$GITHUB_WORKSPACE/instrumentation-diagnostics/results" || true; exit $status
 
       - name: Upload instrumentation diagnostics
         if: always()
