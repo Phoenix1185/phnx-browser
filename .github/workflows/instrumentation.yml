@@ -29,12 +29,12 @@ jobs:
       - name: Install Android SDK packages
         run: |
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.1" "system-images;android-35;google_apis;x86_64"
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.1" "system-images;android-34;google_apis;x86_64"
 
       - name: Run connected instrumentation tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
           arch: x86_64
           target: google_apis
           profile: pixel_2
@@ -42,12 +42,27 @@ jobs:
           disable-animations: true
           script: |
             set +e
-            ./gradlew connectedDebugAndroidTest --stacktrace
-            status=$?
-            mkdir -p instrumentation-diagnostics
-            adb -s emulator-5554 logcat -d -v threadtime > instrumentation-diagnostics/logcat.txt || true
-            cp -R app/build/reports/androidTests instrumentation-diagnostics/reports || true
-            cp -R app/build/outputs/androidTest-results instrumentation-diagnostics/results || true
+            mkdir -p "$GITHUB_WORKSPACE/instrumentation-diagnostics"
+            ready=1
+            for attempt in $(seq 1 60); do
+              if adb -s emulator-5554 shell cmd package list packages >/dev/null 2>&1 && \
+                adb -s emulator-5554 shell cmd activity get-config >/dev/null 2>&1; then
+                ready=0
+                break
+              fi
+              sleep 5
+            done
+            if [ "$ready" -ne 0 ]; then
+              echo "Android framework services did not become ready." >&2
+              adb -s emulator-5554 shell getprop > "$GITHUB_WORKSPACE/instrumentation-diagnostics/getprop.txt" 2>&1 || true
+              status=1
+            else
+              ./gradlew connectedDebugAndroidTest --stacktrace
+              status=$?
+            fi
+            adb -s emulator-5554 logcat -d -v threadtime > "$GITHUB_WORKSPACE/instrumentation-diagnostics/logcat.txt" || true
+            cp -R app/build/reports/androidTests "$GITHUB_WORKSPACE/instrumentation-diagnostics/reports" || true
+            cp -R app/build/outputs/androidTest-results "$GITHUB_WORKSPACE/instrumentation-diagnostics/results" || true
             exit $status
 
       - name: Upload instrumentation diagnostics
@@ -55,5 +70,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: instrumentation-diagnostics-${{ github.sha }}
-          path: instrumentation-diagnostics
+          path: ${{ github.workspace }}/instrumentation-diagnostics
           if-no-files-found: ignore
