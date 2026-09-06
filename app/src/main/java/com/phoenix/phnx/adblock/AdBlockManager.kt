@@ -2,7 +2,9 @@ package com.phoenix.phnx.adblock
 
 import android.content.Context
 import com.phoenix.phnx.update.ChecksumVerifier
+import com.phoenix.phnx.update.ArtifactVerifier
 import java.io.ByteArrayInputStream
+import java.security.PublicKey
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
@@ -55,6 +57,22 @@ class AdBlockManager(context: Context) {
         preferences.edit().putString(key(profileId, RULESET), payload).apply()
         rulesCache[profileId] = rules
         return true
+    }
+
+    fun installSignedRuleset(
+        profileId: String,
+        payload: String,
+        expectedSha256: String,
+        encodedSignature: String,
+        publicKey: PublicKey,
+    ): Boolean {
+        val verified = ArtifactVerifier.verify(
+            input = ByteArrayInputStream(payload.toByteArray()),
+            expectedSha256 = expectedSha256,
+            encodedSignature = encodedSignature,
+            publicKey = publicKey,
+        )
+        return verified && installRuleset(profileId, payload, expectedSha256)
     }
 
     fun rulesetRuleCount(profileId: String): Int = getRules(profileId).size

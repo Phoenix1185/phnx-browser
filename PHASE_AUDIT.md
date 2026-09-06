@@ -10,10 +10,10 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Recent work also added basic HTTPS/HTTP/certificate/Safe Browsing state indicators, download URL/type safety checks, dangerous-download confirmation, mixed-content blocking, and persisted crash-loop recovery state.
 - Profile scheduling now exposes explicit freeze, suspend, and close selection with lifecycle-aware eligibility and unit coverage.
 - A reviewable `legal/` package now documents the current privacy behavior, terms, dependency license families, and third-party services.
-- Phase 10 now has profile-scoped baseline ad/tracker request interception, site exceptions, and accurate in-process request statistics. It blocks intercepted WebView requests rather than claiming visual ad removal.
-- Phase 11 now has typed manifest validation, numeric version comparison, SHA-256 artifact verification, ECDSA signature verification, and an explicit guarded update state machine; the existing UI remains discovery-only.
-- Phase 12 now registers safe HTTP/HTTPS browser intents, validates external URLs, exposes Android browser-role status/requesting, and provides system settings links.
-- Phase 13 now has a responsive static website, official icon asset, accurate product/legal copy, and a GitHub Pages deployment workflow; the live Pages URL still requires repository Pages configuration and a successful deployment.
+- Phase 10 now has profile-scoped baseline ad/tracker request interception, ABP/hosts-style custom ruleset parsing with checksum and signed-artifact validation primitives, site exceptions, and persistent request statistics. It blocks intercepted WebView requests rather than claiming visual ad removal.
+- Phase 11 now has typed manifest validation, numeric version comparison, SHA-256 artifact verification, ECDSA manifest/artifact signature verification, and an explicit guarded update state machine; the existing UI remains discovery-only.
+- Phase 12 now registers safe HTTP/HTTPS browser intents, validates external URLs, exposes Android browser-role status/requesting, provides system settings links, routes user-gesture pop-ups into tabs, supports file selection, and honors profile IDs on shortcut intents.
+- Phase 13 now has a responsive structured website with Features, Download, Releases, Changelog, Documentation, Privacy, Security, About, and GitHub sections. The legacy GitHub Pages URL now redirects into it and has been verified live at `https://phoenix1185.github.io/phnx-browser/`.
 - Release R8/resource shrinking is enabled and verified by the latest debug/release APK and AAB build.
 
 ## Remaining Gaps
@@ -25,12 +25,12 @@ Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, 
 - Phase 5: lifecycle/resource policy is prototype-level; crash-loop recovery is implemented, but broader resource policy and production crash reporting remain.
 - Phase 6: actual tracking protection and fully profile-scoped clear-data coverage remain incomplete; security-state indicators and baseline download safety are implemented.
 - Phase 7: download pause/resume and full settings organization remain incomplete; find-in-page controls, profile/site page controls, profile-aware shortcuts, progress, and sharing are implemented.
-- Phase 8: Room managers use main-thread queries; lazy startup, performance snapshots/configuration, startup profiling, bounded stress tests, and database optimization are not production-ready.
-- Phase 9: release signing, tagged release workflow, migration/instrumentation upgrade tests, network-security hardening, exact generated license notices, rollback documentation, and repository security controls remain.
-- Phase 10: maintained filter-list ingestion, signed ruleset updates, malicious-ad coverage, richer resource-type/context matching, and long-term statistics persistence remain.
-- Phase 11: production key embedding/rotation, delta/full-APK download fallback, atomic apply, rollback, staged rollout, and background policy remain; the verifier uses a deterministic canonical manifest payload but is not wired to a release key or installer yet.
-- Phase 12: browser-role and HTTP/HTTPS intent integration are implemented; external-profile routing, full Android permission-center controls, file-picker policy, and device validation remain.
-- Phase 13: the website source and deployment workflow are present; Pages activation, live-domain verification, generated release metadata, and the full documentation sitemap remain.
+- Phase 8: Room managers still use main-thread-compatible synchronous APIs; performance diagnostics now move database and resource sampling off the UI thread, but lazy startup, startup profiling, bounded stress tests, and database optimization are not production-ready.
+- Phase 9: protected signing secrets are not configured, so the normal CI build remains unsigned; the repository now has a tag-based signed-release workflow, but migration/instrumentation upgrade tests, network-security hardening, exact generated license notices, rollback documentation, and repository security controls remain.
+- Phase 10: remote maintained-list scheduling, signed ruleset manifests, malicious-ad coverage, and richer resource-type/context matching remain.
+- Phase 11: production key embedding/rotation, delta/full-APK download fallback, atomic apply, rollback, staged rollout, and background policy remain; the verifier and state machine are not wired to a release key, download service, or installer yet.
+- Phase 12: browser-role, HTTP/HTTPS intent, user-gesture pop-up, and file-picker integration are implemented; external-profile routing, full Android permission-center controls, capture-mode policy, and device validation remain.
+- Phase 13: the live legacy Pages source is verified, while the optional Actions deployment remains gated until the repository is switched to Pages-from-Actions and `PAGES_ENABLED=true`; generated release metadata and a fully separate documentation sitemap remain.
 
 ## Policy Notes
 

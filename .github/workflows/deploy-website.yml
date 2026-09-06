@@ -6,6 +6,7 @@ on:
     paths:
       - 'website/**'
       - 'assets/branding/app-icon/**'
+      - 'index.html'
       - '.github/workflows/deploy-website.yml'
   workflow_dispatch:
 
@@ -33,7 +34,31 @@ jobs:
         run: |
           test -s website/index.html
           test -s website/assets/phnx-browser-app-icon.png
-          test "$(python3 -c 'from pathlib import Path; print(Path("website/index.html").read_text().count("PHNX Browser"))')" -gt 0
+          test -s index.html
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class Validator(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.ids = set()
+                  self.links = []
+              def handle_starttag(self, tag, attrs):
+                  attrs = dict(attrs)
+                  if "id" in attrs:
+                      self.ids.add(attrs["id"])
+                  if tag == "a" and "href" in attrs:
+                      self.links.append(attrs["href"])
+
+          parser = Validator()
+          parser.feed(Path("website/index.html").read_text())
+          required = {"home", "features", "download", "releases", "privacy", "security", "docs", "about"}
+          missing = required - parser.ids
+          assert not missing, f"missing website sections: {sorted(missing)}"
+          assert any(link.startswith("https://github.com/Phoenix1185/phnx-browser") for link in parser.links)
+          assert "PHNX Browser" in Path("website/index.html").read_text()
+          PY
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

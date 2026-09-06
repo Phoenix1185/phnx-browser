@@ -4,6 +4,8 @@ import java.io.ByteArrayInputStream
 import java.security.KeyPairGenerator
 import java.security.Signature
 import java.util.Base64
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -65,6 +67,29 @@ class UpdateCoreTest {
 
         assertEquals(keyPair.public, SignatureVerifier.parseEcPublicKey(encoded))
         assertEquals(null, SignatureVerifier.parseEcPublicKey("not-base64"))
+    }
+
+    @Test
+    fun validatesManifestShapeBeforeUse() {
+        val valid = """
+            {
+              "product":"phnx-browser",
+              "platform":"android",
+              "architecture":"arm64-v8a",
+              "channel":"stable",
+              "latestVersion":"1.1.0",
+              "latestVersionCode":2,
+              "minimumSupportedVersionCode":1,
+              "updateType":"full",
+              "mandatory":false,
+              "fullApkUrl":"https://example.com/phnx.apk",
+              "fullApkSha256":"${"a".repeat(64)}"
+            }
+        """.trimIndent()
+
+        assertNotNull(UpdateManifestParser.parse(valid))
+        assertNull(UpdateManifestParser.parse(valid.replace("\"minimumSupportedVersionCode\":1", "\"minimumSupportedVersionCode\":3")))
+        assertNull(UpdateManifestParser.parse(valid.replace("https://example.com", "http://example.com")))
     }
 
     @Test
