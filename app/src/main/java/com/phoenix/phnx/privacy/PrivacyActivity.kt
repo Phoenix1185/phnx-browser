@@ -11,16 +11,19 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import com.phoenix.phnx.PhnxApplication
 import com.phoenix.phnx.R
+import com.phoenix.phnx.adblock.AdBlockSettings
 import com.phoenix.phnx.permissions.PermissionActivity
 
 class PrivacyActivity : AppCompatActivity() {
     private val app by lazy { application as PhnxApplication }
     private val profileId by lazy { app.profileManager.activeProfile().id }
     private lateinit var settings: PrivacySettings
+    private lateinit var adBlockSettings: AdBlockSettings
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         settings = app.privacyManager.getSettings(profileId)
+        adBlockSettings = app.adBlockManager.getSettings(profileId)
         title = getString(R.string.privacy_security)
 
         val content = LinearLayout(this).apply {
@@ -66,6 +69,7 @@ class PrivacyActivity : AppCompatActivity() {
             setOnClickListener { startActivity(android.content.Intent(this@PrivacyActivity, ClearDataActivity::class.java)) }
         })
         addTrackingProtection(content)
+        addAdBlockSection(content)
         content.addView(TextView(this).apply {
             text = getString(R.string.privacy_support_note)
             textSize = 13f
@@ -98,6 +102,96 @@ class PrivacyActivity : AppCompatActivity() {
                 .show()
         }
         parent.addView(row)
+    }
+
+    private fun addAdBlockSection(parent: LinearLayout) {
+        addSwitch(
+            parent,
+            getString(R.string.privacy_ad_blocking),
+            getString(R.string.privacy_ad_blocking_summary),
+            adBlockSettings.enabled,
+        ) {
+            adBlockSettings = adBlockSettings.copy(enabled = it)
+            app.adBlockManager.saveSettings(adBlockSettings)
+            recreate()
+        }
+        addSwitch(
+            parent,
+            getString(R.string.privacy_block_ads),
+            getString(R.string.privacy_block_ads_summary),
+            adBlockSettings.blockAds,
+            enabled = adBlockSettings.enabled,
+        ) {
+            adBlockSettings = adBlockSettings.copy(blockAds = it)
+            app.adBlockManager.saveSettings(adBlockSettings)
+        }
+        addSwitch(
+            parent,
+            getString(R.string.privacy_block_trackers),
+            getString(R.string.privacy_block_trackers_summary),
+            adBlockSettings.blockTrackers,
+            enabled = adBlockSettings.enabled,
+        ) {
+            adBlockSettings = adBlockSettings.copy(blockTrackers = it)
+            app.adBlockManager.saveSettings(adBlockSettings)
+        }
+        addSwitch(
+            parent,
+            getString(R.string.privacy_block_malicious_ads),
+            getString(R.string.privacy_block_malicious_ads_summary),
+            adBlockSettings.blockMaliciousAds,
+            enabled = adBlockSettings.enabled,
+        ) {
+            adBlockSettings = adBlockSettings.copy(blockMaliciousAds = it)
+            app.adBlockManager.saveSettings(adBlockSettings)
+        }
+        val stats = app.adBlockManager.stats(profileId)
+        parent.addView(optionRow(
+            getString(R.string.privacy_site_exceptions),
+            getString(
+                R.string.privacy_ad_blocking_stats,
+                stats.blockedRequests,
+                stats.evaluatedRequests,
+            ),
+        ).apply {
+            setOnClickListener { showSiteExceptions() }
+        })
+    }
+
+    private fun showSiteExceptions() {
+        val exceptions = adBlockSettings.siteExceptions.sorted()
+        val builder = AlertDialog.Builder(this)
+            .setTitle(R.string.privacy_site_exceptions)
+            .setPositiveButton(R.string.add) { _, _ -> showAddSiteException() }
+            .setNegativeButton(android.R.string.cancel, null)
+        if (exceptions.isEmpty()) {
+            builder.setMessage(R.string.privacy_no_site_exceptions)
+        } else {
+            builder.setItems(exceptions.toTypedArray()) { _, which ->
+                app.adBlockManager.removeSiteException(profileId, exceptions[which])
+                recreate()
+            }
+        }
+        builder.show()
+    }
+
+    private fun showAddSiteException() {
+        val input = android.widget.EditText(this).apply {
+            hint = getString(R.string.privacy_site_exception_host)
+            isSingleLine = true
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.privacy_add_site_exception)
+            .setView(input)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.add) { _, _ ->
+                if (app.adBlockManager.addSiteException(profileId, input.text.toString())) {
+                    recreate()
+                } else {
+                    android.widget.Toast.makeText(this, R.string.privacy_invalid_site_exception, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+            .show()
     }
 
     private fun addSwitch(

@@ -18,6 +18,7 @@ import com.phoenix.phnx.permissions.PermissionActivity
 import com.phoenix.phnx.profiles.ProfilesActivity
 import com.phoenix.phnx.resources.PerformanceActivity
 import com.phoenix.phnx.search.SearchEngineActivity
+import com.phoenix.phnx.system.DefaultBrowserActivity
 
 class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,6 +42,7 @@ class SettingsActivity : AppCompatActivity() {
         addProfileSection(content)
         addNetworkSection(content)
         addPerformanceSection(content)
+        addSystemSection(content)
         addAboutSection(content)
 
         setContentView(ScrollView(this).apply {
@@ -76,6 +78,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addAboutSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.about_phnx), getString(R.string.about_phnx_summary))
         row.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addSystemSection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.default_browser), getString(R.string.default_browser_summary))
+        row.setOnClickListener { startActivity(Intent(this, DefaultBrowserActivity::class.java)) }
         parent.addView(row)
     }
 

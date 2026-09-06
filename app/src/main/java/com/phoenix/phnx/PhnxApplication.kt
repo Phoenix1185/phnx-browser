@@ -2,6 +2,7 @@ package com.phoenix.phnx
 
 import android.app.Application
 import android.webkit.WebView
+import com.phoenix.phnx.adblock.AdBlockManager
 import com.phoenix.phnx.bookmarks.BookmarkManager
 import com.phoenix.phnx.browser.ProfileViewPool
 import com.phoenix.phnx.history.HistoryManager
@@ -47,6 +48,8 @@ class PhnxApplication : Application() {
         private set
     lateinit var downloadManager: DownloadManager
         private set
+    lateinit var adBlockManager: AdBlockManager
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -66,6 +69,7 @@ class PhnxApplication : Application() {
         bookmarkManager = BookmarkManager(this)
         searchEngineManager = SearchEngineManager(this)
         downloadManager = DownloadManager(this)
+        adBlockManager = AdBlockManager(this)
         deviceProfileManager = DeviceProfileManager(this)
         deviceProfileManager.getProfileConfiguration(activeProfile.id)
         resourceMonitor = AndroidResourceMonitor(this)

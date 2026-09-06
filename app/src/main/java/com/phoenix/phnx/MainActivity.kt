@@ -75,9 +75,11 @@ import com.phoenix.phnx.resources.ProfileResourceState
 import com.phoenix.phnx.security.BrowserSecurityState
 import com.phoenix.phnx.security.SecurityStateResolver
 import com.phoenix.phnx.settings.SettingsActivity
+import com.phoenix.phnx.system.UrlIntentParser
 import com.phoenix.phnx.tabs.Tab
 import com.phoenix.phnx.tabs.TabManager
 import kotlin.math.abs
+import java.io.ByteArrayInputStream
 
 class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val tabManager = TabManager()
@@ -88,6 +90,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val resourceManager by lazy { app.resourceManager }
     private val privacyManager by lazy { app.privacyManager }
     private val permissionManager by lazy { app.permissionManager }
+    private val adBlockManager by lazy { app.adBlockManager }
     private val identityAdapter = WebViewIdentityAdapter()
 
     private lateinit var browserContainer: FrameLayout
@@ -260,6 +263,12 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         reconcileResources()
         attachCurrentTab()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        openIncomingPage(intent)
     }
 
     override fun onStop() {
@@ -451,6 +460,20 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             false
         }
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+                val decision = adBlockManager.evaluate(
+                    profileId = tab.profileId,
+                    url = request.url.toString(),
+                    firstPartyUrl = view.url ?: tab.url,
+                )
+                if (!decision.blocked) return super.shouldInterceptRequest(view, request)
+                return WebResourceResponse(
+                    "text/plain",
+                    "UTF-8",
+                    ByteArrayInputStream(ByteArray(0)),
+                )
+            }
+
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 tab.isLoading = true
                 tab.url = url
@@ -1222,9 +1245,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun openIncomingPage(incomingIntent: Intent?) {
-        if (incomingIntent?.action != Intent.ACTION_VIEW) return
-        val url = incomingIntent.dataString ?: return
-        if (!url.startsWith("http://") && !url.startsWith("https://")) return
+        val url = UrlIntentParser.parse(incomingIntent) ?: return
         val tab = tabManager.currentTab() ?: return
         tab.url = url
         tab.title = url
