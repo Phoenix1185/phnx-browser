@@ -32,18 +32,10 @@ object UpdateManifestParser {
         require(manifest.minimumSupportedVersionCode <= manifest.latestVersionCode)
         require(manifest.latestVersion.isNotBlank())
         require(manifest.architecture.isNotBlank())
-        require(manifest.fullApkUrl.startsWith("https://"))
-        require(SHA256_PATTERN.matches(manifest.fullApkSha256))
-        if (manifest.updateType == UpdateType.DELTA) {
-            require(manifest.deltaUrl?.startsWith("https://") == true)
-            require(manifest.deltaSha256?.let(SHA256_PATTERN::matches) == true)
-        } else {
-            require(manifest.deltaUrl == null && manifest.deltaSha256 == null)
-        }
+        require(manifest.hasValidArtifactMetadata())
         manifest
     }.getOrNull()
 
     private const val PRODUCT = "phnx-browser"
     private const val PLATFORM = "android"
-    private val SHA256_PATTERN = Regex("[a-fA-F0-9]{64}")
 }

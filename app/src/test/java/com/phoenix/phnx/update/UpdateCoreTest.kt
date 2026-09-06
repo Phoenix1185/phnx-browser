@@ -71,30 +71,17 @@ class UpdateCoreTest {
 
     @Test
     fun requiresDeltaMetadataOnlyForDeltaUpdates() {
-        val full = """
-            {
-              "product":"phnx-browser",
-              "platform":"android",
-              "architecture":"arm64-v8a",
-              "channel":"stable",
-              "latestVersion":"1.1.0",
-              "latestVersionCode":2,
-              "minimumSupportedVersionCode":1,
-              "updateType":"full",
-              "mandatory":false,
-              "fullApkUrl":"https://example.com/phnx.apk",
-              "fullApkSha256":"${"a".repeat(64)}"
-            }
-        """.trimIndent()
-        val deltaWithoutMetadata = full.replace("\"full\"", "\"delta\"")
-        val delta = deltaWithoutMetadata.replace(
-            "\"fullApkSha256\":\"${"a".repeat(64)}\"",
-            "\"fullApkSha256\":\"${"a".repeat(64)}\",\"deltaUrl\":\"https://example.com/phnx.patch\",\"deltaSha256\":\"${"b".repeat(64)}\"",
+        val full = sampleManifest()
+        val delta = full.copy(
+            updateType = UpdateType.DELTA,
+            deltaUrl = "https://example.com/phnx.patch",
+            deltaSha256 = "b".repeat(64),
         )
 
-        assertNotNull(UpdateManifestParser.parse(full))
-        assertEquals(null, UpdateManifestParser.parse(deltaWithoutMetadata))
-        assertNotNull(UpdateManifestParser.parse(delta))
+        assertTrue(full.hasValidArtifactMetadata())
+        assertFalse(full.copy(deltaUrl = "https://example.com/phnx.patch").hasValidArtifactMetadata())
+        assertFalse(delta.copy(deltaSha256 = null).hasValidArtifactMetadata())
+        assertTrue(delta.hasValidArtifactMetadata())
     }
 
     @Test

@@ -60,3 +60,15 @@ data class UpdateManifest(
         .replace("\n", "\\n")
         .replace("\r", "\\r")
 }
+
+internal fun UpdateManifest.hasValidArtifactMetadata(): Boolean {
+    if (!fullApkUrl.startsWith("https://") || !SHA256_PATTERN.matches(fullApkSha256)) return false
+    return if (updateType == UpdateType.DELTA) {
+        deltaUrl?.startsWith("https://") == true &&
+            deltaSha256?.let { SHA256_PATTERN.matches(it) } == true
+    } else {
+        deltaUrl == null && deltaSha256 == null
+    }
+}
+
+private val SHA256_PATTERN = Regex("[a-fA-F0-9]{64}")
