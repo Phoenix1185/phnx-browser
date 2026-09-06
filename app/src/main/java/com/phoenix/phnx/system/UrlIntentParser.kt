@@ -11,12 +11,14 @@ object UrlIntentParser {
 
     fun parseUrl(rawUrl: String?): String? {
         val value = rawUrl?.trim().orEmpty()
-        if (value.any(Char::isISOControl)) return null
+        if (value.isEmpty() || value.any { it.isISOControl() }) return null
         val uri = runCatching { URI(value) }.getOrNull() ?: return null
-        if (uri.scheme?.lowercase() !in SUPPORTED_SCHEMES || uri.host.isNullOrBlank() || uri.userInfo != null) {
+        val scheme = uri.scheme?.lowercase() ?: return null
+        val host = uri.host?.lowercase()?.trim('.') ?: return null
+        if (scheme !in SUPPORTED_SCHEMES || host.isBlank() || uri.userInfo != null) {
             return null
         }
-        return uri.toASCIIString()
+        return value
     }
 
     private val SUPPORTED_SCHEMES = setOf("http", "https")
