@@ -68,7 +68,10 @@ class ConnectionTester(
         } else {
             null
         }
-        if (proxyConfig?.scheme in setOf(ProxyType.SOCKS4, ProxyType.SOCKS5) && proxyConfig.username != null) {
+        if (proxyConfig != null &&
+            proxyConfig.scheme in setOf(ProxyType.SOCKS4, ProxyType.SOCKS5) &&
+            proxyConfig.username != null
+        ) {
             return unsupported("SOCKS proxy authentication is not supported by this Android HTTP test stack.")
         }
         if (proxyConfig?.scheme == ProxyType.HTTPS) {
@@ -135,11 +138,11 @@ class ConnectionTester(
     private fun testSecureProxy(config: ProfileNetworkConfig, proxy: ProxyConfig): ConnectionTestResult {
         val startedAt = System.nanoTime()
         val socket = runCatching {
-            (SSLSocketFactory.getDefault() as SSLSocketFactory).createSocket().apply {
-                connect(InetSocketAddress.createUnresolved(proxy.host, proxy.port), timeoutMillis)
-                soTimeout = timeoutMillis
-                startHandshake()
-            }
+            val secureSocket = (SSLSocketFactory.getDefault() as SSLSocketFactory).createSocket() as SSLSocket
+            secureSocket.connect(InetSocketAddress.createUnresolved(proxy.host, proxy.port), timeoutMillis)
+            secureSocket.soTimeout = timeoutMillis
+            secureSocket.startHandshake()
+            secureSocket
         }.getOrElse { return failure(protocolError(it)) }
 
         return (socket as SSLSocket).use { secureSocket ->

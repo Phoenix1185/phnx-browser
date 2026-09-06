@@ -29,11 +29,11 @@ object ProxyConfigNormalizer {
             else -> portText.toIntOrNull() ?: throw invalidEndpoint()
         }
         val port = explicitPort ?: parts.port ?: throw invalidEndpoint()
-        require(parts.port == null || explicitPort == null || parts.port == explicitPort) { invalidEndpoint().message }
-        require(port in 1..65535) { invalidEndpoint().message }
+        require(parts.port == null || explicitPort == null || parts.port == explicitPort) { INVALID_ENDPOINT_MESSAGE }
+        require(port in 1..65535) { INVALID_ENDPOINT_MESSAGE }
 
         val host = parts.host.trim().trim('[', ']').trimEnd('.')
-        require(isValidHost(host)) { invalidEndpoint().message }
+        require(isValidHost(host)) { INVALID_ENDPOINT_MESSAGE }
 
         val username = usernameInput?.takeIf { it.isNotEmpty() }
         val password = passwordInput?.takeIf { it.isNotEmpty() }
@@ -65,7 +65,7 @@ object ProxyConfigNormalizer {
     private data class HostParts(val host: String, val port: Int?)
 
     private fun parseHost(input: String): HostParts {
-        require(input.isNotBlank()) { invalidEndpoint().message }
+        require(input.isNotBlank()) { INVALID_ENDPOINT_MESSAGE }
         if (input.contains("://")) {
             val uri = runCatching { URI(input) }.getOrNull() ?: throw invalidEndpoint()
             require(uri.userInfo == null) { "Enter proxy credentials in the username and password fields." }
@@ -77,11 +77,11 @@ object ProxyConfigNormalizer {
         }
         if (input.startsWith("[")) {
             val closing = input.indexOf(']')
-            require(closing > 1) { invalidEndpoint().message }
+            require(closing > 1) { INVALID_ENDPOINT_MESSAGE }
             val host = input.substring(1, closing)
             val suffix = input.substring(closing + 1)
             val port = if (suffix.isBlank()) null else {
-                require(suffix.startsWith(":")) { invalidEndpoint().message }
+                require(suffix.startsWith(":")) { INVALID_ENDPOINT_MESSAGE }
                 suffix.drop(1).toIntOrNull() ?: throw invalidEndpoint()
             }
             return HostParts(host, port)
@@ -105,7 +105,9 @@ object ProxyConfigNormalizer {
         return HOSTNAME_PATTERN.matches(host)
     }
 
-    private fun invalidEndpoint() = IllegalArgumentException("Invalid proxy host or port.")
+    private fun invalidEndpoint() = IllegalArgumentException(INVALID_ENDPOINT_MESSAGE)
+
+    private const val INVALID_ENDPOINT_MESSAGE = "Invalid proxy host or port."
 
     private val HOSTNAME_PATTERN = Regex(
         "[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*",
