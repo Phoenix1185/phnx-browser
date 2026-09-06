@@ -1,0 +1,22 @@
+flowchart TB
+    App[WhatsApp, email, messages, social app] --> Intent[ACTION_VIEW HTTP/HTTPS intent]
+    Intent --> Android[Android chooser / role resolver]
+    Android --> PHNX[PHNX Browser]
+    PHNX --> Policy{External-link profile policy}
+    Policy -->|Default profile| Default[Open in default profile]
+    Policy -->|Ask| Picker[Show allowed profile picker]
+    Policy -->|Last active| Last[Open in last active profile]
+    Picker --> Selected[User selects profile]
+    Default --> Validate[Validate URL and scheme]
+    Last --> Validate
+    Selected --> Validate
+    Validate --> Open[Open in selected profile]
+
+    classDef source fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef system fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef choice fill:#fef3c7,stroke:#d97706,color:#78350f,stroke-width:1.5px
+    classDef safe fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class App source
+    class Intent,Android,PHNX,Default,Picker,Last,Selected system
+    class Policy choice
+    class Validate,Open safe

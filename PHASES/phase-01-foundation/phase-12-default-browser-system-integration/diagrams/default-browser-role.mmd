@@ -1,0 +1,16 @@
+flowchart TB
+    Settings[Settings → Default Browser] --> Status[Read Android role state]
+    Status --> State{PHNX default?}
+    State -->|Yes| Manage[Show default status and Manage settings]
+    State -->|No| Choose[Show Set PHNX as default]
+    Choose --> System[Open Android system role interface]
+    System --> User[User chooses browser]
+    User --> Refresh[Refresh actual status]
+    Refresh --> State
+
+    classDef ui fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef system fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef result fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Settings,Choose,Manage ui
+    class Status,System,User,Refresh system
+    class State result
