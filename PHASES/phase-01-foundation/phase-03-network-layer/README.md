@@ -22,12 +22,20 @@ ChromiumNetworkAdapter
 Chromium network implementation
 ```
 
+The proxy layer is provider-agnostic. A user-supplied `ProxyConfig` contains only a
+scheme, host, port, optional username, and optional password. Provider names,
+default ports, credential formats, and endpoint addresses are never inferred by
+PHNX. The persisted profile stores only the endpoint fields and a secure credential
+reference; the password is supplied to the runtime connection test from secure
+storage.
+
 ## Core components
 
 | Component | Responsibility |
 |---|---|
 | `NetworkManager` | Set, retrieve, clear, test, and report the active profile's network configuration. |
-| `ProfileNetworkConfig` | Store profile-linked mode, proxy type, endpoint, enablement, and credential reference. |
+| `ProfileNetworkConfig` | Store profile-linked mode, generic proxy endpoint, enablement, and credential reference. |
+| `ProxyConfig` | Normalize and validate arbitrary user-supplied scheme, host, port, and credentials. |
 | `NetworkMonitor` | Observe connection state, detect Android network changes, and report transitions. |
 | `ProxyManager` | Coordinate supported proxy configuration behavior. |
 | `ConnectionTester` | Verify that a configured route can establish a connection. |
@@ -61,14 +69,14 @@ Create `ProfileNetworkConfig` with at least the following fields:
 | `id` | Unique configuration identifier |
 | `profileId` | Profile to which this configuration belongs |
 | `mode` | `DIRECT` or `PROXY` |
-| `proxyType` | Explicit supported type such as HTTP, HTTPS, SOCKS4, or SOCKS5 |
+| `proxyType` | User-selected protocol such as HTTP, HTTPS, SOCKS4, or SOCKS5 |
 | `proxyHost` | Proxy endpoint host |
 | `proxyPort` | Proxy endpoint port |
 | `username` | Optional proxy username |
 | `credentialReference` | Identifier for secure credential storage |
 | `enabled` | Whether the configuration is active |
 
-Only expose proxy types that the actual Chromium/network implementation supports. A newly created profile must default to `DIRECT`; traffic must never be routed through a proxy silently.
+Only expose protocols that the actual Chromium/network implementation supports. A newly created profile must default to `DIRECT`; traffic must never be routed through a proxy silently. Hostnames, IPv4 addresses, bracketed or unbracketed IPv6 addresses, arbitrary valid ports, and credentials containing special characters are treated the same way regardless of provider.
 
 ## Profile separation and configuration leakage
 
@@ -97,7 +105,7 @@ Expose the network settings through the profile context:
 Settings → Profile → Network
 ```
 
-The screen should provide Direct/Proxy selection, supported proxy type, host, port, username, masked password input, Test connection, and Save actions. Error messages and logs must not reveal credentials.
+The screen should provide Direct/My Proxy selection, supported protocol, host, port, username, masked password input, Test connection, and Save actions. Error messages and logs must not reveal credentials or mention a provider the user did not enter.
 
 ## Secure credentials
 
@@ -121,7 +129,7 @@ deleteCredential()
 
 ## Connection testing and status
 
-`Test connection` must validate that the configured route can establish a connection and display a clear success or failure state. Failure guidance may mention the host, port, credentials, or underlying network, but must not include secret values.
+`Test connection` must validate the actual configured route and display a clear success or failure state. Where the stack exposes a protocol-level reason, use messages such as `Proxy authentication failed. Check your proxy credentials.`, `Could not connect to proxy. Connection refused.`, `Proxy connection timed out.`, `TLS connection to proxy failed.`, or `Invalid proxy host or port.` Failure guidance must not include secret values.
 
 The profile UI should show the current connection state, mode, proxy configuration state, and last connection-test result. Use explicit states such as `CONNECTED`, `CONNECTING`, `DISCONNECTED`, and `ERROR`.
 

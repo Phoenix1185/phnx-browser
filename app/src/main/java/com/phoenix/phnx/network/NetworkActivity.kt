@@ -143,7 +143,7 @@ class NetworkActivity : AppCompatActivity() {
 
     private fun buildMyProxyPanel(): LinearLayout = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
-        addView(sectionTitle("MY PROXY"))
+        addView(sectionTitle(getString(R.string.network_my_proxy)))
         proxyType = Spinner(this@NetworkActivity).apply {
             adapter = ArrayAdapter(
                 this@NetworkActivity,
@@ -273,7 +273,7 @@ class NetworkActivity : AppCompatActivity() {
 
     private fun saveMyProxy() {
         runCatching { readMyProxyConfig() }.onSuccess { config ->
-            saveAndApply(config, "My proxy saved.")
+            saveAndApply(config, "My Proxy saved.")
         }.onFailure { showFailure(it.message ?: "Could not save proxy configuration.") }
     }
 
@@ -288,7 +288,7 @@ class NetworkActivity : AppCompatActivity() {
             runOnUiThread {
                 outcome.onSuccess { test ->
                     if (test.state == ConnectionTestState.SUCCESS) {
-                        result.text = "My proxy: Healthy ${test.latencyMs ?: "?"} ms. ${test.message}"
+                        result.text = "My Proxy: Healthy ${test.latencyMs ?: "?"} ms. ${test.message}"
                         hideFailureActions()
                     } else {
                         lastFailedProxy = null
@@ -416,28 +416,30 @@ class NetworkActivity : AppCompatActivity() {
 
     private fun readMyProxyConfig(): ProfileNetworkConfig {
         val existing = loadedConfig ?: app.networkManager.getConfig(profileId)
-        val currentUsername = username.text.toString().trim()
-        val typedPassword = password.text.toString()
+        val currentUsername = username.text.toString()
+        val typedPassword = password.text.toString().takeIf { it.isNotEmpty() }
         val existingReference = existing.credentialReference?.takeIf { currentUsername.isNotBlank() }
+        val normalized = ProxyConfigNormalizer.normalize(
+            scheme = ProxyType.values()[proxyType.selectedItemPosition],
+            hostInput = host.text.toString(),
+            portInput = port.text.toString(),
+            usernameInput = currentUsername.takeIf { it.isNotEmpty() },
+            passwordInput = typedPassword,
+        )
         val provisional = ProfileNetworkConfig(
             id = existing.id,
             profileId = profileId,
             mode = NetworkMode.MY_PROXY,
-            proxyType = ProxyType.values()[proxyType.selectedItemPosition],
-            proxyHost = host.text.toString().trim(),
-            proxyPort = port.text.toString().toIntOrNull() ?: 0,
-            username = currentUsername,
+            proxyType = normalized.scheme,
+            proxyHost = normalized.host,
+            proxyPort = normalized.port,
+            username = normalized.username.orEmpty(),
             credentialReference = existingReference,
             enabled = true,
             fallbackToDirect = directFallback.isChecked,
             freeProxyFallbacks = discoveredProxies,
         )
-        require(NetworkConfigValidator.validate(provisional.copy(
-            credentialReference = existingReference ?: typedPassword.takeIf { it.isNotBlank() }?.let { "pending" },
-        )).isEmpty()) { NetworkConfigValidator.validate(provisional.copy(
-            credentialReference = existingReference ?: typedPassword.takeIf { it.isNotBlank() }?.let { "pending" },
-        )).joinToString(" ") }
-        val reference = if (currentUsername.isNotBlank() && typedPassword.isNotBlank()) {
+        val reference = if (normalized.username != null && typedPassword != null) {
             app.networkManager.saveProxyCredential(profileId, typedPassword)
         } else {
             existingReference
@@ -533,7 +535,7 @@ class NetworkActivity : AppCompatActivity() {
 
     private fun modeLabel(mode: NetworkMode): String = when (mode) {
         NetworkMode.DIRECT -> "DIRECT"
-        NetworkMode.MY_PROXY, NetworkMode.PROXY -> "MY PROXY"
+        NetworkMode.MY_PROXY, NetworkMode.PROXY -> "My Proxy"
         NetworkMode.FREE_PUBLIC_PROXY -> "FREE PUBLIC PROXY"
     }
 

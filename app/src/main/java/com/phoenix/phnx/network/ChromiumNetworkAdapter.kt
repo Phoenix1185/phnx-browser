@@ -45,11 +45,22 @@ class WebViewNetworkAdapter : ChromiumNetworkAdapter {
             val primary = if (config.proxyHost.isBlank()) {
                 null
             } else {
-                ProxyEndpoint(
-                    type = config.proxyType ?: return@runCatching NetworkApplyResult(NetworkApplyStatus.UNSUPPORTED, "Proxy type is missing."),
-                    host = config.proxyHost,
-                    port = config.proxyPort,
-                )
+                val normalizedResult = runCatching {
+                    ProxyConfigNormalizer.normalize(
+                        scheme = config.proxyType,
+                        host = config.proxyHost,
+                        port = config.proxyPort,
+                        username = config.username.takeIf { it.isNotEmpty() },
+                    )
+                }
+                if (normalizedResult.isFailure) {
+                    return@runCatching NetworkApplyResult(
+                        NetworkApplyStatus.UNSUPPORTED,
+                        normalizedResult.exceptionOrNull()?.message ?: "Invalid proxy configuration.",
+                    )
+                }
+                val normalized = normalizedResult.getOrThrow()
+                ProxyEndpoint(normalized.scheme, normalized.host, normalized.port)
             }
             if (config.mode == NetworkMode.FREE_PUBLIC_PROXY && primary == null) {
                 return@runCatching NetworkApplyResult(NetworkApplyStatus.UNSUPPORTED, "Choose a free public proxy before applying this mode.")

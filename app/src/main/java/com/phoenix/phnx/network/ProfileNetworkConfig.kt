@@ -22,9 +22,14 @@ object NetworkConfigValidator {
         if (config.mode.usesProxy() && config.enabled) {
             val freeOnly = config.mode == NetworkMode.FREE_PUBLIC_PROXY ||
                 (config.mode == NetworkMode.PROXY && config.fallbackToFreeProxy && config.proxyHost.isBlank())
-            if (!freeOnly && config.proxyType == null) add("A proxy type is required.")
-            if (!freeOnly && config.proxyHost.isBlank()) add("A proxy host is required.")
-            if (!freeOnly && config.proxyPort !in 1..65535) add("Proxy port must be between 1 and 65535.")
+            if (!freeOnly) {
+                if (config.proxyType == null) add("A proxy protocol is required.")
+                if (config.proxyHost.isBlank()) add("A proxy host is required.")
+                if (config.proxyPort !in 1..65535) add("Proxy port must be between 1 and 65535.")
+                if (config.proxyType != null && config.proxyHost.isNotBlank() && config.proxyPort in 1..65535) {
+                    addAll(ProxyConfigNormalizer.validate(config))
+                }
+            }
             if (config.username.isNotBlank() && config.credentialReference.isNullOrBlank()) {
                 add("Proxy credentials are incomplete.")
             }

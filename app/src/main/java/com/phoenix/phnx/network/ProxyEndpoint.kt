@@ -16,11 +16,7 @@ data class ProxyEndpoint(
     val lastError: String = "",
     val source: String = "",
 ) {
-    fun asWebViewRule(): String = when (type) {
-        ProxyType.HTTP -> "http://$host:$port"
-        ProxyType.HTTPS -> "https://$host:$port"
-        ProxyType.SOCKS4, ProxyType.SOCKS5 -> "socks://$host:$port"
-    }
+    fun asWebViewRule(): String = "${type.webViewScheme()}://${proxyAuthority(host, port)}"
 }
 
 object ProxyEndpointCodec {
