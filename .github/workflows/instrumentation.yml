@@ -40,4 +40,20 @@ jobs:
           profile: pixel_2
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest --stacktrace
+          script: |
+            set +e
+            ./gradlew connectedDebugAndroidTest --stacktrace
+            status=$?
+            mkdir -p instrumentation-diagnostics
+            adb -s emulator-5554 logcat -d -v threadtime > instrumentation-diagnostics/logcat.txt || true
+            cp -R app/build/reports/androidTests instrumentation-diagnostics/reports || true
+            cp -R app/build/outputs/androidTest-results instrumentation-diagnostics/results || true
+            exit $status
+
+      - name: Upload instrumentation diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: instrumentation-diagnostics-${{ github.sha }}
+          path: instrumentation-diagnostics
+          if-no-files-found: ignore
