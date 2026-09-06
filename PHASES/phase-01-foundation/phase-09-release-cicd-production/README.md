@@ -138,6 +138,14 @@ legal/
 
 Do not claim complete privacy, anonymity, undetectability, zero data collection, or Play Store approval without evidence. Generate open-source notices from the actual shipped dependency set where practical.
 
+## Official app icon
+
+The supplied PHNX Browser artwork is the official app-icon reference for branding and release work. The source asset is stored at [`assets/branding/app-icon/phnx-browser-app-icon.png`](../../../assets/branding/app-icon/phnx-browser-app-icon.png).
+
+Use this artwork as the visual source when preparing Android adaptive-icon foreground/background layers and launcher density variants. Preserve the phoenix, globe, dark rounded-square treatment, orange/yellow highlights, and PHNX Browser wordmark. Any production crop or adaptive-icon safe-zone adjustment must retain recognizable branding and should be validated across light/dark launchers, masks, and Android densities.
+
+![Official PHNX Browser app icon](../../../assets/branding/app-icon/phnx-browser-app-icon.png)
+
 ## Release artifacts and workflow
 
 Every successful release produces clearly versioned APK and AAB artifacts, for example:
