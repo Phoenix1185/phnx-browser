@@ -1,11 +1,13 @@
 package com.phoenix.phnx.update
 
 import java.io.ByteArrayInputStream
+import java.nio.file.Files
 import java.security.KeyPairGenerator
 import java.security.Signature
 import java.util.Base64
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -78,6 +80,30 @@ class UpdateCoreTest {
     @Test(expected = IllegalArgumentException::class)
     fun rejectsUnsafeUpdateStateTransitions() {
         UpdateStateMachine.transition(UpdateState.IDLE, UpdateState.APPLYING)
+    }
+
+    @Test
+    fun stagesArtifactsAtomicallyAndRollsBackPreviousArtifact() {
+        val root = Files.createTempDirectory("phnx-update").toFile()
+        try {
+            val first = "first artifact".toByteArray()
+            val second = "second artifact".toByteArray()
+            val firstHash = "69f6245a92f0c902e45cfd6e99297cad3e536598237b6ef3d04fbb59c8a3b095"
+            val secondHash = "60c48ddce35530a43716c40331da2e737fca5f9b2468c01396726ab7d4f351b2"
+            val store = AtomicUpdateStore(root)
+
+            assertNotNull(store.stage(ByteArrayInputStream(first), firstHash))
+            assertEquals("first artifact", store.currentArtifact()?.readText())
+            assertEquals(null, store.stage(ByteArrayInputStream("tampered".toByteArray()), firstHash))
+            assertEquals("first artifact", store.currentArtifact()?.readText())
+            assertNotNull(store.stage(ByteArrayInputStream(second), secondHash))
+            assertEquals("second artifact", store.currentArtifact()?.readText())
+            assertTrue(store.rollback())
+            assertEquals("first artifact", store.currentArtifact()?.readText())
+            assertFalse(store.rollback())
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     private fun sampleManifest() = UpdateManifest(
