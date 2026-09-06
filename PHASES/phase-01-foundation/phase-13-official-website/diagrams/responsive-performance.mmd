@@ -1,0 +1,19 @@
+flowchart TB
+    Site[PHNX website] --> Mobile[Android and mobile]
+    Site --> Desktop[Desktop]
+    Site --> Large[Large screens]
+    Site --> Responsive[Responsive layout]
+    Responsive --> Touch[Touch-friendly controls]
+    Responsive --> NoOverflow[No horizontal overflow]
+    Site --> Optimize[Performance optimization]
+    Optimize --> HTML[Optimized HTML/CSS/JS]
+    Optimize --> Images[Optimized images and fonts]
+    Optimize --> Lightweight[Small bundles and few dependencies]
+    Optimize --> NoTracking[No unnecessary tracking scripts]
+
+    classDef site fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef device fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef quality fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Site site
+    class Mobile,Desktop,Large,Responsive,Touch,NoOverflow device
+    class Optimize,HTML,Images,Lightweight,NoTracking quality

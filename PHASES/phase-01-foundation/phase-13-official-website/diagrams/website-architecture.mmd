@@ -1,0 +1,18 @@
+flowchart TB
+    Repo[PHNX Browser repository] --> Actions[GitHub Actions]
+    Actions --> Pages[GitHub Pages]
+    Pages --> Domain[<username>.github.io]
+    Domain --> Site[Official PHNX website]
+    Site --> Home[Home]
+    Site --> Features[Features]
+    Site --> Download[Download]
+    Site --> Docs[Documentation]
+    Site --> Releases[Releases]
+    Site --> About[About and GitHub]
+
+    classDef source fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef deploy fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef site fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Repo source
+    class Actions,Pages,Domain deploy
+    class Site,Home,Features,Download,Docs,Releases,About site

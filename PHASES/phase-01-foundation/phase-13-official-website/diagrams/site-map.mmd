@@ -1,0 +1,23 @@
+flowchart TB
+    Home[Home] --> Features[Features]
+    Home --> Download[Download]
+    Home --> Docs[Documentation]
+    Home --> Releases[Releases]
+    Home --> Changelog[Changelog]
+    Home --> Privacy[Privacy]
+    Home --> Security[Security]
+    Home --> About[About]
+    Home --> GitHub[GitHub]
+    Docs --> GettingStarted[Getting Started]
+    Docs --> Profiles[Profiles]
+    Docs --> Network[Network and Proxy]
+    Docs --> Permissions[Permissions]
+    Docs --> Updates[Updates]
+    Docs --> Troubleshooting[Troubleshooting]
+
+    classDef primary fill:#fef3c7,stroke:#b45309,color:#78350f,stroke-width:1.5px
+    classDef section fill:#dbeafe,stroke:#2563eb,color:#172554,stroke-width:1.5px
+    classDef docs fill:#dcfce7,stroke:#16a34a,color:#14532d,stroke-width:1.5px
+    class Home primary
+    class Features,Download,Releases,Changelog,Privacy,Security,About,GitHub section
+    class Docs,GettingStarted,Profiles,Network,Permissions,Updates,Troubleshooting docs
