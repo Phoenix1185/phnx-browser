@@ -126,9 +126,21 @@ Statuses are `QUEUED`, `DOWNLOADING`, `PAUSED`, `COMPLETED`, `FAILED`, and `CANC
 
 ## Search and start page
 
-Create `SearchEngineManager` and a configurable `SearchEngine` model with ID, name, search URL, and suggestion URL. Provide a default search engine without hardcoding the architecture around one provider.
+Create `SearchEngineManager` and a configurable `SearchEngine` model with ID, name, search URL, and suggestion URL. **Google is the default search engine**, while users can choose other providers from Settings → Search.
 
-The address bar must distinguish direct URLs from search queries. URLs navigate directly; other text is sent to the selected search engine. Suggestions may be provided where supported, but private typed information must not be sent to a suggestion provider unless the configured behavior allows it. The start page includes PHNX Browser branding, a search/address field, bookmarks, recently visited items, and quick shortcuts without creating unnecessary news or tracking feeds by default.
+Recommended selectable providers:
+
+| Provider | Role in PHNX | Default |
+|---|---|---:|
+| Google | General-purpose search with broad coverage. | Yes |
+| DuckDuckGo | Privacy-oriented alternative. | No |
+| Brave Search | Independent search index with privacy-focused controls. | No |
+| Microsoft Bing | General-purpose alternative with Microsoft services integration. | No |
+| Startpage | Privacy-oriented search interface. | No |
+
+The implementation must remain provider-neutral: users can select, change, and restore a provider without changing browser architecture. Store the selected provider per profile where appropriate, and keep the provider's search and suggestion behavior explicit. Suggestions are optional and must respect the user's configured privacy behavior; private typed information must not be sent to a suggestion provider without permission.
+
+The address bar must distinguish direct URLs from search queries. URLs navigate directly; other text is sent to the selected search engine. The start page includes PHNX Browser branding, a search/address field, bookmarks, recently visited items, and quick shortcuts without creating unnecessary news or tracking feeds by default.
 
 New Tab opens the configured start page; New Private Tab opens a private start page.
 
@@ -220,7 +232,7 @@ Provide PHNX error handling for no internet, DNS failure, connection failure, ti
 | History | Add, search, delete, clear, and profile isolation. |
 | Bookmarks | Add, edit, delete, folders, move, and profile isolation. |
 | Downloads | Start, pause, resume, cancel, complete, and failure. |
-| Search | URL detection, search query routing, and search-engine changes. |
+| Search | URL detection, search query routing, Google as the default, alternative-provider selection, and search-engine changes. |
 | Page features | Find in page, zoom, desktop site, text scaling, and full-screen. |
 | Profile switching | Verify every browser feature uses the correct profile. |
 | Error recovery | Offline state, failed navigation, and tab crash recovery. |
@@ -236,6 +248,8 @@ Create Profile A, open five tabs, visit sites, bookmark pages, search, download 
 - [ ] History, search, clearing, and profile isolation work.
 - [ ] Bookmarks, folders, moving, and profile isolation work.
 - [ ] Downloads, progress, notifications, and safe actions work.
+- [ ] Google is the default search engine.
+- [ ] DuckDuckGo, Brave Search, Bing, and Startpage are available as selectable alternatives.
 - [ ] Search engine selection and URL/search detection work.
 - [ ] Start page works.
 - [ ] Find in page, desktop site, zoom, text scaling, and full-screen work where supported.
