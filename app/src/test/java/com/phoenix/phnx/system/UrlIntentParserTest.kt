@@ -10,7 +10,7 @@ class UrlIntentParserTest {
     @Test
     fun acceptsHttpAndHttpsUrls() {
         assertEquals("https://example.com/path", UrlIntentParser.parseUrl(" https://example.com/path "))
-        assertEquals("http://example.com", UrlIntentParser.parse(Intent(Intent.ACTION_VIEW, Uri.parse("http://example.com"))))
+        assertEquals("http://example.com", UrlIntentParser.parseUrl(Uri.parse("http://example.com").toString()))
     }
 
     @Test
