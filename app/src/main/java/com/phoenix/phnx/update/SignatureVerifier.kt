@@ -8,6 +8,13 @@ import java.util.Base64
 
 object SignatureVerifier {
     private const val ALGORITHM = "SHA256withECDSA"
+    private val embeddedPublicKey: PublicKey? by lazy {
+        parseEcPublicKey(UpdateSigningKey.PUBLIC_KEY_BASE64_DER)
+    }
+
+    fun verify(manifest: UpdateManifest): Boolean = embeddedPublicKey?.let {
+        verify(manifest, it)
+    } == true
 
     fun verify(manifest: UpdateManifest, publicKey: PublicKey): Boolean {
         val encodedSignature = manifest.signature ?: return false

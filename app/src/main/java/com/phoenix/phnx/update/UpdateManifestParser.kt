@@ -33,6 +33,8 @@ object UpdateManifestParser {
         require(manifest.latestVersion.isNotBlank())
         require(manifest.architecture.isNotBlank())
         require(manifest.hasValidArtifactMetadata())
+        require(manifest.signature != null)
+        require(SignatureVerifier.verify(manifest))
         manifest
     }.getOrNull()
 

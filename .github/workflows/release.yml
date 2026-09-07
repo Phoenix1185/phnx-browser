@@ -28,14 +28,16 @@ jobs:
         with:
           ref: ${{ env.RELEASE_TAG }}
 
-      - name: Require protected release secrets
+      - name: Require release secrets
         env:
           KEYSTORE: ${{ secrets.PHNX_KEYSTORE_BASE64 }}
+          UPDATE_SIGNING_KEY: ${{ secrets.PHNX_UPDATE_SIGNING_KEY_BASE64 }}
         run: |
           test -n "$KEYSTORE" || { echo "PHNX_KEYSTORE_BASE64 is not configured" >&2; exit 1; }
           test -n "$PHNX_KEYSTORE_PASSWORD" || { echo "PHNX_KEYSTORE_PASSWORD is not configured" >&2; exit 1; }
           test -n "$PHNX_KEY_ALIAS" || { echo "PHNX_KEY_ALIAS is not configured" >&2; exit 1; }
           test -n "$PHNX_KEY_PASSWORD" || { echo "PHNX_KEY_PASSWORD is not configured" >&2; exit 1; }
+          test -n "$UPDATE_SIGNING_KEY" || { echo "PHNX_UPDATE_SIGNING_KEY_BASE64 is not configured" >&2; exit 1; }
 
       - name: Require version-matched tag
         run: |
@@ -68,6 +70,29 @@ jobs:
         run: |
           printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/phnx-release.keystore"
           test -s "$RUNNER_TEMP/phnx-release.keystore"
+
+      - name: Decode update signing key
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.PHNX_UPDATE_SIGNING_KEY_BASE64 }}
+        run: |
+          printf '%s' "$UPDATE_SIGNING_KEY" | base64 --decode > "$RUNNER_TEMP/phnx-update-signing-key.pem"
+          chmod 600 "$RUNNER_TEMP/phnx-update-signing-key.pem"
+          openssl pkey -in "$RUNNER_TEMP/phnx-update-signing-key.pem" -check -noout
+          EXPECTED_UPDATE_PUBLIC_KEY=$(python3 - <<'PY'
+          import re
+
+          text = open("app/src/main/java/com/phoenix/phnx/update/UpdateSigningKey.kt").read()
+          match = re.search(r"PUBLIC_KEY_BASE64_DER\s*=\s*\n\s*\"([^\"]+)\"", text)
+          if not match:
+              raise SystemExit("embedded update public key was not found")
+          print(match.group(1))
+          PY
+          )
+          ACTUAL_UPDATE_PUBLIC_KEY=$(openssl pkey -in "$RUNNER_TEMP/phnx-update-signing-key.pem" -pubout -outform DER | base64 -w0)
+          test "$ACTUAL_UPDATE_PUBLIC_KEY" = "$EXPECTED_UPDATE_PUBLIC_KEY" || {
+            echo "update signing key does not match the embedded PHNX public key" >&2
+            exit 1
+          }
 
       - name: Build signed APK and AAB
         env:
@@ -109,11 +134,79 @@ jobs:
           }
 
       - name: Stage release metadata
+        env:
+          UPDATE_SIGNING_KEY_PATH: ${{ runner.temp }}/phnx-update-signing-key.pem
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/release/app-release.apk release/phnx-browser-${RELEASE_TAG}.apk
-          cp app/build/outputs/bundle/release/app-release.aab release/phnx-browser-${RELEASE_TAG}.aab
-          sha256sum release/* > release/SHA256SUMS
+          APK_NAME="phnx-browser-${RELEASE_TAG}.apk"
+          AAB_NAME="phnx-browser-${RELEASE_TAG}.aab"
+          cp app/build/outputs/apk/release/app-release.apk "release/$APK_NAME"
+          cp app/build/outputs/bundle/release/app-release.aab "release/$AAB_NAME"
+
+          VERSION_NAME=$(python3 -c "import re; print(re.search(r'versionName = (.+)', open('app/build.gradle.kts').read()).group(1).strip().strip(chr(34)))")
+          VERSION_CODE=$(python3 -c "import re; print(re.search(r'versionCode = (\\d+)', open('app/build.gradle.kts').read()).group(1))")
+          APK_SHA256=$(sha256sum "release/$APK_NAME" | cut -d' ' -f1)
+          APK_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/$APK_NAME"
+
+          python3 - "$RUNNER_TEMP/phnx-update-manifest.canonical" "release/phnx-update-manifest.json" "$VERSION_NAME" "$VERSION_CODE" "$APK_URL" "$APK_SHA256" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          canonical_path, manifest_path, version, version_code, apk_url, apk_sha256 = sys.argv[1:]
+          fields = [
+              ("product", "phnx-browser"),
+              ("platform", "android"),
+              ("architecture", "universal"),
+              ("channel", "stable"),
+              ("latestVersion", version),
+              ("latestVersionCode", version_code),
+              ("minimumSupportedVersionCode", version_code),
+              ("updateType", "full"),
+              ("mandatory", "false"),
+              ("fullApkUrl", apk_url),
+              ("fullApkSha256", apk_sha256),
+              ("deltaUrl", ""),
+              ("deltaSha256", ""),
+          ]
+
+          def escape(value):
+              return value.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\r")
+
+          canonical = "\n".join(f"{key}={escape(value)}" for key, value in fields)
+          Path(canonical_path).write_bytes(canonical.encode("utf-8"))
+          Path(manifest_path).write_text(json.dumps({
+              "product": "phnx-browser",
+              "platform": "android",
+              "architecture": "universal",
+              "channel": "stable",
+              "latestVersion": version,
+              "latestVersionCode": int(version_code),
+              "minimumSupportedVersionCode": int(version_code),
+              "updateType": "full",
+              "mandatory": False,
+              "fullApkUrl": apk_url,
+              "fullApkSha256": apk_sha256,
+          }, indent=2) + "\n")
+          PY
+
+          openssl dgst -sha256 \
+            -sign "$UPDATE_SIGNING_KEY_PATH" \
+            -out "$RUNNER_TEMP/phnx-update-manifest.sig" \
+            "$RUNNER_TEMP/phnx-update-manifest.canonical"
+          python3 - "release/phnx-update-manifest.json" "$RUNNER_TEMP/phnx-update-manifest.sig" <<'PY'
+          import base64
+          import json
+          import sys
+          from pathlib import Path
+
+          manifest_path, signature_path = sys.argv[1:]
+          manifest = json.loads(Path(manifest_path).read_text())
+          manifest["signature"] = base64.b64encode(Path(signature_path).read_bytes()).decode("ascii")
+          Path(manifest_path).write_text(json.dumps(manifest, indent=2) + "\n")
+          PY
+
+          sha256sum "release/$APK_NAME" "release/$AAB_NAME" release/phnx-update-manifest.json > release/SHA256SUMS
           printf 'tag=%s\ncommit=%s\n' "$RELEASE_TAG" "$GITHUB_SHA" > release/build-metadata.txt
 
       - name: Publish GitHub Release
@@ -128,4 +221,7 @@ jobs:
             "$RUNNER_TEMP/phnx-release.keystore" \
             "$RUNNER_TEMP/phnx-release-cert.der" \
             "$RUNNER_TEMP/phnx-aab-certificate.txt" \
-            "$RUNNER_TEMP/phnx-aab-jarsigner.txt"
+            "$RUNNER_TEMP/phnx-aab-jarsigner.txt" \
+            "$RUNNER_TEMP/phnx-update-signing-key.pem" \
+            "$RUNNER_TEMP/phnx-update-manifest.canonical" \
+            "$RUNNER_TEMP/phnx-update-manifest.sig"

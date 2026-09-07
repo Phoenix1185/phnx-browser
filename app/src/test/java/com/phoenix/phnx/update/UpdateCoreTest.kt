@@ -8,8 +8,10 @@ import java.util.Base64
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.json.JSONObject
 
 class UpdateCoreTest {
     @Test
@@ -43,6 +45,16 @@ class UpdateCoreTest {
         assertTrue(SignatureVerifier.verify(signed, keyPair.public))
         assertFalse(SignatureVerifier.verify(signed.copy(latestVersionCode = 2), keyPair.public))
         assertFalse(SignatureVerifier.verify(signed.copy(signature = "not-base64"), keyPair.public))
+    }
+
+    @Test
+    fun parsesOnlyManifestsSignedByTheEmbeddedUpdateKey() {
+        val signed = sampleManifest().copy(signature = EMBEDDED_SAMPLE_SIGNATURE)
+        assertTrue(SignatureVerifier.verify(signed))
+        assertNotNull(UpdateManifestParser.parse(manifestJson(signed)))
+        assertNull(UpdateManifestParser.parse(manifestJson(signed.copy(signature = null))))
+        assertNull(UpdateManifestParser.parse(manifestJson(signed.copy(latestVersionCode = 2))))
+        assertNull(UpdateManifestParser.parse(manifestJson(signed.copy(signature = "not-base64"))))
     }
 
     @Test
@@ -134,5 +146,27 @@ class UpdateCoreTest {
         fullApkUrl = "https://example.com/phnx.apk",
         fullApkSha256 = "a".repeat(64),
     )
+
+    private fun manifestJson(manifest: UpdateManifest): String = JSONObject().apply {
+        put("product", manifest.product)
+        put("platform", manifest.platform)
+        put("architecture", manifest.architecture)
+        put("channel", manifest.channel.name.lowercase())
+        put("latestVersion", manifest.latestVersion)
+        put("latestVersionCode", manifest.latestVersionCode)
+        put("minimumSupportedVersionCode", manifest.minimumSupportedVersionCode)
+        put("updateType", manifest.updateType.name.lowercase())
+        put("mandatory", manifest.mandatory)
+        put("fullApkUrl", manifest.fullApkUrl)
+        put("fullApkSha256", manifest.fullApkSha256)
+        manifest.deltaUrl?.let { put("deltaUrl", it) }
+        manifest.deltaSha256?.let { put("deltaSha256", it) }
+        manifest.signature?.let { put("signature", it) }
+    }.toString()
+
+    private companion object {
+        const val EMBEDDED_SAMPLE_SIGNATURE =
+            "MEUCIQCCKW9/VDHaAofLpPqB7AGsR6A7bZlvervqnBoYEm5QzgIgDTsOFhy92UuzKNKhe9mEIX5Gh2nGmS/QOyn/L4TXC7E="
+    }
 
 }

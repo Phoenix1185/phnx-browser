@@ -10,7 +10,10 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.phoenix.phnx.BuildConfig
 import com.phoenix.phnx.R
+import com.phoenix.phnx.update.UpdateManifest
+import com.phoenix.phnx.update.UpdateManifestParser
 import com.phoenix.phnx.update.VersionComparator
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -86,10 +89,32 @@ class UpdateActivity : AppCompatActivity() {
                 name = json.optString("name").ifBlank { json.optString("tag_name") },
                 tag = json.optString("tag_name"),
                 url = json.optString("html_url"),
+                manifest = fetchManifest(json.optJSONArray("assets")),
             )
         } finally {
             connection.disconnect()
         }
+    }
+
+    private fun fetchManifest(assets: JSONArray?): UpdateManifest? {
+        for (index in 0 until (assets?.length() ?: 0)) {
+            val asset = assets?.optJSONObject(index) ?: continue
+            if (asset.optString("name") != MANIFEST_ASSET_NAME) continue
+            val url = asset.optString("browser_download_url").takeIf { it.startsWith("https://") }
+                ?: return null
+            val connection = URL(url).openConnection() as HttpURLConnection
+            return try {
+                connection.connectTimeout = TIMEOUT_MILLIS
+                connection.readTimeout = TIMEOUT_MILLIS
+                connection.setRequestProperty("Accept", "application/octet-stream")
+                connection.setRequestProperty("User-Agent", "PHNX-Browser/${BuildConfig.VERSION_NAME}")
+                if (connection.responseCode !in 200..299) return null
+                UpdateManifestParser.parse(connection.inputStream.bufferedReader().use { it.readText() })
+            } finally {
+                connection.disconnect()
+            }
+        }
+        return null
     }
 
     private fun showRelease(release: ReleaseInfo) {
@@ -100,8 +125,14 @@ class UpdateActivity : AppCompatActivity() {
             releaseButton.isEnabled = releaseUrl != null
             return
         }
+        if (release.manifest == null) {
+            status.text = "Published release has no valid signed update manifest."
+            releaseButton.text = "Open official release page"
+            releaseButton.isEnabled = releaseUrl != null
+            return
+        }
         val current = BuildConfig.VERSION_NAME.removeSuffix("-debug").removePrefix("v")
-        val latest = release.tag.removePrefix("v")
+        val latest = release.manifest.latestVersion.removePrefix("v")
         releaseButton.text = "Open official release page"
         status.text = if (!VersionComparator.isNewer(latest, current)) {
             "You are up to date (${release.name})."
@@ -129,9 +160,11 @@ class UpdateActivity : AppCompatActivity() {
         val name: String,
         val tag: String,
         val url: String,
+        val manifest: UpdateManifest? = null,
     )
 
     private companion object {
+        const val MANIFEST_ASSET_NAME = "phnx-update-manifest.json"
         const val LATEST_RELEASE_API = "https://api.github.com/repos/Phoenix1185/phnx-browser/releases/latest"
         const val REPOSITORY_URL = "https://github.com/Phoenix1185/phnx-browser"
         const val TIMEOUT_MILLIS = 10_000
