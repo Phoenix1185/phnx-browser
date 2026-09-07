@@ -6,9 +6,11 @@ data class ClientHintsConfig(
     val brands: List<String>,
 )
 
-data class BrowserIdentityConfig(
+/** The single runtime and persisted model for a selected device profile. */
+data class DeviceProfile(
     val profileId: String,
     val presetId: String,
+    val name: String,
     val userAgent: String,
     val platform: String,
     val operatingSystem: String,
@@ -26,3 +28,6 @@ data class BrowserIdentityConfig(
     val mobileMode: Boolean,
     val clientHints: ClientHintsConfig,
 )
+
+/** Source compatibility for the existing profile-scoped identity APIs. */
+typealias BrowserIdentityConfig = DeviceProfile

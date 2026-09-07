@@ -4,6 +4,7 @@ object DeviceProfileValidator {
     fun validate(config: BrowserIdentityConfig): List<String> = buildList {
         if (config.profileId.isBlank()) add("A profile is required.")
         if (config.presetId.isBlank()) add("A device preset is required.")
+        if (config.name.isBlank()) add("A device profile name is required.")
         if (config.userAgent.isBlank()) add("A User-Agent is required.")
         if (config.platform.isBlank()) add("A platform is required.")
         if (config.operatingSystem.isBlank()) add("An operating system is required.")
@@ -44,6 +45,9 @@ object DeviceProfileValidator {
         if (platform == "ios" && !userAgent.contains("iphone") && !userAgent.contains("ipad")) {
             add("iOS configuration requires an iPhone or iPad User-Agent.")
         }
+        if (platform == "ios" && !operatingSystem.contains("ios") && !operatingSystem.contains("ipados")) {
+            add("iOS platform and operating system do not match.")
+        }
         if (platform == "macos" && !userAgent.contains("macintosh")) {
             add("macOS configuration requires a Macintosh User-Agent.")
         }
@@ -53,9 +57,24 @@ object DeviceProfileValidator {
         if (config.mobileMode && !config.touchSupport) add("Mobile mode requires touch support.")
         if (config.mobileMode && config.viewportWidth > 1600) add("Mobile viewport is too wide.")
         if (!config.mobileMode && config.viewportWidth < 640) add("Desktop viewport is too narrow.")
+        if (config.mobileMode) {
+            val widthScale = config.screenWidth.toDouble() / config.viewportWidth
+            val heightScale = config.screenHeight.toDouble() / config.viewportHeight
+            if (kotlin.math.abs(widthScale - heightScale) > 0.15 ||
+                kotlin.math.abs(widthScale - config.deviceScaleFactor) > 0.15
+            ) {
+                add("Mobile screen dimensions and device scale factor must describe the same emulation model.")
+            }
+        }
         if (config.clientHints.platform.isBlank()) add("Client-hints platform is required.")
         if (config.clientHints.mobile != config.mobileMode) add("Client-hints mobile mode does not match the profile.")
         if (config.clientHints.platform.lowercase() != platform) add("Client-hints platform does not match the profile platform.")
         if (config.clientHints.brands.isEmpty()) add("At least one client-hints brand is required.")
+        if (platform == "ios" && config.clientHints.brands.any { it.contains("android", ignoreCase = true) }) {
+            add("iOS profiles cannot declare Android client-hint brands.")
+        }
+        if (platform == "android" && config.clientHints.brands.any { it.contains("safari", ignoreCase = true) }) {
+            add("Android profiles cannot declare Safari client-hint brands.")
+        }
     }
 }

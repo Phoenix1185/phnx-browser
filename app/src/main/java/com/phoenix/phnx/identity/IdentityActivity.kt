@@ -105,6 +105,14 @@ class IdentityActivity : AppCompatActivity() {
             setOnClickListener { saveSelectedPreset() }
         })
         content.addView(actions)
+        content.addView(Button(this).apply {
+            text = "Open runtime diagnostics"
+            setOnClickListener {
+                startActivity(Intent(this@IdentityActivity, IdentityDiagnosticActivity::class.java).apply {
+                    putExtra(EXTRA_PROFILE_ID, profileId)
+                })
+            }
+        })
         return ScrollView(this).apply {
             setBackgroundColor(getColor(R.color.phnx_cream))
             addView(content)
@@ -124,26 +132,36 @@ class IdentityActivity : AppCompatActivity() {
         runCatching {
             val config = app.deviceProfileManager.applyPreset(profileId, preset.id)
             showDetails(config)
-            result.text = getString(R.string.identity_saved)
-            if (profileId == app.profileManager.activeProfile().id) restartBrowser()
+            val status = DeviceProfileCapabilities.overallStatus(config)
+            result.text = "Saved. Application assessment: ${DeviceProfileCapabilities.statusLabel(status)}."
+            if (profileId == app.profileManager.activeProfile().id) {
+                result.text = "Saved. Restarting PHNX to recreate WebView with the selected profile."
+                restartBrowser()
+            }
         }.onFailure { error ->
             result.text = error.message ?: getString(R.string.identity_save_failed)
         }
     }
 
     private fun showDetails(config: BrowserIdentityConfig) {
+        val capabilityLines = DeviceProfileCapabilities.forProfile(config).map {
+            "${it.label}: ${DeviceProfileCapabilities.modeLabel(it.mode)}. ${it.detail}"
+        }
         details.text = listOf(
-            "Preset: ${config.presetId}",
-            "Browser: ${config.userAgent}",
-            "Operating system: ${config.operatingSystem}",
-            "Viewport: ${config.viewportWidth} x ${config.viewportHeight}",
-            "Screen: ${config.screenWidth} x ${config.screenHeight}",
-            "Scale factor: ${config.deviceScaleFactor}",
-            "Locale: ${config.locale} (${config.language})",
-            "Timezone: ${config.timezone}",
-            "Touch: ${config.touchSupport}; mobile mode: ${config.mobileMode}",
-            "Client hints: ${config.clientHints.platform}, mobile=${config.clientHints.mobile}",
-            "WebView support: User-Agent and supported viewport mode are applied. Screen metrics, locale, timezone, and client hints remain limited by Android WebView.",
+            "Profile: ${config.name} (${config.presetId})",
+            "User-Agent: ${config.userAgent}",
+            "Operating system target: ${config.operatingSystem}",
+            "Viewport target: ${config.viewportWidth} x ${config.viewportHeight}",
+            "JavaScript screen target: ${config.screenWidth} x ${config.screenHeight}",
+            "Device scale target: ${config.deviceScaleFactor}",
+            "Locale target: ${config.locale} (${config.language})",
+            "Timezone target: ${config.timezone}",
+            "Touch target: ${config.touchSupport}; mobile mode: ${config.mobileMode}",
+            "Client hints target (not applied by WebView): ${config.clientHints.platform}, mobile=${config.clientHints.mobile}",
+            "Overall status: ${DeviceProfileCapabilities.statusLabel(DeviceProfileCapabilities.overallStatus(config))}",
+            "",
+            "Field capabilities:",
+            *capabilityLines.toTypedArray(),
         ).joinToString("\n")
     }
 

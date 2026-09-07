@@ -61,6 +61,7 @@ import com.phoenix.phnx.browser.NavigationController
 import com.phoenix.phnx.downloads.DownloadsActivity
 import com.phoenix.phnx.downloads.DownloadSecurityManager
 import com.phoenix.phnx.identity.DevicePresets
+import com.phoenix.phnx.identity.WebViewIdentityCompatibility
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.network.NetworkApplyStatus
@@ -491,6 +492,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.isLoading = true
                 tab.url = url
                 tab.title = tabTitleForUrl(url)
+                applyProfileCompatibility(view, tab.profileId)
                 if (tabManager.currentTab()?.id == tab.id) updateSecurityState(SecurityStateResolver.fromUrl(url))
                 updateTabChrome(tab, view)
             }
@@ -500,6 +502,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 if (url != START_PAGE_BASE) tab.url = url
                 tab.title = view.title?.takeIf { it.isNotBlank() } ?: tabTitleForUrl(url)
                 if (tabManager.currentTab()?.id == tab.id) updateSecurityState(SecurityStateResolver.fromUrl(url))
+                applyProfileCompatibility(view, tab.profileId)
                 privacyManager.applyTo(view, tab.profileId)
                 app.historyManager.recordVisit(tab.profileId, url, tab.title, tab.isPrivate)
                 updateTabChrome(tab, view)
@@ -1191,6 +1194,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 pageZoomPercent = levels[which]
                 PhnxPreferences.setProfilePageZoomPercent(this, profileManager.activeProfile().id, pageZoomPercent)
                 applyPageControls(view)
+                tabManager.currentTab()?.let { applyProfileIdentity(view, it.profileId) }
                 view.reload()
                 dialog.dismiss()
             }
@@ -1410,8 +1414,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     private fun applyBrowserModes(view: WebView) {
         view.settings.apply {
-            useWideViewPort = desktopSiteEnabled
-            loadWithOverviewMode = desktopSiteEnabled
             cacheMode = if (dataSaverEnabled) WebSettings.LOAD_CACHE_ELSE_NETWORK else WebSettings.LOAD_DEFAULT
             blockNetworkImage = dataSaverEnabled
             mediaPlaybackRequiresUserGesture = true
@@ -1419,13 +1421,17 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun applyPageControls(view: WebView) {
-        view.setInitialScale(pageZoomPercent)
         view.settings.textZoom = textScalePercent
     }
 
     private fun applyProfileIdentity(view: WebView, profileId: String) {
         val config = identityConfig(profileId)
-        identityAdapter.apply(view, config)
+        identityAdapter.apply(view, config, pageZoomPercent)
+        WebViewIdentityCompatibility.install(view, config)
+    }
+
+    private fun applyProfileCompatibility(view: WebView, profileId: String) {
+        WebViewIdentityCompatibility.install(view, identityConfig(profileId))
     }
 
     private fun identityConfig(profileId: String) = if (desktopSiteEnabled) {

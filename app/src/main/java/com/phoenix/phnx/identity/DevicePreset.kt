@@ -30,6 +30,7 @@ data class DevicePreset(
     fun forProfile(profileId: String) = BrowserIdentityConfig(
         profileId = profileId,
         presetId = id,
+        name = name,
         userAgent = userAgent,
         platform = platform,
         operatingSystem = operatingSystem,
@@ -320,7 +321,7 @@ object DevicePresets {
             platform = "Android",
             userAgent = "Mozilla/5.0 (Linux; Android 14; XT2451-4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36",
             viewportWidth = 412,
-            viewportHeight = 915,
+            viewportHeight = 1006,
             screenWidth = 1080,
             screenHeight = 2640,
             colorDepth = 24,

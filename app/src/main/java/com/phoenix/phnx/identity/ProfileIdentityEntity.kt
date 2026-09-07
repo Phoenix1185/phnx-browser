@@ -30,6 +30,8 @@ data class ProfileIdentityEntity(
 fun ProfileIdentityEntity.toDomain() = BrowserIdentityConfig(
     profileId = profileId,
     presetId = presetId,
+    name = if (presetId == DevicePresets.SYSTEM_DEFAULT) "System Default"
+    else DevicePresets.get(presetId)?.name ?: presetId,
     userAgent = userAgent,
     platform = platform,
     operatingSystem = operatingSystem,

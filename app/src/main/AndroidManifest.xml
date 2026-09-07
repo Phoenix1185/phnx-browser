@@ -72,6 +72,9 @@
             android:name=".identity.IdentityActivity"
             android:exported="false" />
         <activity
+            android:name=".identity.IdentityDiagnosticActivity"
+            android:exported="false" />
+        <activity
             android:name=".profiles.ProfilesActivity"
             android:exported="false" />
         <activity
