@@ -76,9 +76,37 @@ jobs:
           ./gradlew lint test assembleRelease bundleRelease
 
       - name: Verify signed artifacts
+        env:
+          PHNX_KEYSTORE_PATH: ${{ runner.temp }}/phnx-release.keystore
         run: |
-          $ANDROID_HOME/build-tools/35.0.1/apksigner verify --verbose app/build/outputs/apk/release/app-release.apk
-          test -s app/build/outputs/bundle/release/app-release.aab
+          APK=app/build/outputs/apk/release/app-release.apk
+          AAB=app/build/outputs/bundle/release/app-release.aab
+          CERTIFICATE="$RUNNER_TEMP/phnx-release-cert.der"
+          AAB_CERTIFICATE="$RUNNER_TEMP/phnx-aab-certificate.txt"
+          AAB_VERIFY_LOG="$RUNNER_TEMP/phnx-aab-jarsigner.txt"
+
+          "$ANDROID_HOME/build-tools/35.0.1/apksigner" verify --verbose "$APK"
+          test -s "$AAB"
+
+          keytool -exportcert \
+            -keystore "$PHNX_KEYSTORE_PATH" \
+            -storepass "$PHNX_KEYSTORE_PASSWORD" \
+            -alias "$PHNX_KEY_ALIAS" \
+            -file "$CERTIFICATE"
+          EXPECTED_CERTIFICATE_SHA256=$(sha256sum "$CERTIFICATE" | cut -d' ' -f1)
+
+          jarsigner -verify -verbose -certs "$AAB" > "$AAB_VERIFY_LOG"
+          keytool -printcert -jarfile "$AAB" > "$AAB_CERTIFICATE"
+          ACTUAL_CERTIFICATE_SHA256=$(awk -F': ' '/SHA256:/{gsub(":", "", $2); print tolower($2); exit}' "$AAB_CERTIFICATE")
+
+          test -n "$ACTUAL_CERTIFICATE_SHA256" || {
+            echo "AAB signer certificate fingerprint was not found" >&2
+            exit 1
+          }
+          test "$ACTUAL_CERTIFICATE_SHA256" = "$EXPECTED_CERTIFICATE_SHA256" || {
+            echo "AAB signer certificate does not match the configured release keystore" >&2
+            exit 1
+          }
 
       - name: Stage release metadata
         run: |
@@ -92,3 +120,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$RELEASE_TAG" release/* --generate-notes --verify-tag
+
+      - name: Remove temporary release signing files
+        if: always()
+        run: |
+          rm -f \
+            "$RUNNER_TEMP/phnx-release.keystore" \
+            "$RUNNER_TEMP/phnx-release-cert.der" \
+            "$RUNNER_TEMP/phnx-aab-certificate.txt" \
+            "$RUNNER_TEMP/phnx-aab-jarsigner.txt"
