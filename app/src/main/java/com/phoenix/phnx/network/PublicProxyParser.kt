@@ -141,7 +141,7 @@ object PublicProxyParser {
         ?.let { value -> STRING_PATTERN.findAll(value).map { it.groupValues[1] }.toList() }
         .orEmpty()
 
-    private val OBJECT_PATTERN = Regex("\\{([^{}]*)}")
+    private val OBJECT_PATTERN = Regex("\\{([^{}]*)\\}")
     private val PROXYFLY_ENTRY_START = Regex("(?=\\{\\s*\"proxy\"\\s*:)" )
     private val STRING_PATTERN = Regex("\\\"((?:\\\\.|[^\\\"\\\\])*)\\\"")
 }
