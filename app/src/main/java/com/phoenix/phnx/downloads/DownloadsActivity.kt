@@ -155,7 +155,7 @@ class DownloadsActivity : AppCompatActivity() {
                     bytesLabel,
                     formatBytes(current.totalBytes),
                 )
-                val estimate = estimate(downloadId = download.downloadId, progress = current, status = status)
+                val estimate = estimate(downloadId = downloadId, progress = current, status = status)
                 if (estimate != null) "$details\n$estimate" else details
             } else {
                 getString(R.string.download_progress_unknown, bytesLabel)
