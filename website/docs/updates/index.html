@@ -4,9 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#071522">
-  <meta name="description" content="The current app reads official release metadata and lets users review a release before opening it. Typed manifest, checksum, signature, patch, rollback, and recovery primitives exist in the project, but production release infrastructure is not yet configured.">
+  <meta name="description" content="The app reads official release metadata, validates the signed manifest, compares versions, and lets users review the official release page. GitHub Actions can produce signed APK/AAB artifacts and a signed manifest when a version-matched tag is released.">
   <meta property="og:title" content="Release discovery is not silent installation">
-  <meta property="og:description" content="The current app reads official release metadata and lets users review a release before opening it. Typed manifest, checksum, signature, patch, rollback, and recovery primitives exist in the project, but production release infrastructure is not yet configured.">
+  <meta property="og:description" content="The app reads official release metadata, validates the signed manifest, compares versions, and lets users review the official release page. GitHub Actions can produce signed APK/AAB artifacts and a signed manifest when a version-matched tag is released.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://phoenix1185.github.io/phnx-browser/docs/updates/">
   <meta property="og:image" content="https://phoenix1185.github.io/phnx-browser/assets/phnx-browser-app-icon.png">
@@ -29,10 +29,10 @@
   <div class="wrap">
     <div class="eyebrow">Documentation</div>
     <h1>Release discovery is not silent installation</h1>
-    <p>The current app reads official release metadata and lets users review a release before opening it. Typed manifest, checksum, signature, patch, rollback, and recovery primitives exist in the project, but production release infrastructure is not yet configured.</p>
+    <p>The app reads official release metadata, validates the signed manifest, compares versions, and lets users review the official release page. GitHub Actions can produce signed APK/AAB artifacts and a signed manifest when a version-matched tag is released.</p>
   </div>
 </section>
-  <section class="light"><div class="wrap split"><div><div class="kicker">Read next</div><h2>Current behavior.</h2><div class="actions"><a class="button" href="../../docs/">All docs</a><a class="button" href="https://github.com/Phoenix1185/phnx-browser/tree/main/PHASES/phase-01-foundation/phase-11-self-update-patch-system">Repository blueprint</a></div></div><div class="prose"><h3>Key points</h3><ul><li>No public APK is shown unless a real published release asset exists.</li><li>Private signing keys, keystores, and update secrets must remain outside the repository.</li><li>The intended production path includes verification, atomic apply, rollback, and startup validation.</li></ul></div></div></section>
+  <section class="light"><div class="wrap split"><div><div class="kicker">Read next</div><h2>Current behavior.</h2><div class="actions"><a class="button" href="../../docs/">All docs</a><a class="button" href="https://github.com/Phoenix1185/phnx-browser/tree/main/PHASES/phase-01-foundation/phase-11-self-update-patch-system">Repository blueprint</a></div></div><div class="prose"><h3>Key points</h3><ul><li>No public APK is shown unless a real published release asset exists.</li><li>Private signing keys, keystores, and update secrets remain outside the repository.</li><li>The app does not yet download and apply updates in the background; delta, rollback-on-startup, staged rollout, and policy scheduling remain future release work.</li></ul></div></div></section>
 </main>
   <footer>
     <div class="wrap footer-row">

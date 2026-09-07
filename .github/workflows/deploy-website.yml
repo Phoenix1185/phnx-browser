@@ -54,6 +54,8 @@ jobs:
           ]
           missing = [route for route in required_routes if not (Path("website") / route).is_file()]
           assert not missing, f"missing website routes: {missing}"
+          assert (Path("website") / "sitemap.xml").is_file()
+          assert (Path("website") / "robots.txt").is_file()
           html = "\n".join(path.read_text() for path in Path("website").rglob("*.html"))
           assert "PHNX Browser" in html
           assert "https://github.com/Phoenix1185/phnx-browser" in html

@@ -32,13 +32,13 @@
     <p>The official download page resolves published GitHub Release metadata at runtime. It never exposes CI artifacts, debug builds, unsigned packages, or invented links.</p>
   </div>
 </section>
-  <section class="light"><div class="wrap split"><div><div class="kicker">Android</div><h2>One honest download path.</h2><p class="lede">When a stable release includes a real APK asset, it will appear here with its version, channel, release date, release notes, and checksum if the release publishes one.</p></div><div class="release-panel" data-release-panel>
+  <section class="light"><div class="wrap split"><div><div class="kicker">Android</div><h2>One honest download path.</h2><p class="lede">The signed-release workflow is configured, but no stable public APK is published until a version-matched release tag is built and signed. This page shows only real GitHub Release assets.</p></div><div class="release-panel" data-release-panel>
   <h3 data-release-title>Checking official GitHub Releases...</h3>
   <p data-release-copy>The page will only show a download when a published stable release includes a real APK asset.</p>
   <div class="release-meta" data-release-meta>Source: official Phoenix GitHub Releases</div>
   <div class="actions" data-release-actions><a class="button disabled" href="" aria-disabled="true">Waiting for release data</a></div>
 </div></div></section>
-  <section class="dark"><div class="wrap split"><div><div class="eyebrow">Before installing</div><h2>Know what you are getting.</h2></div><div class="prose"><ul class="list"><li>Android requirement: Android 9 / API 28 or newer for the current build.</li><li>PHNX uses the device Android System WebView provider for Chromium rendering.</li><li>Review Android's install and permission prompts before installing an APK.</li><li>Production signing and public release infrastructure are still being completed if no release is listed above.</li></ul><div class="actions"><a class="button primary" href="../releases/">Release status</a><a class="button ghost" href="../security/">Security details</a></div></div></div></section>
+  <section class="dark"><div class="wrap split"><div><div class="eyebrow">Before installing</div><h2>Know what you are getting.</h2></div><div class="prose"><ul class="list"><li>Android requirement: Android 9 / API 28 or newer for the current build.</li><li>PHNX uses the device Android System WebView provider for Chromium rendering.</li><li>Review Android's install and permission prompts before installing an APK.</li><li>The app validates release metadata but currently opens the official release page for user-reviewed installation.</li></ul><div class="actions"><a class="button primary" href="../releases/">Release status</a><a class="button ghost" href="../security/">Security details</a></div></div></div></section>
 </main>
   <footer>
     <div class="wrap footer-row">
