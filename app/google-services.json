@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "65358585021",
+    "project_id": "phnx-browser",
+    "storage_bucket": "phnx-browser.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:65358585021:android:e5f577c40be9c0f449ebd4",
+        "android_client_info": {
+          "package_name": "com.phoenix.phnx"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdoY5_2V2owMN75j1ai39gjvHxQp_0HJk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,12 +1,13 @@
 from html import escape
 from pathlib import Path
+import re
 
 
 # Change this one value when moving PHNX to a custom domain.
 SITE_URL = "https://phoenix1185.github.io/phnx-browser"
 REPO_URL = "https://github.com/Phoenix1185/phnx-browser"
 RELEASES_URL = f"{REPO_URL}/releases"
-ICON_URL = f"{SITE_URL}/assets/phnx-browser-app-icon.png"
+ICON_PATH = "assets/phnx-browser-app-icon.png"
 
 ROOT = Path(__file__).resolve().parent
 
@@ -36,7 +37,33 @@ DOCS = [
 
 def url(path=""):
     clean = path.strip("/")
-    return f"{SITE_URL}/{clean}/" if clean else f"{SITE_URL}/"
+    return f"__PHNX_RELATIVE_URL__{clean}__"
+
+
+def absolute_url(path=""):
+    clean = path.strip("/")
+    if not clean:
+        return f"{SITE_URL}/"
+    suffix = "" if Path(clean).suffix else "/"
+    return f"{SITE_URL}/{clean}{suffix}"
+
+
+def relative_url(route, path=""):
+    clean = path.strip("/")
+    depth = len([part for part in route.strip("/").split("/") if part])
+    prefix = "../" * depth
+    if not clean:
+        return prefix or "./"
+    suffix = "" if Path(clean).suffix else "/"
+    return f"{prefix}{clean}{suffix}"
+
+
+def resolve_relative_urls(route, content):
+    return re.sub(
+        r"__PHNX_RELATIVE_URL__(.*?)__",
+        lambda match: relative_url(route, match.group(1)),
+        content,
+    )
 
 
 def phase_url(folder):
@@ -48,14 +75,14 @@ def github_file(path):
 
 
 def page_shell(route, title, description, body):
-    canonical = url(route)
+    canonical = absolute_url(route)
     current = "docs" if route.startswith("docs") else route.split("/", 1)[0]
     links = []
     for label, target in NAV:
         selected = ' aria-current="page"' if current == target else ""
-        links.append(f'<a href="{url(target)}"{selected}>{label}</a>')
+        links.append(f'<a href="{relative_url(route, target)}"{selected}>{label}</a>')
     nav = "".join(links)
-    return f'''<!doctype html>
+    html = f'''<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -66,17 +93,17 @@ def page_shell(route, title, description, body):
   <meta property="og:description" content="{escape(description)}">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{canonical}">
-  <meta property="og:image" content="{ICON_URL}">
+  <meta property="og:image" content="{absolute_url(ICON_PATH)}">
   <meta name="twitter:card" content="summary">
   <link rel="canonical" href="{canonical}">
-  <link rel="icon" href="{ICON_URL}">
-  <link rel="stylesheet" href="{url('assets/site.css').rstrip('/')}">
+  <link rel="icon" href="{relative_url(route, ICON_PATH)}">
+  <link rel="stylesheet" href="{relative_url(route, 'assets/site.css')}">
   <title>{escape(title)} | PHNX Browser</title>
 </head>
 <body>
   <header class="topbar">
     <nav class="wrap nav">
-      <a class="brand" href="{url()}"><img src="{ICON_URL}" alt="PHNX Browser icon"><span>PHNX BROWSER</span></a>
+      <a class="brand" href="{relative_url(route)}"><img src="{url(ICON_PATH)}" alt="PHNX Browser icon"><span>PHNX BROWSER</span></a>
       <button class="menu" type="button" aria-expanded="false" aria-controls="navlinks">Menu</button>
       <div class="navlinks" id="navlinks">{nav}<a href="{REPO_URL}">GitHub</a></div>
     </nav>
@@ -88,10 +115,11 @@ def page_shell(route, title, description, body):
       <span><a href="{REPO_URL}">GitHub</a> · <a href="{RELEASES_URL}">Releases</a> · <a href="{url('privacy')}">Privacy</a> · <a href="{url('security')}">Security</a></span>
     </div>
   </footer>
-  <script src="{url('assets/site.js').rstrip('/')}"></script>
+  <script src="{relative_url(route, 'assets/site.js')}"></script>
 </body>
 </html>
 '''
+    return resolve_relative_urls(route, html)
 
 
 def page_hero(kicker, headline, intro):
@@ -135,7 +163,7 @@ def home():
         <p>A fast, private, and powerful Chromium-based Android browser built for modern browsing, with isolated profiles, clear controls, and an honest mobile-first experience.</p>
         <div class="actions"><a class="button primary" href="{url('download')}">Download PHNX</a><a class="button ghost" href="{url('features')}">Explore features</a></div>
       </div>
-      <div class="device"><div class="device-screen"><div class="browser-bar"><span class="dot"></span><span class="dot" style="background:#ffc857"></span><span class="dot" style="background:#8de1d0"></span><span class="address">Search or enter address</span></div><div class="screen-content"><img src="{ICON_URL}" alt="PHNX Browser"><div><strong>PHNX Browser</strong><br><small>Profiles. Privacy. Control.</small></div></div></div></div>
+      <div class="device"><div class="device-screen"><div class="browser-bar"><span class="dot"></span><span class="dot" style="background:#ffc857"></span><span class="dot" style="background:#8de1d0"></span><span class="address">Search or enter address</span></div><div class="screen-content"><img src="{url(ICON_PATH)}" alt="PHNX Browser"><div><strong>PHNX Browser</strong><br><small>Profiles. Privacy. Control.</small></div></div></div></div>
     </div>
   </section>
   <section class="light"><div class="wrap"><div class="section-head"><h2>Built around<br>your browsing.</h2><p>PHNX keeps the everyday browser surface simple while putting profiles, permissions, network choices, and resource behavior within reach.</p></div><div class="cards">{card('Modern browsing', 'Android System WebView provides JavaScript, DOM storage, tabs, history, bookmarks, downloads, find-in-page, zoom, and full-screen support.', 'Implemented')}{card('Isolated profiles', 'Separate supported cookies, storage, permissions, history, sessions, identity settings, and network configuration by profile.', 'Implemented')}{card('Privacy controls', 'Profile-scoped JavaScript, cookie, pop-up, Safe Browsing, permission, clear-data, and blocker controls.', 'Implemented')}{card('Resource-aware', 'Profiles can move through active, idle, frozen, suspended, recreating, and closed lifecycle states.', 'Implemented')}{card('Baseline blocking', 'Intercept supported advertising and tracking requests locally, with site exceptions and accurate blocked-request statistics.', 'Implemented')}{card('Network choice', 'Direct or configured HTTP, HTTPS, SOCKS4, and SOCKS5 routes where supported, with clear public-proxy limitations.', 'Implemented')}{card('Secure updates', 'Release discovery and verification primitives exist. Production signing, a release server, patching, and staged rollout are not yet complete.', 'In progress')}{card('System integration', 'HTTP and HTTPS intents, browser-role controls, permission prompts, file selection, and safe URL validation are implemented where supported.', 'Implemented')}{card('Open source', 'The repository, phase blueprints, legal source, issues, and release history remain publicly inspectable.', 'Implemented')}</div></div></section>

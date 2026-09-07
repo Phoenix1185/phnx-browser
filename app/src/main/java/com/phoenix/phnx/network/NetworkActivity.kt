@@ -113,6 +113,10 @@ class NetworkActivity : AppCompatActivity() {
             "Off by default. If enabled, PHNX may expose the normal IP after every proxy route fails.",
         )
         content.addView(directFallback)
+        content.addView(Button(this).apply {
+            text = getString(R.string.save_network)
+            setOnClickListener { saveSelectedMode() }
+        })
 
         myProxyPanel = buildMyProxyPanel()
         freeProxyPanel = buildFreeProxyPanel()
@@ -277,6 +281,37 @@ class NetworkActivity : AppCompatActivity() {
         }.onFailure { showFailure(it.message ?: "Could not save proxy configuration.") }
     }
 
+    private fun saveSelectedMode() {
+        when (selectedMode()) {
+            NetworkMode.DIRECT -> useDirectConnection()
+            NetworkMode.MY_PROXY -> saveMyProxy()
+            NetworkMode.FREE_PUBLIC_PROXY -> {
+                val selected = selectedFreeProxy()
+                if (selected != null) {
+                    useProxy(selected)
+                } else {
+                    val existing = loadedConfig ?: app.networkManager.getConfig(profileId)
+                    val config = existing.copy(
+                        mode = NetworkMode.FREE_PUBLIC_PROXY,
+                        proxyType = null,
+                        proxyHost = "",
+                        proxyPort = 0,
+                        enabled = true,
+                        fallbackToFreeProxy = false,
+                        fallbackToDirect = directFallback.isChecked,
+                        freeProxyFallbacks = discoveredProxies,
+                    )
+                    app.networkManager.saveConfig(config)
+                    loadedConfig = config
+                    password.text.clear()
+                    result.text = "Free public proxy mode saved. Choose a route before applying it."
+                    updateActiveStatus(config)
+                }
+            }
+            NetworkMode.PROXY -> saveMyProxy()
+        }
+    }
+
     private fun testMyProxy() {
         runCatching { readMyProxyConfig() }.onSuccess { config ->
             app.networkManager.saveConfig(config)
@@ -304,11 +339,11 @@ class NetworkActivity : AppCompatActivity() {
 
     private fun useDirectConnection() {
         val existing = loadedConfig ?: app.networkManager.getConfig(profileId)
-        val config = ProfileNetworkConfig(
-            id = existing.id,
-            profileId = profileId,
+        val config = existing.copy(
             mode = NetworkMode.DIRECT,
             enabled = true,
+            fallbackToFreeProxy = false,
+            fallbackToDirect = false,
             freeProxyFallbacks = discoveredProxies,
         )
         saveAndApply(config, "Direct connection selected.")
@@ -460,6 +495,10 @@ class NetworkActivity : AppCompatActivity() {
             activeProxyStatus.text = "DIRECT\nNo proxy is active."
             return
         }
+        if (config.mode == NetworkMode.FREE_PUBLIC_PROXY && config.proxyHost.isBlank()) {
+            activeProxyStatus.text = "FREE PUBLIC PROXY\nNo public proxy route is selected."
+            return
+        }
         val endpoint = config.freeProxyFallbacks.firstOrNull { it.type == config.proxyType && it.host == config.proxyHost && it.port == config.proxyPort }
         val health = endpoint?.let { "${healthDot(it.health)} ${it.health.name.lowercase()}" } ?: "* unknown"
         val latency = endpoint?.latencyMs?.let { "\nLatency: ${it}ms" }.orEmpty()
@@ -525,6 +564,15 @@ class NetworkActivity : AppCompatActivity() {
         myProxyRadio.id -> NetworkMode.MY_PROXY
         freeProxyRadio.id -> NetworkMode.FREE_PUBLIC_PROXY
         else -> NetworkMode.DIRECT
+    }
+
+    private fun selectedFreeProxy(): ProxyEndpoint? {
+        val current = loadedConfig ?: return null
+        return discoveredProxies.firstOrNull { endpoint ->
+            endpoint.type == current.proxyType &&
+                endpoint.host == current.proxyHost &&
+                endpoint.port == current.proxyPort
+        }
     }
 
     private fun radioFor(mode: NetworkMode): RadioButton = when (mode) {
