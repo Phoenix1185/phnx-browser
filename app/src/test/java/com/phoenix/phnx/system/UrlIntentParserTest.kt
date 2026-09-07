@@ -1,6 +1,7 @@
 package com.phoenix.phnx.system
 
 import android.content.Intent
+import android.net.Uri
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -23,5 +24,12 @@ class UrlIntentParserTest {
     @Test
     fun ignoresNonViewIntents() {
         assertNull(UrlIntentParser.parse(Intent(Intent.ACTION_SEND)))
+    }
+
+    @Test
+    fun parsesExternalViewIntentData() {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com/from-email"))
+
+        assertEquals("https://example.com/from-email", UrlIntentParser.parse(intent))
     }
 }

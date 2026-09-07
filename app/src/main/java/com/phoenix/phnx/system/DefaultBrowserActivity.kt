@@ -69,18 +69,22 @@ class DefaultBrowserActivity : AppCompatActivity() {
             DefaultBrowserState.DEFAULT -> {
                 status.text = getString(R.string.default_browser_status_default)
                 action.text = getString(R.string.manage_default_browser)
+                action.isEnabled = false
             }
             DefaultBrowserState.NOT_DEFAULT -> {
                 status.text = getString(R.string.default_browser_status_not_default)
                 action.text = getString(R.string.set_as_default_browser)
+                action.isEnabled = true
             }
             DefaultBrowserState.UNKNOWN -> {
                 status.text = getString(R.string.default_browser_status_unknown)
                 action.text = getString(R.string.open_default_browser_settings)
+                action.isEnabled = true
             }
             DefaultBrowserState.UNAVAILABLE -> {
                 status.text = getString(R.string.default_browser_status_unavailable)
                 action.text = getString(R.string.open_default_browser_settings)
+                action.isEnabled = true
             }
         }
     }

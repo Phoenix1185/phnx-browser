@@ -24,7 +24,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
 import android.webkit.PermissionRequest
-import android.webkit.URLUtil
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebChromeClient.CustomViewCallback
@@ -59,6 +58,7 @@ import com.phoenix.phnx.browser.BrowserController
 import com.phoenix.phnx.browser.BrowserView
 import com.phoenix.phnx.browser.NavigationController
 import com.phoenix.phnx.downloads.DownloadsActivity
+import com.phoenix.phnx.downloads.DownloadFileResolver
 import com.phoenix.phnx.downloads.DownloadSecurityManager
 import com.phoenix.phnx.identity.DevicePresets
 import com.phoenix.phnx.identity.WebViewIdentityCompatibility
@@ -793,20 +793,29 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun enqueueDownload(download: PendingDownload) {
-        val filename = URLUtil.guessFileName(download.url, download.contentDisposition, download.mimeType)
-            .replace(Regex("[\\\\/:*?\"<>|]"), "_")
+        val resolution = DownloadFileResolver.resolve(
+            url = download.url,
+            contentDisposition = download.contentDisposition,
+            mimeType = download.mimeType,
+        )
         val request = DownloadManager.Request(Uri.parse(download.url))
-            .setTitle(filename)
+            .setTitle(resolution.filename)
             .setDescription("Downloading with PHNX Browser")
-            .setMimeType(download.mimeType)
+            .setMimeType(resolution.mimeType)
             .addRequestHeader("User-Agent", download.userAgent)
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
+            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, resolution.filename)
         val manager = getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
         val downloadId = manager.enqueue(request)
         val profileId = tabManager.currentTab()?.profileId ?: profileManager.activeProfile().id
-        app.downloadManager.record(profileId, downloadId, download.url, filename, download.mimeType)
-        Toast.makeText(this, "Download started", Toast.LENGTH_SHORT).show()
+        app.downloadManager.record(
+            profileId,
+            downloadId,
+            download.url,
+            resolution.filename,
+            resolution.mimeType,
+        )
+        Toast.makeText(this, "Downloading: ${resolution.filename}", Toast.LENGTH_SHORT).show()
     }
 
     private fun navigateFromAddressBar() {
@@ -1298,6 +1307,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val tab = tabManager.currentTab() ?: return
         tab.url = url
         tab.title = url
+        tab.isLoading = true
+        hideError()
         currentBrowserView()?.loadUrl(url)
     }
 

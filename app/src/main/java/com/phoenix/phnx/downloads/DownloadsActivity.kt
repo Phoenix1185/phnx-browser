@@ -2,6 +2,9 @@ package com.phoenix.phnx.downloads
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.Gravity
 import android.widget.Button
 import android.widget.LinearLayout
@@ -12,8 +15,20 @@ import com.phoenix.phnx.PhnxApplication
 import com.phoenix.phnx.R
 
 class DownloadsActivity : AppCompatActivity() {
+    private data class ProgressSample(val bytes: Long, val atMillis: Long)
+
     private val app by lazy { application as PhnxApplication }
     private val profileId by lazy { app.profileManager.activeProfile().id }
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val progressSamples = mutableMapOf<Long, ProgressSample>()
+    private val refreshRunnable = object : Runnable {
+        override fun run() {
+            if (!isFinishing && !isDestroyed) {
+                refresh()
+                refreshHandler.postDelayed(this, REFRESH_INTERVAL_MILLIS)
+            }
+        }
+    }
     private lateinit var list: LinearLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,13 +54,22 @@ class DownloadsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::list.isInitialized) refresh()
+        if (::list.isInitialized) {
+            refreshHandler.removeCallbacks(refreshRunnable)
+            refreshRunnable.run()
+        }
+    }
+
+    override fun onPause() {
+        refreshHandler.removeCallbacks(refreshRunnable)
+        super.onPause()
     }
 
     private fun refresh() {
         list.removeAllViews()
         val downloads = app.downloadManager.getForProfile(profileId)
         if (downloads.isEmpty()) {
+            progressSamples.clear()
             list.addView(TextView(this).apply {
                 text = getString(R.string.no_downloads)
                 textSize = 16f
@@ -54,6 +78,7 @@ class DownloadsActivity : AppCompatActivity() {
             })
             return
         }
+        progressSamples.keys.retainAll(downloads.mapTo(mutableSetOf()) { it.downloadId })
         downloads.forEach { download ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -63,10 +88,7 @@ class DownloadsActivity : AppCompatActivity() {
             val status = app.downloadManager.query(download.downloadId)
             val progress = app.downloadManager.progress(download.downloadId)
             row.addView(TextView(this).apply {
-                val progressLabel = progress?.takeIf { it.totalBytes > 0 }?.let {
-                    "\n${formatBytes(it.downloadedBytes)} / ${formatBytes(it.totalBytes)}"
-                }.orEmpty()
-                text = "${download.filename}\n${statusLabel(status)}$progressLabel"
+                text = buildDownloadLabel(download.downloadId, download.filename, status, progress)
                 textSize = 15f
                 setTextColor(getColor(R.color.phnx_text))
             }, LinearLayout.LayoutParams(0, -2, 1f))
@@ -115,9 +137,81 @@ class DownloadsActivity : AppCompatActivity() {
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
+    private fun buildDownloadLabel(
+        downloadId: Long,
+        filename: String,
+        status: DownloadStatus,
+        progress: DownloadProgress?,
+    ): String {
+        val progressLabel = progress?.let { current ->
+            val bytesLabel = formatBytes(current.downloadedBytes)
+            if (current.totalBytes > 0) {
+                val percent = ((current.downloadedBytes * 100L) / current.totalBytes)
+                    .coerceIn(0L, 100L)
+                    .toInt()
+                val details = getString(
+                    R.string.download_progress,
+                    percent,
+                    bytesLabel,
+                    formatBytes(current.totalBytes),
+                )
+                val estimate = estimate(downloadId = download.downloadId, progress = current, status = status)
+                if (estimate != null) "$details\n$estimate" else details
+            } else {
+                getString(R.string.download_progress_unknown, bytesLabel)
+            }
+        }
+        return buildString {
+            append(filename)
+            append('\n')
+            append(statusLabel(status))
+            if (!progressLabel.isNullOrBlank()) {
+                append('\n')
+                append(progressLabel)
+            }
+        }
+    }
+
+    private fun estimate(downloadId: Long, progress: DownloadProgress, status: DownloadStatus): String? {
+        val now = SystemClock.elapsedRealtime()
+        val previous = progressSamples.put(
+            downloadId,
+            ProgressSample(progress.downloadedBytes, now),
+        )
+        if (status == DownloadStatus.PAUSED) return getString(R.string.download_eta_paused)
+        if (status != DownloadStatus.DOWNLOADING) return null
+        val sample = previous ?: return getString(R.string.download_eta_calculating)
+        val elapsed = now - sample.atMillis
+        val bytesPerSecond = if (elapsed > 0 && progress.downloadedBytes > sample.bytes) {
+            ((progress.downloadedBytes - sample.bytes) * 1000L / elapsed).coerceAtLeast(1L)
+        } else {
+            0L
+        }
+        if (bytesPerSecond == 0L) return getString(R.string.download_eta_calculating)
+        val remainingBytes = (progress.totalBytes - progress.downloadedBytes).coerceAtLeast(0L)
+        val remainingSeconds = (remainingBytes + bytesPerSecond - 1L) / bytesPerSecond
+        val eta = getString(R.string.download_eta, formatDuration(remainingSeconds))
+        return "$eta\n${getString(R.string.download_speed, formatBytes(bytesPerSecond))}"
+    }
+
+    private fun formatDuration(seconds: Long): String {
+        val hours = seconds / 3600L
+        val minutes = (seconds % 3600L) / 60L
+        val remainingSeconds = seconds % 60L
+        return when {
+            hours > 0 -> "${hours}h ${minutes}m"
+            minutes > 0 -> "${minutes}m ${remainingSeconds}s"
+            else -> "${remainingSeconds}s"
+        }
+    }
+
     private fun formatBytes(bytes: Long): String = when {
         bytes >= 1024L * 1024L -> "%.1f MB".format(bytes / (1024.0 * 1024.0))
         bytes >= 1024L -> "%.1f KB".format(bytes / 1024.0)
         else -> "$bytes B"
+    }
+
+    private companion object {
+        const val REFRESH_INTERVAL_MILLIS = 1000L
     }
 }
