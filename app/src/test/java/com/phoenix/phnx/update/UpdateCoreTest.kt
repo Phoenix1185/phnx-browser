@@ -11,7 +11,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.json.JSONObject
 
 class UpdateCoreTest {
     @Test
@@ -147,22 +146,26 @@ class UpdateCoreTest {
         fullApkSha256 = "a".repeat(64),
     )
 
-    private fun manifestJson(manifest: UpdateManifest): String = JSONObject().apply {
-        put("product", manifest.product)
-        put("platform", manifest.platform)
-        put("architecture", manifest.architecture)
-        put("channel", manifest.channel.name.lowercase())
-        put("latestVersion", manifest.latestVersion)
-        put("latestVersionCode", manifest.latestVersionCode)
-        put("minimumSupportedVersionCode", manifest.minimumSupportedVersionCode)
-        put("updateType", manifest.updateType.name.lowercase())
-        put("mandatory", manifest.mandatory)
-        put("fullApkUrl", manifest.fullApkUrl)
-        put("fullApkSha256", manifest.fullApkSha256)
-        manifest.deltaUrl?.let { put("deltaUrl", it) }
-        manifest.deltaSha256?.let { put("deltaSha256", it) }
-        manifest.signature?.let { put("signature", it) }
-    }.toString()
+    private fun manifestJson(manifest: UpdateManifest): String = buildString {
+        append("{")
+        append("\"product\":").append(jsonString(manifest.product))
+        append(",\"platform\":").append(jsonString(manifest.platform))
+        append(",\"architecture\":").append(jsonString(manifest.architecture))
+        append(",\"channel\":").append(jsonString(manifest.channel.name.lowercase()))
+        append(",\"latestVersion\":").append(jsonString(manifest.latestVersion))
+        append(",\"latestVersionCode\":").append(manifest.latestVersionCode)
+        append(",\"minimumSupportedVersionCode\":").append(manifest.minimumSupportedVersionCode)
+        append(",\"updateType\":").append(jsonString(manifest.updateType.name.lowercase()))
+        append(",\"mandatory\":").append(manifest.mandatory)
+        append(",\"fullApkUrl\":").append(jsonString(manifest.fullApkUrl))
+        append(",\"fullApkSha256\":").append(jsonString(manifest.fullApkSha256))
+        manifest.deltaUrl?.let { append(",\"deltaUrl\":").append(jsonString(it)) }
+        manifest.deltaSha256?.let { append(",\"deltaSha256\":").append(jsonString(it)) }
+        manifest.signature?.let { append(",\"signature\":").append(jsonString(it)) }
+        append("}")
+    }
+
+    private fun jsonString(value: String): String = "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
     private companion object {
         const val EMBEDDED_SAMPLE_SIGNATURE =
