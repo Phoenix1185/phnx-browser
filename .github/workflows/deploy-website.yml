@@ -21,7 +21,6 @@ concurrency:
 
 jobs:
   deploy:
-    if: vars.PAGES_ENABLED == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -30,34 +29,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Build static website
+        run: python3 website/build.py
+
       - name: Prepare site
         run: |
           test -s website/index.html
           test -s website/assets/phnx-browser-app-icon.png
-          test -s index.html
+          test -s website/assets/site.css
+          test -s website/assets/site.js
           python3 - <<'PY'
-          from html.parser import HTMLParser
           from pathlib import Path
 
-          class Validator(HTMLParser):
-              def __init__(self):
-                  super().__init__()
-                  self.ids = set()
-                  self.links = []
-              def handle_starttag(self, tag, attrs):
-                  attrs = dict(attrs)
-                  if "id" in attrs:
-                      self.ids.add(attrs["id"])
-                  if tag == "a" and "href" in attrs:
-                      self.links.append(attrs["href"])
-
-          parser = Validator()
-          parser.feed(Path("website/index.html").read_text())
-          required = {"home", "features", "download", "releases", "privacy", "security", "docs", "about"}
-          missing = required - parser.ids
-          assert not missing, f"missing website sections: {sorted(missing)}"
-          assert any(link.startswith("https://github.com/Phoenix1185/phnx-browser") for link in parser.links)
-          assert "PHNX Browser" in Path("website/index.html").read_text()
+          required_routes = [
+              "index.html", "features/index.html", "download/index.html",
+              "releases/index.html", "changelog/index.html", "privacy/index.html",
+              "security/index.html", "about/index.html", "legal/index.html",
+              "docs/index.html", "docs/getting-started/index.html",
+              "docs/profiles/index.html", "docs/network/index.html",
+              "docs/privacy-security/index.html", "docs/ad-blocking/index.html",
+              "docs/performance/index.html", "docs/updates/index.html",
+              "docs/default-browser/index.html", "docs/permissions/index.html",
+              "docs/troubleshooting/index.html", "docs/developer/index.html",
+          ]
+          missing = [route for route in required_routes if not (Path("website") / route).is_file()]
+          assert not missing, f"missing website routes: {missing}"
+          html = "\n".join(path.read_text() for path in Path("website").rglob("*.html"))
+          assert "PHNX Browser" in html
+          assert "https://github.com/Phoenix1185/phnx-browser" in html
+          assert "Android download coming soon" not in html
+          for secret_marker in ("ghp_", "github_pat_", "BEGIN PRIVATE KEY", "PHNX_KEYSTORE_PASSWORD"):
+              assert secret_marker not in html, f"secret marker found: {secret_marker}"
           PY
 
       - name: Configure Pages

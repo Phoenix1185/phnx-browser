@@ -1,7 +1,7 @@
 # PHNX Browser Website
 
-This is the static GitHub Pages site for PHNX Browser. It uses the repository's official icon and links to the actual Phoenix repository, issues, releases, and product documentation. The root `index.html` redirects legacy root-based Pages configurations into this maintained site directory.
+This is the static GitHub Pages site for PHNX Browser. It uses the repository's official icon and links to the actual Phoenix repository, issues, releases, legal documents, and product documentation. `build.py` generates the direct-refresh route directories in this folder from one configurable base URL.
 
-The Download section resolves the latest stable GitHub Release through the public API and links directly to its APK asset. Until a signed stable release with an APK asset exists, it shows `Android download coming soon` and exposes no CI artifacts, debug builds, unsigned packages, or workflow links as product downloads.
+The Download, Releases, and Changelog pages resolve published GitHub Releases through the public API and link directly to real APK assets only when they exist. Until a signed stable release with an APK asset exists, they show `No signed public release is currently available.` and expose no CI artifacts, debug builds, unsigned packages, or workflow links as product downloads.
 
-To activate deployment, enable GitHub Pages with `GitHub Actions` as the source and set the repository variable `PAGES_ENABLED` to `true`. The workflow is intentionally dormant until that one-time repository configuration exists. Until then, legacy root-based Pages serves the root redirect.
+GitHub Pages must use `GitHub Actions` as its source. Every push to `main` runs `.github/workflows/deploy-website.yml`, builds the static routes, validates them, uploads the `website/` artifact, and deploys the Pages site.

@@ -1,5 +1,7 @@
 package com.phoenix.phnx.privacy
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -12,6 +14,7 @@ import androidx.appcompat.widget.SwitchCompat
 import com.phoenix.phnx.PhnxApplication
 import com.phoenix.phnx.R
 import com.phoenix.phnx.adblock.AdBlockSettings
+import com.phoenix.phnx.about.PhnxWebsite
 import com.phoenix.phnx.permissions.PermissionActivity
 
 class PrivacyActivity : AppCompatActivity() {
@@ -75,6 +78,12 @@ class PrivacyActivity : AppCompatActivity() {
             textSize = 13f
             setTextColor(getColor(R.color.phnx_muted))
             setPadding(0, dp(14), 0, 0)
+        })
+        content.addView(optionRow("Read online privacy policy", "PHNX's public privacy behavior and limitations").apply {
+            setOnClickListener { openWebsite(PhnxWebsite.PRIVACY) }
+        })
+        content.addView(optionRow("Read online security page", "Release verification, permissions, and safety boundaries").apply {
+            setOnClickListener { openWebsite(PhnxWebsite.SECURITY) }
         })
 
         setContentView(ScrollView(this).apply {
@@ -230,6 +239,10 @@ class PrivacyActivity : AppCompatActivity() {
     }
 
     private fun save() = app.privacyManager.saveSettings(settings)
+
+    private fun openWebsite(url: String) {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+    }
 
     private fun optionRow(title: String, summary: String): View = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL

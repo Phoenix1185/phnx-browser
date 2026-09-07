@@ -1,6 +1,7 @@
 package com.phoenix.phnx.about
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -53,6 +54,17 @@ class AboutActivity : AppCompatActivity() {
             startActivity(Intent(this, UpdateActivity::class.java))
         })
 
+        content.addView(sectionTitle("Online resources"))
+        content.addView(websiteButton("Official PHNX website", PhnxWebsite.HOME))
+        content.addView(websiteButton("Features", PhnxWebsite.FEATURES))
+        content.addView(websiteButton("Documentation", PhnxWebsite.DOCS))
+        content.addView(websiteButton("Download status", PhnxWebsite.DOWNLOAD))
+        content.addView(websiteButton("Releases", PhnxWebsite.RELEASES))
+        content.addView(websiteButton("Changelog", PhnxWebsite.CHANGELOG))
+        content.addView(websiteButton("GitHub repository", PhnxWebsite.GITHUB))
+        content.addView(websiteButton("Online privacy policy", PhnxWebsite.PRIVACY))
+        content.addView(websiteButton("Security", PhnxWebsite.SECURITY))
+
         content.addView(sectionTitle("Legal and notices"))
         content.addView(linkButton("Privacy Policy", LegalActivity.PRIVACY))
         content.addView(linkButton("Terms of Use", LegalActivity.TERMS))
@@ -90,6 +102,10 @@ class AboutActivity : AppCompatActivity() {
 
     private fun linkButton(label: String, page: String): Button = actionButton(label) {
         startActivity(Intent(this, LegalActivity::class.java).putExtra(LegalActivity.EXTRA_PAGE, page))
+    }
+
+    private fun websiteButton(label: String, url: String): Button = actionButton(label) {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     }
 
     private fun text(value: String, size: Float, prominent: Boolean): TextView = TextView(this).apply {
