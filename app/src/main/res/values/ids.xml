@@ -1,0 +1,11 @@
+<resources>
+    <item name="tab_preview_card" type="id" />
+    <item name="tab_preview_image" type="id" />
+    <item name="tab_preview_pending" type="id" />
+    <item name="tab_preview_close" type="id" />
+    <item name="tab_favicon" type="id" />
+    <item name="tab_preview_title" type="id" />
+    <item name="tab_preview_domain" type="id" />
+    <item name="tab_preview_status" type="id" />
+    <item name="tab_preview_group" type="id" />
+</resources>

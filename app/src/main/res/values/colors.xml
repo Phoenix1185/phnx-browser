@@ -7,4 +7,8 @@
     <color name="phnx_error">#B42318</color>
     <color name="phnx_toolbar_content">#172033</color>
     <color name="phnx_toolbar_hint">#697386</color>
+    <color name="phnx_card_surface">#FFFFFF</color>
+    <color name="phnx_card_stroke">#D9DFEA</color>
+    <color name="phnx_preview_surface">#E7ECF5</color>
+    <color name="phnx_search_surface">#EEF2F8</color>
 </resources>

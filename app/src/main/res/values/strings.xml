@@ -213,4 +213,13 @@
     <string name="cpu_sampling">CPU usage: collecting a second sample; updates automatically</string>
     <string name="profile_lifecycle">Profile lifecycle</string>
     <string name="profile_state">%1$s: %2$s</string>
+    <string name="tab_overview_title">PHNX Browser</string>
+    <string name="search_tabs">Search your tabs</string>
+    <string name="open_tabs_count">%1$d tabs</string>
+    <string name="open_tabs_profile">%1$s</string>
+    <string name="no_open_tabs">No open tabs</string>
+    <string name="no_matching_tabs">No matching tabs</string>
+    <string name="tab_preview_pending">Preview pending</string>
+    <string name="close">Close</string>
+    <string name="close_tab_overview">Close tab overview</string>
 </resources>

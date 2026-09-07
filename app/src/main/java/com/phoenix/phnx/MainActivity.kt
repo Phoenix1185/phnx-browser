@@ -81,6 +81,10 @@ import com.phoenix.phnx.settings.SettingsActivity
 import com.phoenix.phnx.system.UrlIntentParser
 import com.phoenix.phnx.tabs.Tab
 import com.phoenix.phnx.tabs.TabManager
+import com.phoenix.phnx.tabs.TabOverviewDialog
+import com.phoenix.phnx.tabs.TabOverviewItem
+import com.phoenix.phnx.tabs.TabPreviewStore
+import com.phoenix.phnx.tabs.toOverviewItem
 import kotlin.math.abs
 import java.io.ByteArrayInputStream
 
@@ -95,6 +99,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val permissionManager by lazy { app.permissionManager }
     private val adBlockManager by lazy { app.adBlockManager }
     private val identityAdapter = WebViewIdentityAdapter()
+    private val previewStore by lazy { TabPreviewStore(this) }
 
     private lateinit var browserContainer: FrameLayout
     private lateinit var addressBar: EditText
@@ -118,6 +123,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var findQuery = ""
     private var findDialogWebView: WebView? = null
     private var findCountView: TextView? = null
+    private var tabOverview: TabOverviewDialog? = null
 
     private val swipeDetector by lazy {
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -505,6 +511,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 applyProfileCompatibility(view, tab.profileId)
                 privacyManager.applyTo(view, tab.profileId)
                 app.historyManager.recordVisit(tab.profileId, url, tab.title, tab.isPrivate)
+                captureTabPreview(tab, view)
                 updateTabChrome(tab, view)
                 hideError()
             }
@@ -570,6 +577,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             override fun onReceivedTitle(view: WebView, title: String) {
                 tab.title = title.ifBlank { "New tab" }
                 updateTabChrome(tab, view)
+            }
+
+            override fun onReceivedIcon(view: WebView, icon: android.graphics.Bitmap) {
+                previewStore.setFavicon(tab, icon)
             }
 
             override fun onShowCustomView(view: View, callback: CustomViewCallback) {
@@ -939,76 +950,87 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         return Uri.parse(url).host?.removePrefix("www.").takeUnless { it.isNullOrBlank() } ?: "Loading"
     }
 
-    private fun showTabSwitcher() {
-        val list = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(18), dp(4), dp(18), 0)
-        }
-        val dialog = AlertDialog.Builder(this).setTitle("Open tabs").setView(list).setNegativeButton("Close", null).create()
-        val profileId = profileManager.activeProfile().id
-        tabManager.getTabs(profileId).forEach { tab ->
-            val row = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
-            val select = Button(this).apply {
-                val groupPrefix = tab.groupTitle?.let { "$it: " }.orEmpty()
-                text = (groupPrefix + tab.title.ifBlank { "New tab" }).take(32)
-                setOnClickListener {
-                    tabManager.switchTab(tab.id, profileId = profileId)
-                    dialog.dismiss()
-                    attachCurrentTab()
-                }
-            }
-            row.addView(select, LinearLayout.LayoutParams(0, dp(52), 1f))
-            row.addView(Button(this).apply {
-                text = getString(if (tab.groupId == null) R.string.group_tab else R.string.ungroup_tab)
-                contentDescription = text
-                setOnClickListener {
-                    if (tab.groupId == null) {
-                        showGroupPicker(tab, dialog)
-                    } else {
-                        tabManager.removeFromGroup(profileId, tab.id)
-                        dialog.dismiss()
-                        attachCurrentTab()
-                    }
-                }
-            }, LinearLayout.LayoutParams(dp(96), dp(52)))
-            row.addView(Button(this).apply {
-                text = "Close"
-                contentDescription = "Close tab"
-                setOnClickListener {
-                    tabManager.closeTab(tab.id)?.let(browserController::close)
-                    if (tabManager.tabCount(profileId) == 0) {
-                        tabManager.createTab(profileId = profileId)
-                    }
-                    dialog.dismiss()
-                    attachCurrentTab()
-                }
-            }, LinearLayout.LayoutParams(dp(80), dp(52)))
-            list.addView(row)
-        }
-        dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setOnClickListener { dialog.dismiss() }
-        }
-        dialog.show()
+    private fun captureTabPreview(tab: Tab, view: WebView) {
+        // Capture once after navigation settles. The cache, not the WebView, owns the preview.
+        view.postDelayed({
+            if (tabManager.getTabs().any { it.id == tab.id }) previewStore.capture(tab, view)
+        }, PREVIEW_CAPTURE_DELAY_MS)
     }
 
-    private fun showGroupPicker(tab: Tab, parentDialog: AlertDialog) {
+    private fun showTabSwitcher() {
+        val profileId = profileManager.activeProfile().id
+        tabManager.currentTab()?.takeIf { it.profileId == profileId }?.let { current ->
+            currentBrowserView()?.let { previewStore.capture(current, it) }
+        }
+        val dialog = TabOverviewDialog(
+            context = this,
+            profileId = profileId,
+            profileName = profileManager.activeProfile().name,
+            previewStore = previewStore,
+            onSelect = ::selectTabFromOverview,
+            onClose = ::closeTabFromOverview,
+            onGroup = { item -> showGroupPicker(item) },
+            onNewTab = ::onNewTab,
+            onRecentTabs = ::onRecentTabs,
+        )
+        tabOverview = dialog
+        dialog.setOnDismissListener {
+            if (tabOverview === dialog) tabOverview = null
+        }
+        dialog.show()
+        dialog.setTabs(tabManager.getTabs(profileId).map { it.toOverviewItem(tabManager.activeTabId().orEmpty()) })
+    }
+
+    private fun selectTabFromOverview(item: TabOverviewItem) {
+        val activeProfileId = profileManager.activeProfile().id
+        if (item.profileId != activeProfileId) return
+        if (!tabManager.switchTab(item.id, profileId = activeProfileId)) return
+        saveProfileSession(activeProfileId)
+        tabOverview?.dismiss()
+        attachCurrentTab()
+    }
+
+    private fun closeTabFromOverview(item: TabOverviewItem) {
+        val activeProfileId = profileManager.activeProfile().id
+        if (item.profileId != activeProfileId) return
+        val wasCurrent = tabManager.activeTabId() == item.id
+        val closed = tabManager.closeTab(item.id) ?: return
+        browserController.close(closed)
+        previewStore.remove(closed)
+        if (tabManager.tabCount(activeProfileId) == 0) tabManager.createTab(profileId = activeProfileId)
+        if (wasCurrent) attachCurrentTab()
+        saveProfileSession(activeProfileId)
+        refreshTabOverview()
+    }
+
+    private fun refreshTabOverview() {
+        val profileId = profileManager.activeProfile().id
+        tabOverview?.setTabs(tabManager.getTabs(profileId).map { it.toOverviewItem(tabManager.activeTabId().orEmpty()) })
+    }
+
+    private fun showGroupPicker(item: TabOverviewItem) {
+        val tab = tabManager.getTabs(item.profileId).firstOrNull { it.id == item.id } ?: return
+        if (tab.groupId != null) {
+            tabManager.removeFromGroup(tab.profileId, tab.id)
+            refreshTabOverview()
+            return
+        }
         val groups = tabManager.getGroups(tab.profileId).filterNot { it.id == tab.groupId }
         val options = listOf(getString(R.string.new_tab_group)) + groups.map { it.title }
         AlertDialog.Builder(this)
             .setTitle(R.string.group_tab)
             .setItems(options.toTypedArray()) { _, which ->
                 if (which == 0) {
-                    showGroupEditor(tab, parentDialog)
+                    showGroupEditor(tab)
                 } else if (tabManager.addToGroup(tab.profileId, tab.id, groups[which - 1].id)) {
-                    parentDialog.dismiss()
-                    attachCurrentTab()
+                    refreshTabOverview()
                 }
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 
-    private fun showGroupEditor(tab: Tab, parentDialog: AlertDialog) {
+    private fun showGroupEditor(tab: Tab) {
         val input = EditText(this).apply {
             hint = getString(R.string.tab_group_name)
             setSingleLine(true)
@@ -1023,8 +1045,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 if (created == null) {
                     Toast.makeText(this, getString(R.string.tab_group_name_required), Toast.LENGTH_SHORT).show()
                 } else {
-                    parentDialog.dismiss()
-                    attachCurrentTab()
+                    refreshTabOverview()
                 }
             }
             .show()
@@ -1314,8 +1335,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onDestroy() {
         if (::browserContainer.isInitialized) hideCustomView()
+        tabOverview?.dismiss()
         if (isFinishing) clearHistoryOnClose()
         browserController.clear()
+        previewStore.shutdown()
         super.onDestroy()
     }
 
@@ -1376,6 +1399,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private companion object {
         const val START_PAGE_BASE = "https://phnx.local/"
         const val EXTRA_PROFILE_ID = "profile_id"
+        const val PREVIEW_CAPTURE_DELAY_MS = 120L
     }
 
     private fun startPageHtml(): String {
