@@ -923,7 +923,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         AlertDialog.Builder(this)
             .setTitle(if (target.linkUrl != null) R.string.context_link else R.string.context_image)
             .setMessage(summary)
-            .setItems(actions.map { it.label }.toTypedArray()) { _, which -> actions[which].run() }
+            .setItems(actions.map { it.label }.toTypedArray()) { _, which -> actions[which].action() }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
