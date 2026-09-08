@@ -29,7 +29,7 @@ object AppIntegrityVerifier {
             }
 
             val signingInfo = packageInfo.signingInfo ?: return@runCatching false
-            if (signingInfo.hasMultipleSigners) return@runCatching false
+            if (signingInfo.hasMultipleSigners()) return@runCatching false
             val signers = signingInfo.apkContentsSigners
             if (signers.size != 1) return@runCatching false
 
