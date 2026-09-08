@@ -51,6 +51,7 @@ jobs:
               "docs/performance/index.html", "docs/updates/index.html",
               "docs/default-browser/index.html", "docs/permissions/index.html",
               "docs/troubleshooting/index.html", "docs/developer/index.html",
+              "website/index.html",
           ]
           missing = [route for route in required_routes if not (Path("website") / route).is_file()]
           assert not missing, f"missing website routes: {missing}"

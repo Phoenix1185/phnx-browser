@@ -202,7 +202,7 @@ def features():
 def download():
     body = f'''<main>
   {page_hero('Download', 'Get PHNX Browser.', 'The official download page resolves published GitHub Release metadata at runtime. It never exposes CI artifacts, debug builds, unsigned packages, or invented links.')}
-  <section class="light"><div class="wrap split"><div><div class="kicker">Android</div><h2>One honest download path.</h2><p class="lede">The signed-release workflow is configured, but no stable public APK is published until a version-matched release tag is built and signed. This page shows only real GitHub Release assets.</p></div>{release_panel()}</div></section>
+  <section class="light"><div class="wrap split"><div><div class="kicker">Android</div><h2>One honest download path.</h2><p class="lede">The signed-release workflow publishes the current stable Android APK through the official GitHub release. This page shows only real GitHub Release assets.</p></div>{release_panel()}</div></section>
   <section class="dark"><div class="wrap split"><div><div class="eyebrow">Before installing</div><h2>Know what you are getting.</h2></div><div class="prose"><ul class="list"><li>Android requirement: Android 9 / API 28 or newer for the current build.</li><li>PHNX uses the device Android System WebView provider for Chromium rendering.</li><li>Review Android's install and permission prompts before installing an APK.</li><li>The app validates release metadata but currently opens the official release page for user-reviewed installation.</li></ul><div class="actions"><a class="button primary" href="{url('releases')}">Release status</a><a class="button ghost" href="{url('security')}">Security details</a></div></div></div></section>
 </main>'''
     return page_shell("download", "Download", "Download PHNX Browser only from an official published release with a real APK asset.", body)
@@ -301,6 +301,15 @@ def write_page(route, content):
     target.write_text(content, encoding="utf-8")
 
 
+def write_legacy_download_redirect():
+    target = ROOT / "website" / "index.html"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta http-equiv=\"refresh\" content=\"0; url=../download/\"><link rel=\"canonical\" href=\"../download/\"><title>Download | PHNX Browser</title></head><body><p>Redirecting to the PHNX Browser download page...</p><script>location.replace('../download/' + location.hash)</script></body></html>\n",
+        encoding="utf-8",
+    )
+
+
 def main():
     write_page("", home())
     write_page("features", features())
@@ -314,6 +323,7 @@ def main():
     write_page("security", security())
     write_page("about", about())
     write_page("legal", legal())
+    write_legacy_download_redirect()
     sitemap = "\n".join(
         [
             '<?xml version="1.0" encoding="UTF-8"?>',
