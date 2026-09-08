@@ -1,8 +1,22 @@
 # PHNX Phase Audit
 
-Audit date: 2026-09-07
+Audit date: 2026-09-08
 
 Audit basis: phase blueprints in `PHASES/phase-01-foundation`, repository code, unit tests, GitHub Actions, release workflows, and the live Pages site. This document distinguishes shipped behavior, platform limits, and work that still requires a signed public release or device validation.
+
+## Current Baseline
+
+This report and the repository at the audit date are the current PHNX engineering baseline. Future work must build on the existing tab, profile, session, WebView, lifecycle, resource, update, and release components. Do not rewrite or migrate the app architecture, and do not create competing sources of truth.
+
+The required execution order is:
+
+1. Phase 5/8 performance and stability: remove synchronous Room access from the main thread, lazy-initialize expensive components, profile startup, add bounded stress and long-run coverage, and complete production crash reporting.
+2. Phase 9 release hardening: harden network security, repository and branch controls, upgrade and migration tests, rollback documentation, exact generated license notices, and device-level release validation.
+3. Phase 11 self-update: implement signed discovery, authenticated download, pre-install signature verification, APK fallback, Android-compatible atomic handling, failed-update recovery, staged rollout, signing-key rotation design, and mandatory security-update policy.
+4. Phase 10 ruleset maintenance and Phase 12 Android integration.
+5. Phase 13 first stable public release: create the signed GitHub Release, populate metadata, point the website download flow to the actual release APK, and complete clean-install and upgrade tests on real Android devices.
+
+Real-device validation takes precedence over emulator-only evidence. A phase is not complete because the code compiles. After each phase, report `implemented`, `tested`, `failed`, `remaining`, and known Android/WebView limitations. Unsupported WebView behavior must remain documented rather than presented as an enforceable guarantee.
 
 ## Verified Complete
 
