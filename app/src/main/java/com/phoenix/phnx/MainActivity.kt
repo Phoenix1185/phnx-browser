@@ -145,7 +145,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val previewHandler = Handler(Looper.getMainLooper())
     private val pendingPreviewCaptures = mutableMapOf<String, Runnable>()
     private val longPressPoints = WeakHashMap<WebView, PointF>()
-    private val restoringDefaultLongPress = WeakHashMap<WebView, Boolean>()
     private var bookmarkStateUrl: String? = null
     private var bookmarkState = false
 
@@ -854,10 +853,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun handleWebViewLongPress(view: WebView, tab: Tab): Boolean {
-        if (restoringDefaultLongPress.remove(view) == true) return false
-        val hitTarget = contextTargetFromHitTest(view.hitTestResult)
+        // Let WebView handle ordinary text long presses so its native selection action mode remains available.
+        val hitTarget = contextTargetFromHitTest(view.hitTestResult) ?: return false
         val point = longPressPoints[view]?.let { PointF(it.x, it.y) }
-        if (hitTarget == null && point == null) return false
         resolveContextTarget(view, tab, hitTarget, point)
         return true
     }
@@ -865,22 +863,21 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private fun resolveContextTarget(
         view: WebView,
         tab: Tab,
-        seed: WebContextTarget?,
+        seed: WebContextTarget,
         point: PointF?,
     ) {
         if (point == null) {
-            if (seed != null) showWebContextMenu(view, tab, seed)
+            showWebContextMenu(view, tab, seed)
             return
         }
         val script = contextTargetScript(view, point)
         try {
             view.evaluateJavascript(script) { raw ->
                 val target = mergeContextTargets(seed, parseDomContextTarget(raw))
-                if (target != null) showWebContextMenu(view, tab, target)
-                else restoreDefaultLongPress(view)
+                showWebContextMenu(view, tab, target ?: seed)
             }
         } catch (_: RuntimeException) {
-            if (seed != null) showWebContextMenu(view, tab, seed) else restoreDefaultLongPress(view)
+            showWebContextMenu(view, tab, seed)
         }
     }
 
@@ -982,16 +979,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val extension = MimeTypeMap.getFileExtensionFromUrl(url).lowercase()
         val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension).orEmpty()
         requestDownload(url, view.settings.userAgentString, "", mimeType)
-    }
-
-    private fun restoreDefaultLongPress(view: WebView) {
-        if (!view.isAttachedToWindow) return
-        view.post {
-            if (!view.isAttachedToWindow) return@post
-            restoringDefaultLongPress[view] = true
-            view.performLongClick()
-            restoringDefaultLongPress.remove(view)
-        }
     }
 
     private fun contextTargetFromHitTest(result: WebView.HitTestResult): WebContextTarget? {
@@ -1648,7 +1635,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         pendingPreviewCaptures.values.forEach(previewHandler::removeCallbacks)
         pendingPreviewCaptures.clear()
         longPressPoints.clear()
-        restoringDefaultLongPress.clear()
         previewHandler.removeCallbacksAndMessages(null)
         pendingPermissionRequest?.deny()
         pendingPermissionRequest = null
