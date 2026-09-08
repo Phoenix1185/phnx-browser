@@ -28,6 +28,8 @@ class BrowserController(private val pool: ProfileViewPool) {
 
     fun state(profileId: String): ProfileLifecycleState? = pool.state(profileId)
 
+    fun viewForTab(tabId: String): BrowserView? = pool.viewForTab(tabId)
+
     fun suspendProfile(profileId: String) = pool.transition(profileId, ProfileLifecycleState.SUSPENDED)
 
     fun setSessionSaver(saver: (String) -> Unit) = pool.setSessionSaver(saver)

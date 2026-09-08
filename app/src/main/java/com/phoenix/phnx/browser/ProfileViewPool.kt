@@ -95,6 +95,8 @@ class ProfileViewPool(context: Context) {
 
     fun state(profileId: String): ProfileLifecycleState? = tracker.stateOrNull(profileId)
 
+    fun viewForTab(tabId: String): BrowserView? = entries[tabId]?.view
+
     fun forEachView(action: (BrowserView) -> Unit) {
         entries.values.mapNotNull { it.view }.forEach(action)
     }

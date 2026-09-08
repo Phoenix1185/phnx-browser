@@ -89,6 +89,7 @@ import com.phoenix.phnx.tabs.TabOverviewItem
 import com.phoenix.phnx.tabs.toOverviewItem
 import kotlin.math.abs
 import java.io.ByteArrayInputStream
+import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val tabManager = TabManager()
@@ -116,6 +117,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var pageZoomPercent = 100
     private var textScalePercent = 100
     private var activityVisible = false
+    private var mediaCheckInFlight = false
     private var attachedTabId: String? = null
     private var appliedNetworkConfigHash: Int? = null
     private var customView: View? = null
@@ -305,17 +307,17 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     override fun onStop() {
         app.adBlockManager.flushStats()
         activityVisible = false
-        reconcileResources()
         trimInactiveTabs()
+        reconcileResources()
         super.onStop()
     }
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
-        reconcileResources()
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             trimInactiveTabs(aggressive = level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
         }
+        reconcileResources()
     }
 
     private fun saveCurrentProfileSession() {
@@ -1471,6 +1473,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         const val EXTRA_PROFILE_ID = "profile_id"
         private const val START_PAGE_BASE = "https://phnx.local/"
         private const val PREVIEW_CAPTURE_DELAY_MS = 120L
+        private const val ACTIVE_MEDIA_CHECK_SCRIPT =
+            "(function(){try{return Array.from(document.querySelectorAll('audio,video')).some(function(m){return !m.paused && !m.ended && m.readyState >= 2;});}catch(_){return true;}})()"
     }
 
     private fun startPageHtml(): String {
@@ -1553,6 +1557,39 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun trimInactiveTabs(aggressive: Boolean = false) {
+        if (mediaCheckInFlight) return
+        val current = tabManager.currentTab() ?: return
+        val candidates = tabManager.getTabs(current.profileId)
+            .filter { it.id != current.id && !it.isLoading && !it.hasPendingWebTask }
+            .mapNotNull { tab -> browserController.viewForTab(tab.id)?.let { tab to it } }
+        if (candidates.isEmpty()) {
+            trimInactiveTabsNow(aggressive)
+            return
+        }
+
+        mediaCheckInFlight = true
+        val remaining = AtomicInteger(candidates.size)
+        candidates.forEach { (tab, view) ->
+            val complete = {
+                if (remaining.decrementAndGet() == 0) {
+                    mediaCheckInFlight = false
+                    trimInactiveTabsNow(aggressive)
+                }
+            }
+            try {
+                view.evaluateJavascript(ACTIVE_MEDIA_CHECK_SCRIPT) { result ->
+                    // A failed or unexpected result is treated as active to avoid interrupting media.
+                    tab.hasActiveMedia = result != "false"
+                    complete()
+                }
+            } catch (_: RuntimeException) {
+                tab.hasActiveMedia = true
+                complete()
+            }
+        }
+    }
+
+    private fun trimInactiveTabsNow(aggressive: Boolean) {
         val current = tabManager.currentTab() ?: return
         browserController.trimInactiveTabs(
             tabs = tabManager.getTabs(current.profileId),
@@ -1576,4 +1613,5 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         fun matches(other: WebViewConfiguration): Boolean =
             tabId == other.tabId && profileId == other.profileId && identity == other.identity && privacy == other.privacy
     }
+
 }
