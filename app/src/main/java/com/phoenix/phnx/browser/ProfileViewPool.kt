@@ -2,6 +2,7 @@ package com.phoenix.phnx.browser
 
 import android.content.Context
 import android.os.Bundle
+import android.webkit.WebViewClient
 import com.phoenix.phnx.resources.PerformanceMode
 import com.phoenix.phnx.resources.LifecycleTransition
 import com.phoenix.phnx.resources.ProfileLifecycleState
@@ -174,7 +175,7 @@ class ProfileViewPool(context: Context) {
     private fun destroy(view: BrowserView) {
         detach(view)
         view.stopLoading()
-        view.webViewClient = null
+        view.webViewClient = WebViewClient()
         view.webChromeClient = null
         view.setDownloadListener(null)
         view.setFindListener(null)
