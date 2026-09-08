@@ -85,23 +85,50 @@ class IdentityDiagnosticActivity : AppCompatActivity() {
                 .replaceAll(">", "&gt;").replaceAll('"', "&quot;");
               window.__PHNX_RENDER_DIAGNOSTICS = function() {
                 const uaData = navigator.userAgentData;
+                const webgl = (() => {
+                  try {
+                    const canvas = document.createElement("canvas");
+                    const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+                    if (!gl) return "unavailable";
+                    const debug = gl.getExtension("WEBGL_debug_renderer_info");
+                    return debug ? JSON.stringify({
+                      vendor: gl.getParameter(debug.UNMASKED_VENDOR_WEBGL),
+                      renderer: gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)
+                    }) : "available; unmasked renderer unavailable";
+                  } catch (_) {
+                    return "unavailable";
+                  }
+                })();
                 const rows = [
                   ["navigator.userAgent", navigator.userAgent],
                   ["navigator.platform", navigator.platform],
+                  ["navigator.vendor", navigator.vendor],
                   ["navigator.language", navigator.language],
+                  ["navigator.languages", JSON.stringify(navigator.languages)],
                   ["navigator.maxTouchPoints", navigator.maxTouchPoints],
+                  ["navigator.hardwareConcurrency", navigator.hardwareConcurrency],
+                  ["navigator.deviceMemory", navigator.deviceMemory],
                   ["window.innerWidth", window.innerWidth],
                   ["window.innerHeight", window.innerHeight],
+                  ["window.outerWidth", window.outerWidth],
+                  ["window.outerHeight", window.outerHeight],
+                  ["visualViewport", window.visualViewport ? JSON.stringify({width: window.visualViewport.width, height: window.visualViewport.height, scale: window.visualViewport.scale}) : "unavailable"],
                   ["screen.width", screen.width],
                   ["screen.height", screen.height],
                   ["screen.availWidth", screen.availWidth],
                   ["screen.availHeight", screen.availHeight],
                   ["screen.colorDepth", screen.colorDepth],
                   ["devicePixelRatio", window.devicePixelRatio],
+                  ["screen.orientation", screen.orientation ? screen.orientation.type : "unavailable"],
+                  ["pointer: coarse", window.matchMedia ? window.matchMedia("(pointer: coarse)").matches : "unavailable"],
+                  ["touch event surface", "ontouchstart" in window],
                   ["timezone", Intl.DateTimeFormat().resolvedOptions().timeZone],
                   ["navigator.userAgentData.brands", uaData ? JSON.stringify(uaData.brands) : "unavailable"],
                   ["navigator.userAgentData.mobile", uaData ? uaData.mobile : "unavailable"],
-                  ["navigator.userAgentData.platform", uaData ? uaData.platform : "unavailable"]
+                  ["navigator.userAgentData.platform", uaData ? uaData.platform : "unavailable"],
+                  ["WebGL vendor and renderer", webgl],
+                  ["Canvas 2D", document.createElement("canvas").getContext("2d") ? "available" : "unavailable"],
+                  ["AudioContext", window.AudioContext || window.webkitAudioContext ? "available" : "unavailable"]
                 ];
                 document.getElementById("values").innerHTML = rows
                   .map(row => "<tr><td>" + escape(row[0]) + "</td><td>" + escape(row[1]) + "</td></tr>")

@@ -12,16 +12,11 @@ import org.junit.Test
 
 class IdentityProfileSwitchTest {
     @Test
-    fun switchesAndroidIphoneDesktopAndAnotherAndroidProfile() {
+    fun observesEveryBuiltInPresetCompatibilityValue() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val app = context.applicationContext as PhnxApplication
         val profileId = app.profileManager.activeProfile().id
-        val presetIds = listOf(
-            DevicePresets.ANDROID_PHONE,
-            DevicePresets.IPHONE_15,
-            DevicePresets.DESKTOP,
-            DevicePresets.GALAXY_S24,
-        )
+        val presetIds = DevicePresets.all().map { it.id }
 
         try {
             presetIds.forEach { presetId ->
@@ -36,7 +31,7 @@ class IdentityProfileSwitchTest {
                     scenario.onActivity { activity ->
                         activity.whenDiagnosticsReady { webView ->
                             webView.evaluateJavascript(
-                                "JSON.stringify({ua:navigator.userAgent,platform:navigator.platform,width:window.innerWidth,height:window.innerHeight,dpr:window.devicePixelRatio})",
+                                "JSON.stringify({ua:navigator.userAgent,platform:navigator.platform,language:navigator.language,languages:navigator.languages,width:window.innerWidth,height:window.innerHeight,dpr:window.devicePixelRatio,timezone:Intl.DateTimeFormat().resolvedOptions().timeZone})",
                             ) {
                                 observed.set(it)
                                 ready.countDown()
@@ -53,6 +48,8 @@ class IdentityProfileSwitchTest {
                 assertTrue("Viewport height was not observed for $presetId: $result", result.contains(expected.viewportHeight.toString()))
                 val expectedDpr = expected.deviceScaleFactor.toString().removeSuffix(".0")
                 assertTrue("Device scale was not observed for $presetId: $result", result.contains(expectedDpr))
+                assertTrue("Language was not observed for $presetId: $result", result.contains(expected.language))
+                assertTrue("Timezone was not observed for $presetId: $result", result.contains(expected.timezone))
             }
         } finally {
             app.deviceProfileManager.resetProfileConfiguration(profileId)

@@ -1,5 +1,8 @@
 package com.phoenix.phnx.identity
 
+import java.time.ZoneId
+import java.util.Locale
+
 object DeviceProfileValidator {
     fun validate(config: BrowserIdentityConfig): List<String> = buildList {
         if (config.profileId.isBlank()) add("A profile is required.")
@@ -18,6 +21,9 @@ object DeviceProfileValidator {
         if (config.locale.isBlank() || config.language.isBlank() || config.languages.isEmpty()) {
             add("Locale and language preferences are required.")
         } else {
+            if (!isLanguageTag(config.locale)) add("Locale must be a valid language tag.")
+            if (!isLanguageTag(config.language)) add("Primary language must be a valid language tag.")
+            if (config.languages.any { !isLanguageTag(it) }) add("Language preferences must be valid language tags.")
             val localeLanguage = config.locale.substringBefore('-').lowercase()
             val declaredLanguage = config.language.substringBefore('-').lowercase()
             if (localeLanguage != declaredLanguage) add("Locale and primary language do not match.")
@@ -25,7 +31,11 @@ object DeviceProfileValidator {
                 add("The first language preference must match the primary language.")
             }
         }
-        if (config.timezone.isBlank()) add("A timezone is required.")
+        if (config.timezone.isBlank()) {
+            add("A timezone is required.")
+        } else if (runCatching { ZoneId.of(config.timezone) }.isFailure) {
+            add("Timezone must be a valid IANA timezone.")
+        }
 
         val userAgent = config.userAgent.lowercase()
         val operatingSystem = config.operatingSystem.lowercase()
@@ -54,6 +64,9 @@ object DeviceProfileValidator {
         if (platform == "linux" && !userAgent.contains("linux")) {
             add("Linux configuration requires a Linux User-Agent.")
         }
+        if (platform == "chromeos" && !userAgent.contains("cros")) {
+            add("ChromeOS configuration requires a CrOS User-Agent.")
+        }
         if (config.mobileMode && !config.touchSupport) add("Mobile mode requires touch support.")
         if (config.mobileMode && config.viewportWidth > 1600) add("Mobile viewport is too wide.")
         if (!config.mobileMode && config.viewportWidth < 640) add("Desktop viewport is too narrow.")
@@ -76,5 +89,23 @@ object DeviceProfileValidator {
         if (platform == "android" && config.clientHints.brands.any { it.contains("safari", ignoreCase = true) }) {
             add("Android profiles cannot declare Safari client-hint brands.")
         }
+        val browserBrands = config.clientHints.brands.joinToString(" ").lowercase()
+        when {
+            userAgent.contains("firefox") && !browserBrands.contains("firefox") ->
+                add("Firefox User-Agents must declare a Firefox client-hint brand.")
+            userAgent.contains("edg/") && !browserBrands.contains("edge") ->
+                add("Edge User-Agents must declare an Edge client-hint brand.")
+            userAgent.contains("safari") && !userAgent.contains("chrome") && !browserBrands.contains("safari") ->
+                add("Safari User-Agents must declare a Safari client-hint brand.")
+            (userAgent.contains("chrome") || userAgent.contains("chromium")) &&
+                !browserBrands.contains("chrome") && !browserBrands.contains("chromium") && !browserBrands.contains("edge") ->
+                add("Chromium User-Agents must declare a Chromium, Chrome, or Edge client-hint brand.")
+        }
+    }
+
+    private fun isLanguageTag(value: String): Boolean {
+        val normalized = value.replace('_', '-')
+        val parsed = Locale.forLanguageTag(normalized)
+        return parsed.language.isNotBlank() && parsed.toLanguageTag().equals(normalized, ignoreCase = true)
     }
 }

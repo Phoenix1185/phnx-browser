@@ -35,4 +35,15 @@ class DeviceProfileCapabilitiesTest {
             assertTrue("${preset.id}: ${errors.joinToString()}", errors.isEmpty())
         }
     }
+
+    @Test
+    fun reportsNativeFingerprintSurfacesAsWebViewControlledOrUnsupported() {
+        val labels = DeviceProfileCapabilities.forProfile(
+            DevicePresets.get(DevicePresets.IPHONE_15)!!.forProfile("profile_a"),
+        ).associateBy { it.label }
+
+        assertTrue(labels.getValue("Browser engine and operating system").mode == DevicePropertyMode.WEBVIEW_CONTROLLED)
+        assertTrue(labels.getValue("WebGL and GPU identity").mode == DevicePropertyMode.UNSUPPORTED)
+        assertTrue(labels.getValue("Canvas and audio identity").mode == DevicePropertyMode.UNSUPPORTED)
+    }
 }

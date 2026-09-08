@@ -37,4 +37,22 @@ class DeviceProfileValidatorTest {
 
         assertTrue(DeviceProfileValidator.validate(config).isNotEmpty())
     }
+
+    @Test
+    fun rejectsInvalidTimezone() {
+        val config = DevicePresets.get(DevicePresets.ANDROID_PHONE)!!.forProfile("profile_a").copy(
+            timezone = "Not/A_Timezone",
+        )
+
+        assertTrue(DeviceProfileValidator.validate(config).any { it.contains("IANA timezone") })
+    }
+
+    @Test
+    fun rejectsBrowserBrandThatContradictsUserAgent() {
+        val config = DevicePresets.get(DevicePresets.WINDOWS_FIREFOX)!!.forProfile("profile_a").copy(
+            clientHints = ClientHintsConfig("Windows", false, listOf("Chromium", "Google Chrome")),
+        )
+
+        assertTrue(DeviceProfileValidator.validate(config).any { it.contains("Firefox client-hint") })
+    }
 }

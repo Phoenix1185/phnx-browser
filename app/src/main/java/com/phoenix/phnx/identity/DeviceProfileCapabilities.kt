@@ -64,12 +64,22 @@ object DeviceProfileCapabilities {
         DevicePropertyCapability(
             label = "Timezone",
             mode = DevicePropertyMode.JAVASCRIPT_EMULATED,
-            detail = "Intl.DateTimeFormat().resolvedOptions().timeZone is compatibility-layer output; the Android timezone is unchanged.",
+            detail = "Only resolvedOptions().timeZone is compatibility-layer output; Date, timezone offsets, and Android timezone remain unchanged.",
         ),
         DevicePropertyCapability(
             label = "Touch capability",
             mode = DevicePropertyMode.JAVASCRIPT_EMULATED,
-            detail = "navigator.maxTouchPoints is a compatibility value; actual Android touch input remains native.",
+            detail = "navigator.maxTouchPoints is a compatibility value; actual touch input, pointer media queries, and Android hardware remain native.",
+        ),
+        DevicePropertyCapability(
+            label = "Locale and request language",
+            mode = DevicePropertyMode.WEBVIEW_CONTROLLED,
+            detail = "navigator language fields are compatibility values; Android resources, Intl locale defaults, and HTTP Accept-Language remain WebView-controlled.",
+        ),
+        DevicePropertyCapability(
+            label = "Browser engine and operating system",
+            mode = DevicePropertyMode.WEBVIEW_CONTROLLED,
+            detail = "All profiles execute in Android System WebView. Non-Android presets can change compatibility values but cannot become native iOS, desktop, Safari, or Firefox engines.",
         ),
         DevicePropertyCapability(
             label = "Physical display metrics",
@@ -85,6 +95,16 @@ object DeviceProfileCapabilities {
             label = "Genuine iOS or desktop Client Hints",
             mode = DevicePropertyMode.UNSUPPORTED,
             detail = "Android WebView exposes no supported API for replacing its native userAgentData or Sec-CH-UA headers.",
+        ),
+        DevicePropertyCapability(
+            label = "WebGL and GPU identity",
+            mode = DevicePropertyMode.UNSUPPORTED,
+            detail = "PHNX does not change WebGL renderer, GPU vendor, extensions, or shader precision; these remain native to Android WebView.",
+        ),
+        DevicePropertyCapability(
+            label = "Canvas and audio identity",
+            mode = DevicePropertyMode.UNSUPPORTED,
+            detail = "PHNX does not spoof Canvas, font, or AudioContext output. These values remain native and are not part of a selectable device profile.",
         ),
     )
 
