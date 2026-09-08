@@ -1,9 +1,45 @@
+import java.io.FileInputStream
+import java.security.KeyStore
+import java.security.MessageDigest
+
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
     id("com.google.devtools.ksp")
     id("org.jetbrains.kotlin.android")
 }
+
+val releaseKeystorePath = System.getenv("PHNX_KEYSTORE_PATH")
+val releaseKeystorePassword = System.getenv("PHNX_KEYSTORE_PASSWORD")
+val releaseKeyAlias = System.getenv("PHNX_KEY_ALIAS")
+val releaseKeyPassword = System.getenv("PHNX_KEY_PASSWORD")
+val releaseSigningConfigured = !releaseKeystorePath.isNullOrBlank() &&
+    !releaseKeystorePassword.isNullOrBlank() &&
+    !releaseKeyAlias.isNullOrBlank() &&
+    !releaseKeyPassword.isNullOrBlank()
+val releaseTaskRequested = gradle.startParameter.taskNames.any { it.contains("release", ignoreCase = true) }
+
+if (releaseTaskRequested && !releaseSigningConfigured) {
+    throw GradleException(
+        "Release builds require PHNX_KEYSTORE_PATH, PHNX_KEYSTORE_PASSWORD, PHNX_KEY_ALIAS, and PHNX_KEY_PASSWORD.",
+    )
+}
+
+fun releaseCertificateSha256(): String {
+    if (!releaseSigningConfigured) return "UNCONFIGURED"
+    val keyStoreType = System.getenv("PHNX_KEYSTORE_TYPE").takeUnless { it.isNullOrBlank() } ?: "JKS"
+    val keyStore = KeyStore.getInstance(keyStoreType)
+    FileInputStream(releaseKeystorePath!!).use { input ->
+        keyStore.load(input, releaseKeystorePassword!!.toCharArray())
+    }
+    val certificate = keyStore.getCertificate(releaseKeyAlias!!)
+        ?: throw GradleException("No certificate found for PHNX_KEY_ALIAS in the release keystore.")
+    return MessageDigest.getInstance("SHA-256")
+        .digest(certificate.encoded)
+        .joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
+}
+
+val expectedReleaseCertificateSha256 = releaseCertificateSha256()
 
 android {
     namespace = "com.phoenix.phnx"
@@ -17,18 +53,22 @@ android {
         versionCode = 1
         versionName = "1.0.0"
 
+        buildConfigField("String", "EXPECTED_RELEASE_CERTIFICATE_SHA256", "\"$expectedReleaseCertificateSha256\"")
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
 
-    val releaseKeystorePath = System.getenv("PHNX_KEYSTORE_PATH")
-    if (!releaseKeystorePath.isNullOrBlank()) {
-        signingConfigs {
-            create("release") {
-                storeFile = file(releaseKeystorePath)
-                storePassword = System.getenv("PHNX_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("PHNX_KEY_ALIAS")
-                keyPassword = System.getenv("PHNX_KEY_PASSWORD")
+    signingConfigs {
+        create("release") {
+            if (releaseSigningConfigured) {
+                storeFile = file(releaseKeystorePath!!)
+                storePassword = releaseKeystorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            } else {
+                // Keep debug builds usable while making an unsigned release impossible to publish.
+                storeFile = file("release-signing-not-configured.jks")
             }
         }
     }
@@ -41,9 +81,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            if (!releaseKeystorePath.isNullOrBlank()) {
-                signingConfig = signingConfigs.getByName("release")
-            }
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

@@ -56,6 +56,7 @@ class PhnxApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        if (!AppIntegrityVerifier.verify(this)) return
         PhnxPreferences.applyTheme(this)
         crashRecoveryManager = CrashRecoveryManager(this)
         crashRecoveryManager.beginLaunch()

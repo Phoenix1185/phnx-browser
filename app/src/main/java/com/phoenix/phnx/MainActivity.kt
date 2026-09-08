@@ -130,6 +130,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var thermalListenerRegistered = false
     @SuppressLint("NewApi")
     private val thermalStatusListener = PowerManager.OnThermalStatusChangedListener { updateThermalDisplayPolicy() }
+    private var integrityRejected = false
     private var attachedTabId: String? = null
     private var appliedNetworkConfigHash: Int? = null
     private var customView: View? = null
@@ -238,6 +239,11 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!AppIntegrityVerifier.verify(this)) {
+            integrityRejected = true
+            showIntegrityFailure()
+            return
+        }
         if (restartForShortcutProfile(intent)) return
         val activeProfileId = profileManager.activeProfile().id
         val preferences = PhnxPreferences.store(this)
@@ -293,6 +299,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onResume() {
         super.onResume()
+        if (integrityRejected) return
         activityVisible = true
         updateThermalDisplayPolicy()
         val savedDataSaver = PhnxPreferences.store(this).getBoolean(PhnxPreferences.DATA_SAVER_ENABLED, false)
@@ -315,12 +322,17 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (integrityRejected) return
         if (restartForShortcutProfile(intent)) return
         setIntent(intent)
         openIncomingPage(intent)
     }
 
     override fun onStop() {
+        if (integrityRejected) {
+            super.onStop()
+            return
+        }
         app.adBlockManager.flushStats()
         activityVisible = false
         trimInactiveTabs()
@@ -330,6 +342,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
+        if (integrityRejected) return
         if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
             trimInactiveTabs(aggressive = level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
         }
@@ -1627,6 +1640,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     override fun onDestroy() {
+        if (integrityRejected) {
+            super.onDestroy()
+            return
+        }
         unregisterThermalListener()
         pendingPreviewCaptures.values.forEach(previewHandler::removeCallbacks)
         pendingPreviewCaptures.clear()
@@ -1648,6 +1665,15 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         if (isFinishing) clearHistoryOnClose()
         browserController.clear()
         super.onDestroy()
+    }
+
+    private fun showIntegrityFailure() {
+        AlertDialog.Builder(this)
+            .setTitle(AppIntegrityVerifier.FAILURE_MESSAGE)
+            .setMessage("This PHNX package is not an official release and cannot run.")
+            .setCancelable(false)
+            .setPositiveButton(android.R.string.ok) { _, _ -> finishAndRemoveTask() }
+            .show()
     }
 
     private fun clearHistoryOnClose() {
