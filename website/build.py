@@ -310,6 +310,13 @@ def write_legacy_download_redirect():
     )
 
 
+def write_not_found_page():
+    (ROOT / "404.html").write_text(
+        "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Page not found | PHNX Browser</title></head><body><h1>Page not found</h1><p><a href=\"./\">Return to PHNX Browser</a></p><script>(function(){var match=location.pathname.match(/^(.*\\/)website\\/?$/);if(match){location.replace(match[1]+'download/'+location.hash);}}());</script></body></html>\n",
+        encoding="utf-8",
+    )
+
+
 def main():
     write_page("", home())
     write_page("features", features())
@@ -324,6 +331,7 @@ def main():
     write_page("about", about())
     write_page("legal", legal())
     write_legacy_download_redirect()
+    write_not_found_page()
     sitemap = "\n".join(
         [
             '<?xml version="1.0" encoding="UTF-8"?>',
