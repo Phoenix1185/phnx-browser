@@ -17,6 +17,7 @@ import android.os.Message
 import android.os.Environment
 import android.os.Process
 import android.os.Looper
+import android.os.PowerManager
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.GestureDetector
@@ -118,6 +119,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var textScalePercent = 100
     private var activityVisible = false
     private var mediaCheckInFlight = false
+    private var thermalListenerRegistered = false
+    private val thermalStatusListener = PowerManager.OnThermalStatusChangedListener { updateThermalDisplayPolicy() }
     private var attachedTabId: String? = null
     private var appliedNetworkConfigHash: Int? = null
     private var customView: View? = null
@@ -234,6 +237,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         window.statusBarColor = getColor(R.color.phnx_navy)
         window.navigationBarColor = getColor(R.color.phnx_navy)
+        registerThermalListener()
 
         val layout = buildLayout()
         setContentView(layout)
@@ -279,6 +283,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     override fun onResume() {
         super.onResume()
         activityVisible = true
+        updateThermalDisplayPolicy()
         val savedDataSaver = PhnxPreferences.store(this).getBoolean(PhnxPreferences.DATA_SAVER_ENABLED, false)
         if (savedDataSaver != dataSaverEnabled) {
             dataSaverEnabled = savedDataSaver
@@ -1393,6 +1398,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     override fun onDestroy() {
+        unregisterThermalListener()
         pendingPreviewCaptures.values.forEach(previewHandler::removeCallbacks)
         pendingPreviewCaptures.clear()
         previewHandler.removeCallbacksAndMessages(null)
@@ -1416,6 +1422,35 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private fun clearHistoryOnClose() {
         if (PhnxPreferences.historyRetention(this) == PhnxPreferences.HISTORY_CLEAR_ON_CLOSE) {
             app.historyManager.clearProfile(profileManager.activeProfile().id)
+        }
+    }
+
+    private fun registerThermalListener() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || thermalListenerRegistered) return
+        getSystemService(PowerManager::class.java).addThermalStatusListener(
+            mainExecutor,
+            thermalStatusListener,
+        )
+        thermalListenerRegistered = true
+        updateThermalDisplayPolicy()
+    }
+
+    private fun unregisterThermalListener() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || !thermalListenerRegistered) return
+        getSystemService(PowerManager::class.java).removeThermalStatusListener(thermalStatusListener)
+        thermalListenerRegistered = false
+    }
+
+    private fun updateThermalDisplayPolicy() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
+        val powerManager = getSystemService(PowerManager::class.java)
+        val reduceDisplayWork = powerManager.currentThermalStatus >= PowerManager.THERMAL_STATUS_MODERATE ||
+            powerManager.isPowerSaveMode
+        val targetRefreshRate = if (reduceDisplayWork) THERMAL_REFRESH_RATE_HZ else 0f
+        val attributes = window.attributes
+        if (attributes.preferredRefreshRate != targetRefreshRate) {
+            attributes.preferredRefreshRate = targetRefreshRate
+            window.attributes = attributes
         }
     }
 
@@ -1473,6 +1508,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         const val EXTRA_PROFILE_ID = "profile_id"
         private const val START_PAGE_BASE = "https://phnx.local/"
         private const val PREVIEW_CAPTURE_DELAY_MS = 120L
+        private const val THERMAL_REFRESH_RATE_HZ = 60f
         private const val ACTIVE_MEDIA_CHECK_SCRIPT =
             "(function(){try{return Array.from(document.querySelectorAll('audio,video')).some(function(m){return !m.paused && !m.ended && m.readyState >= 2;});}catch(_){return true;}})()"
     }
