@@ -208,11 +208,28 @@ jobs:
 
           sha256sum "release/$APK_NAME" "release/$AAB_NAME" release/phnx-update-manifest.json > release/SHA256SUMS
           printf 'tag=%s\ncommit=%s\n' "$RELEASE_TAG" "$GITHUB_SHA" > release/build-metadata.txt
+          printf '%s\n' \
+            "PHNX Browser ${RELEASE_TAG}" \
+            "The first stable public release of PHNX Browser." \
+            "" \
+            "Highlights:" \
+            "- Fast Android browsing" \
+            "- Privacy-focused browsing" \
+            "- Tabs and navigation" \
+            "- History and bookmarks" \
+            "- Link context actions" \
+            "- Proxy support" \
+            "- Account/login integration" \
+            "- Built-in update system" \
+            "- Signed release/update verification" \
+            "" \
+            "APK SHA-256: ${APK_SHA256}" \
+            > "$RUNNER_TEMP/phnx-release-notes.md"
 
       - name: Publish GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$RELEASE_TAG" release/* --generate-notes --verify-tag
+        run: gh release create "$RELEASE_TAG" release/* --title "PHNX Browser $RELEASE_TAG" --notes-file "$RUNNER_TEMP/phnx-release-notes.md" --verify-tag
 
       - name: Remove temporary release signing files
         if: always()
@@ -222,6 +239,7 @@ jobs:
             "$RUNNER_TEMP/phnx-release-cert.der" \
             "$RUNNER_TEMP/phnx-aab-certificate.txt" \
             "$RUNNER_TEMP/phnx-aab-jarsigner.txt" \
+            "$RUNNER_TEMP/phnx-release-notes.md" \
             "$RUNNER_TEMP/phnx-update-signing-key.pem" \
             "$RUNNER_TEMP/phnx-update-manifest.canonical" \
             "$RUNNER_TEMP/phnx-update-manifest.sig"

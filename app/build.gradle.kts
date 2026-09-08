@@ -51,7 +51,7 @@ android {
         minSdk = 28
         targetSdk = 35
         versionCode = 1
-        versionName = "1.0.0"
+        versionName = "1.0.0.0"
 
         buildConfigField("String", "EXPECTED_RELEASE_CERTIFICATE_SHA256", "\"$expectedReleaseCertificateSha256\"")
 
