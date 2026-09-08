@@ -22,6 +22,16 @@ class TabManagerTest {
     }
 
     @Test
+    fun backgroundTabDoesNotChangeActiveTab() {
+        val manager = TabManager()
+        val current = manager.createTab()
+        val background = manager.createTab(activate = false)
+
+        assertEquals(current.id, manager.currentTab()?.id)
+        assertTrue(manager.getTabs().contains(background))
+    }
+
+    @Test
     fun closingActiveTabSelectsAnotherTab() {
         val manager = TabManager()
         val first = manager.createTab()

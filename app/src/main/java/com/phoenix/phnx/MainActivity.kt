@@ -3,12 +3,15 @@ package com.phoenix.phnx
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.DownloadManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ShortcutInfo
 import android.content.pm.ShortcutManager
 import android.graphics.Color
+import android.graphics.PointF
 import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
@@ -27,6 +30,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
+import android.webkit.MimeTypeMap
 import android.webkit.PermissionRequest
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -89,8 +93,11 @@ import com.phoenix.phnx.tabs.TabManager
 import com.phoenix.phnx.tabs.TabOverviewDialog
 import com.phoenix.phnx.tabs.TabOverviewItem
 import com.phoenix.phnx.tabs.toOverviewItem
+import org.json.JSONArray
+import org.json.JSONTokener
 import kotlin.math.abs
 import java.io.ByteArrayInputStream
+import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
@@ -136,6 +143,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var tabOverview: TabOverviewDialog? = null
     private val previewHandler = Handler(Looper.getMainLooper())
     private val pendingPreviewCaptures = mutableMapOf<String, Runnable>()
+    private val longPressPoints = WeakHashMap<WebView, PointF>()
+    private val restoringDefaultLongPress = WeakHashMap<WebView, Boolean>()
     private var bookmarkStateUrl: String? = null
     private var bookmarkState = false
 
@@ -506,9 +515,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         applyPageControls(webView)
         privacyManager.applyTo(webView, tab.profileId, config.privacy)
         webView.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                longPressPoints[webView] = PointF(event.x, event.y)
+            }
             swipeDetector.onTouchEvent(event)
             false
         }
+        webView.setOnLongClickListener { handleWebViewLongPress(webView, tab) }
         webView.webViewClient = object : WebViewClient() {
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
                 // WebView invokes this callback off the main thread; never read WebView state here.
@@ -825,6 +838,219 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             return
         }
         beginDownload(request)
+    }
+
+    private fun handleWebViewLongPress(view: WebView, tab: Tab): Boolean {
+        if (restoringDefaultLongPress.remove(view) == true) return false
+        val hitTarget = contextTargetFromHitTest(view.hitTestResult)
+        val point = longPressPoints[view]?.let { PointF(it.x, it.y) }
+        if (hitTarget == null && point == null) return false
+        resolveContextTarget(view, tab, hitTarget, point)
+        return true
+    }
+
+    private fun resolveContextTarget(
+        view: WebView,
+        tab: Tab,
+        seed: WebContextTarget?,
+        point: PointF?,
+    ) {
+        if (point == null) {
+            if (seed != null) showWebContextMenu(view, tab, seed)
+            return
+        }
+        val script = contextTargetScript(view, point)
+        try {
+            view.evaluateJavascript(script) { raw ->
+                val target = mergeContextTargets(seed, parseDomContextTarget(raw))
+                if (target != null) showWebContextMenu(view, tab, target)
+                else restoreDefaultLongPress(view)
+            }
+        } catch (_: RuntimeException) {
+            if (seed != null) showWebContextMenu(view, tab, seed) else restoreDefaultLongPress(view)
+        }
+    }
+
+    private fun showWebContextMenu(view: WebView, tab: Tab, target: WebContextTarget) {
+        val actions = mutableListOf<WebContextAction>()
+        target.linkUrl?.let { linkUrl ->
+            if (isHttpUrl(linkUrl)) {
+                actions += WebContextAction(getString(R.string.context_open_new_tab)) {
+                    openContextUrl(tab, linkUrl, background = false)
+                }
+                actions += WebContextAction(getString(R.string.context_open_background_tab)) {
+                    openContextUrl(tab, linkUrl, background = true)
+                }
+            }
+            actions += WebContextAction(getString(R.string.context_copy_link)) {
+                copyContextText(getString(R.string.context_copy_link), linkUrl)
+            }
+            actions += WebContextAction(getString(R.string.context_copy_link_text)) {
+                copyContextText(getString(R.string.context_copy_link_text), target.linkText.ifBlank { linkUrl })
+            }
+            actions += WebContextAction(getString(R.string.context_share_link)) {
+                shareContextText(target.linkText, linkUrl)
+            }
+            if (isHttpUrl(linkUrl)) {
+                actions += WebContextAction(getString(R.string.context_download_link)) {
+                    downloadContextUrl(view, linkUrl)
+                }
+            }
+        }
+        target.imageUrl?.let { imageUrl ->
+            actions += WebContextAction(getString(R.string.context_open_image_new_tab)) {
+                openContextUrl(tab, imageUrl, background = false)
+            }
+            actions += WebContextAction(getString(R.string.context_open_image_background_tab)) {
+                openContextUrl(tab, imageUrl, background = true)
+            }
+            actions += WebContextAction(getString(R.string.context_copy_image_address)) {
+                copyContextText(getString(R.string.context_copy_image_address), imageUrl)
+            }
+            actions += WebContextAction(getString(R.string.context_share_image)) {
+                shareContextText(getString(R.string.context_image), imageUrl)
+            }
+            actions += WebContextAction(getString(R.string.context_download_image)) {
+                downloadContextUrl(view, imageUrl)
+            }
+        }
+        if (actions.isEmpty()) return
+
+        val summary = target.linkText.ifBlank { target.linkUrl ?: target.imageUrl.orEmpty() }
+            .replace('\n', ' ')
+            .trim()
+            .take(160)
+        AlertDialog.Builder(this)
+            .setTitle(if (target.linkUrl != null) R.string.context_link else R.string.context_image)
+            .setMessage(summary)
+            .setItems(actions.map { it.label }.toTypedArray()) { _, which -> actions[which].run() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun openContextUrl(sourceTab: Tab, url: String, background: Boolean) {
+        if (!isHttpUrl(url)) return
+        val newTab = tabManager.createTab(
+            profileId = sourceTab.profileId,
+            isPrivate = sourceTab.isPrivate,
+            activate = !background,
+        ).apply {
+            this.url = url
+            title = tabTitleForUrl(url)
+            isLoading = true
+        }
+        if (background) {
+            val backgroundView = browserController.getOrCreate(newTab)
+            configureWebView(backgroundView, newTab)
+            backgroundView.loadUrl(url)
+        } else {
+            attachCurrentTab()
+        }
+        saveProfileSession(sourceTab.profileId)
+        refreshTabOverview()
+    }
+
+    private fun copyContextText(label: String, value: String) {
+        val clipboard = getSystemService(ClipboardManager::class.java) ?: return
+        clipboard.setPrimaryClip(ClipData.newPlainText(label, value))
+        Toast.makeText(this, label, Toast.LENGTH_SHORT).show()
+    }
+
+    private fun shareContextText(title: String, value: String) {
+        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, value)
+            putExtra(Intent.EXTRA_TITLE, title.ifBlank { value })
+        }, getString(R.string.share)))
+    }
+
+    private fun downloadContextUrl(view: WebView, url: String) {
+        val extension = MimeTypeMap.getFileExtensionFromUrl(url).lowercase()
+        val mimeType = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension).orEmpty()
+        requestDownload(url, view.settings.userAgentString, "", mimeType)
+    }
+
+    private fun restoreDefaultLongPress(view: WebView) {
+        if (!view.isAttachedToWindow) return
+        view.post {
+            if (!view.isAttachedToWindow) return@post
+            restoringDefaultLongPress[view] = true
+            view.performLongClick()
+            restoringDefaultLongPress.remove(view)
+        }
+    }
+
+    private fun contextTargetFromHitTest(result: WebView.HitTestResult): WebContextTarget? {
+        val extra = result.extra?.trim().orEmpty()
+        if (extra.isBlank()) return null
+        return when (result.type) {
+            WebView.HitTestResult.ANCHOR_TYPE,
+            WebView.HitTestResult.SRC_ANCHOR_TYPE,
+            -> WebContextTarget(linkUrl = safeLinkUrl(extra))
+            WebView.HitTestResult.IMAGE_TYPE,
+            WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE,
+            -> WebContextTarget(imageUrl = safeHttpUrl(extra))
+            WebView.HitTestResult.PHONE_TYPE,
+            WebView.HitTestResult.GEO_TYPE,
+            WebView.HitTestResult.EMAIL_TYPE,
+            -> WebContextTarget(linkUrl = safeLinkUrl(extra))
+            else -> null
+        }?.takeIf { it.linkUrl != null || it.imageUrl != null }
+    }
+
+    private fun parseDomContextTarget(raw: String): WebContextTarget? {
+        val values = runCatching { JSONArray(raw) }.getOrNull()
+            ?: runCatching { JSONArray(JSONTokener(raw).nextValue().toString()) }.getOrNull()
+            ?: return null
+        val target = WebContextTarget(
+            linkUrl = safeLinkUrl(values.optString(0)),
+            linkText = values.optString(1).trim(),
+            imageUrl = safeHttpUrl(values.optString(2)),
+        )
+        return target.takeIf { it.linkUrl != null || it.imageUrl != null }
+    }
+
+    private fun mergeContextTargets(first: WebContextTarget?, second: WebContextTarget?): WebContextTarget? {
+        val target = WebContextTarget(
+            linkUrl = first?.linkUrl ?: second?.linkUrl,
+            linkText = second?.linkText.orEmpty().ifBlank { first?.linkText.orEmpty() },
+            imageUrl = first?.imageUrl ?: second?.imageUrl,
+        )
+        return target.takeIf { it.linkUrl != null || it.imageUrl != null }
+    }
+
+    private fun contextTargetScript(view: WebView, point: PointF): String {
+        val density = view.resources.displayMetrics.density
+        val x = (point.x / density).coerceAtLeast(0f)
+        val y = (point.y / density).coerceAtLeast(0f)
+        return """
+            (function(x,y){
+                var element=document.elementFromPoint(x,y);
+                if(!element)return ['','',''];
+                var anchor=element.closest&&element.closest('a[href]');
+                var roleLink=element.closest&&element.closest('[role="link"],[data-href],[data-url]');
+                var link=anchor?anchor.href:(roleLink?(roleLink.href||roleLink.getAttribute('data-href')||roleLink.getAttribute('data-url')||''):'');
+                try{if(link)link=new URL(link,document.baseURI).href;}catch(e){}
+                var text=anchor?(anchor.innerText||anchor.textContent||anchor.getAttribute('aria-label')||anchor.title||''):(roleLink?(roleLink.innerText||roleLink.textContent||roleLink.getAttribute('aria-label')||''):'');
+                var image=element.closest&&element.closest('img');
+                var imageUrl=image?(image.currentSrc||image.src||''):'';
+                return [link,(text||'').trim(),imageUrl];
+            })($x,$y)
+        """.trimIndent()
+    }
+
+    private fun safeLinkUrl(value: String?): String? {
+        val candidate = value?.trim().orEmpty()
+        val scheme = Uri.parse(candidate).scheme?.lowercase() ?: return null
+        return candidate.takeIf { scheme in setOf("http", "https", "mailto", "tel", "geo") }
+    }
+
+    private fun safeHttpUrl(value: String?): String? = safeLinkUrl(value)
+        ?.takeIf { isHttpUrl(it) }
+
+    private fun isHttpUrl(value: String): Boolean {
+        val scheme = Uri.parse(value).scheme?.lowercase()
+        return scheme == "http" || scheme == "https"
     }
 
     private fun beginDownload(request: PendingDownload) {
@@ -1403,6 +1629,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         unregisterThermalListener()
         pendingPreviewCaptures.values.forEach(previewHandler::removeCallbacks)
         pendingPreviewCaptures.clear()
+        longPressPoints.clear()
+        restoringDefaultLongPress.clear()
         previewHandler.removeCallbacksAndMessages(null)
         pendingPermissionRequest?.deny()
         pendingPermissionRequest = null
@@ -1504,6 +1732,17 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val userAgent: String,
         val contentDisposition: String,
         val mimeType: String,
+    )
+
+    private data class WebContextTarget(
+        val linkUrl: String? = null,
+        val linkText: String = "",
+        val imageUrl: String? = null,
+    )
+
+    private data class WebContextAction(
+        val label: String,
+        val action: () -> Unit,
     )
 
     companion object {

@@ -232,4 +232,17 @@
     <string name="tab_preview_pending">Preview pending</string>
     <string name="close">Close</string>
     <string name="close_tab_overview">Close tab overview</string>
+    <string name="context_link">Link</string>
+    <string name="context_image">Image</string>
+    <string name="context_open_new_tab">Open in new tab</string>
+    <string name="context_open_background_tab">Open in background tab</string>
+    <string name="context_copy_link">Copy link</string>
+    <string name="context_copy_link_text">Copy link text</string>
+    <string name="context_share_link">Share link</string>
+    <string name="context_download_link">Download link</string>
+    <string name="context_open_image_new_tab">Open image in new tab</string>
+    <string name="context_open_image_background_tab">Open image in background tab</string>
+    <string name="context_copy_image_address">Copy image address</string>
+    <string name="context_share_image">Share image</string>
+    <string name="context_download_image">Download image</string>
 </resources>

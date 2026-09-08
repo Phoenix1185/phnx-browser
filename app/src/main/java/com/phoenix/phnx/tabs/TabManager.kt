@@ -8,10 +8,14 @@ class TabManager {
     private val recentlyClosed = mutableMapOf<String, ArrayDeque<Tab>>()
     private var activeTabId: String? = null
 
-    fun createTab(profileId: String = DEFAULT_PROFILE_ID, isPrivate: Boolean = false): Tab {
+    fun createTab(
+        profileId: String = DEFAULT_PROFILE_ID,
+        isPrivate: Boolean = false,
+        activate: Boolean = true,
+    ): Tab {
         val tab = Tab(profileId = profileId, isPrivate = isPrivate)
         tabs += tab
-        activeTabId = tab.id
+        if (activate) activeTabId = tab.id
         return tab
     }
 
