@@ -1,7 +1,5 @@
 package com.phoenix.phnx.tabs
 
-import android.net.Uri
-
 data class TabOverviewItem(
     val id: String,
     val profileId: String,
@@ -14,7 +12,7 @@ data class TabOverviewItem(
 )
 
 val TabOverviewItem.domain: String
-    get() = Uri.parse(url).host?.removePrefix("www.").orEmpty()
+    get() = runCatching { java.net.URI(url).host?.removePrefix("www.") }.getOrNull().orEmpty()
 
 fun TabOverviewItem.matches(query: String): Boolean {
     val needle = query.trim()
