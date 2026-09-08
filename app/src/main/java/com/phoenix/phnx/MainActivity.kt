@@ -947,6 +947,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             attachCurrentTab()
         }
         saveProfileSession(sourceTab.profileId)
+        if (background) currentBrowserView()?.let { updateTabChrome(sourceTab, it) }
         refreshTabOverview()
     }
 
