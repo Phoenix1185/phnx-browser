@@ -6,12 +6,14 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import android.text.Editable
 import android.text.TextWatcher
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.phoenix.phnx.PhnxApplication
 import com.phoenix.phnx.R
+import com.phoenix.phnx.system.BrowserNavigationIntent
 import java.text.DateFormat
 import java.util.Date
 
@@ -92,9 +94,15 @@ class HistoryActivity : AppCompatActivity() {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 setPadding(0, dp(12), 0, dp(12))
+                isClickable = true
+                isFocusable = true
+                setBackgroundResource(android.R.drawable.list_selector_background)
             }
+            val label = entry.title.ifBlank { entry.host.ifBlank { entry.url } }
+            row.contentDescription = getString(R.string.open_history_entry, label)
+            row.setOnClickListener { openSavedUrl(entry.url) }
             row.addView(TextView(this).apply {
-                text = "${entry.title}\n${entry.host}\n${DateFormat.getDateTimeInstance().format(Date(entry.visitedAt))}"
+                text = "$label\n${entry.host}\n${DateFormat.getDateTimeInstance().format(Date(entry.visitedAt))}"
                 textSize = 15f
                 setTextColor(getColor(R.color.phnx_text))
             }, LinearLayout.LayoutParams(0, -2, 1f))
@@ -106,6 +114,15 @@ class HistoryActivity : AppCompatActivity() {
                 }
             })
             list.addView(row)
+        }
+    }
+
+    private fun openSavedUrl(rawUrl: String) {
+        val intent = BrowserNavigationIntent.forSavedUrl(this, profileId, rawUrl)
+        if (intent == null) {
+            Toast.makeText(this, getString(R.string.unable_to_open_saved_page), Toast.LENGTH_LONG).show()
+        } else {
+            startActivity(intent)
         }
     }
 

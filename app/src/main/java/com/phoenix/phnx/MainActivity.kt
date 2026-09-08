@@ -1325,6 +1325,15 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun openIncomingPage(incomingIntent: Intent?) {
+        val requestedProfileId = incomingIntent?.getStringExtra(EXTRA_PROFILE_ID)
+        if (requestedProfileId != null) {
+            if (profileManager.getAllProfiles().none { it.id == requestedProfileId } ||
+                profileManager.activeProfile().id != requestedProfileId
+            ) {
+                Toast.makeText(this, getString(R.string.profile_unavailable), Toast.LENGTH_LONG).show()
+                return
+            }
+        }
         val url = UrlIntentParser.parse(incomingIntent) ?: return
         val tab = tabManager.currentTab() ?: return
         tab.url = url
@@ -1397,10 +1406,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val mimeType: String,
     )
 
-    private companion object {
-        const val START_PAGE_BASE = "https://phnx.local/"
+    companion object {
         const val EXTRA_PROFILE_ID = "profile_id"
-        const val PREVIEW_CAPTURE_DELAY_MS = 120L
+        private const val START_PAGE_BASE = "https://phnx.local/"
+        private const val PREVIEW_CAPTURE_DELAY_MS = 120L
     }
 
     private fun startPageHtml(): String {

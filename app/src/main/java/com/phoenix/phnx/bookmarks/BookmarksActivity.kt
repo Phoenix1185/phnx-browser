@@ -11,6 +11,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.phoenix.phnx.PhnxApplication
 import com.phoenix.phnx.R
+import com.phoenix.phnx.system.BrowserNavigationIntent
 
 class BookmarksActivity : AppCompatActivity() {
     private val app by lazy { application as PhnxApplication }
@@ -95,11 +96,17 @@ class BookmarksActivity : AppCompatActivity() {
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 setPadding(0, dp(12), 0, dp(12))
+                isClickable = true
+                isFocusable = true
+                setBackgroundResource(android.R.drawable.list_selector_background)
             }
+            val label = bookmark.title.ifBlank { bookmark.url }
+            row.contentDescription = getString(R.string.open_bookmark, label)
+            row.setOnClickListener { openSavedUrl(bookmark.url) }
             row.addView(TextView(this).apply {
                 val folderName = folders.firstOrNull { it.id == bookmark.folderId }?.name
                 text = buildString {
-                    append(bookmark.title)
+                    append(label)
                     append('\n')
                     append(bookmark.url)
                     if (folderName != null) {
@@ -122,6 +129,15 @@ class BookmarksActivity : AppCompatActivity() {
                 }
             })
             list.addView(row)
+        }
+    }
+
+    private fun openSavedUrl(rawUrl: String) {
+        val intent = BrowserNavigationIntent.forSavedUrl(this, profileId, rawUrl)
+        if (intent == null) {
+            Toast.makeText(this, getString(R.string.unable_to_open_saved_page), Toast.LENGTH_LONG).show()
+        } else {
+            startActivity(intent)
         }
     }
 

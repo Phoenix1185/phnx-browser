@@ -11,6 +11,10 @@
     <string name="downloads">Downloads</string>
     <string name="recent_tabs">Recent tabs</string>
     <string name="no_recent_tabs">No recently closed tabs for this profile.</string>
+    <string name="open_history_entry">Open history entry: %1$s</string>
+    <string name="open_bookmark">Open bookmark: %1$s</string>
+    <string name="unable_to_open_saved_page">Unable to open this page.</string>
+    <string name="profile_unavailable">The requested browser profile is unavailable.</string>
     <string name="group_tab">Group tab</string>
     <string name="ungroup_tab">Ungroup</string>
     <string name="new_tab_group">New tab group</string>
