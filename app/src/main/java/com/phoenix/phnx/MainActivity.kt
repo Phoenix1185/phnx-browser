@@ -60,6 +60,7 @@ import com.phoenix.phnx.browser.NavigationController
 import com.phoenix.phnx.downloads.DownloadsActivity
 import com.phoenix.phnx.downloads.DownloadFileResolver
 import com.phoenix.phnx.downloads.DownloadSecurityManager
+import com.phoenix.phnx.identity.BrowserIdentityConfig
 import com.phoenix.phnx.identity.DevicePresets
 import com.phoenix.phnx.identity.WebViewIdentityCompatibility
 import com.phoenix.phnx.identity.WebViewIdentityAdapter
@@ -1460,19 +1461,24 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun applyProfileIdentity(view: WebView, profileId: String) {
-        val config = identityConfig(profileId)
+        val config = effectiveIdentityConfig(profileId)
         identityAdapter.apply(view, config, pageZoomPercent)
         WebViewIdentityCompatibility.install(view, config)
     }
 
     private fun applyProfileCompatibility(view: WebView, profileId: String) {
-        WebViewIdentityCompatibility.install(view, identityConfig(profileId))
+        WebViewIdentityCompatibility.install(view, effectiveIdentityConfig(profileId))
     }
 
-    private fun identityConfig(profileId: String) = if (desktopSiteEnabled) {
-        DevicePresets.get(DevicePresets.DESKTOP)?.forProfile(profileId)
-            ?: deviceProfileManager.getProfileConfiguration(profileId)
-    } else {
+    private fun identityConfig(profileId: String): BrowserIdentityConfig =
         deviceProfileManager.getProfileConfiguration(profileId)
+
+    private fun effectiveIdentityConfig(profileId: String): BrowserIdentityConfig {
+        val selected = identityConfig(profileId)
+        if (!desktopSiteEnabled) return selected
+
+        // Desktop Site is a deliberate transient runtime override; it never replaces the
+        // profile-owned device selection or its persisted configuration.
+        return DevicePresets.get(DevicePresets.DESKTOP)?.forProfile(profileId) ?: selected
     }
 }
