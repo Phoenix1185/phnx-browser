@@ -1,6 +1,7 @@
 package com.phoenix.phnx
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.DownloadManager
 import android.content.Context
 import android.content.Intent
@@ -120,6 +121,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var activityVisible = false
     private var mediaCheckInFlight = false
     private var thermalListenerRegistered = false
+    @SuppressLint("NewApi")
     private val thermalStatusListener = PowerManager.OnThermalStatusChangedListener { updateThermalDisplayPolicy() }
     private var attachedTabId: String? = null
     private var appliedNetworkConfigHash: Int? = null
