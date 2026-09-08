@@ -17,6 +17,7 @@ import com.phoenix.phnx.privacy.PrivacyActivity
 import com.phoenix.phnx.permissions.PermissionActivity
 import com.phoenix.phnx.profiles.ProfilesActivity
 import com.phoenix.phnx.resources.PerformanceActivity
+import com.phoenix.phnx.resources.PerformanceMode
 import com.phoenix.phnx.search.SearchEngineActivity
 import com.phoenix.phnx.system.DefaultBrowserActivity
 
@@ -41,6 +42,7 @@ class SettingsActivity : AppCompatActivity() {
         addSearchSection(content)
         addProfileSection(content)
         addNetworkSection(content)
+        addPerformanceModeSection(content)
         addPerformanceSection(content)
         addSystemSection(content)
         addAboutSection(content)
@@ -72,6 +74,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addPerformanceSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.performance), getString(R.string.performance_summary))
         row.setOnClickListener { startActivity(Intent(this, PerformanceActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addPerformanceModeSection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.performance_mode), performanceModeLabel())
+        row.setOnClickListener { showPerformanceModeDialog() }
         parent.addView(row)
     }
 
@@ -209,6 +217,21 @@ class SettingsActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun showPerformanceModeDialog() {
+        val modes = PerformanceMode.values()
+        val labels = modes.map { performanceModeLabel(it) }.toTypedArray()
+        val selected = modes.indexOf(PhnxPreferences.performanceMode(this)).coerceAtLeast(0)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.performance_mode)
+            .setSingleChoiceItems(labels, selected) { dialog, which ->
+                PhnxPreferences.setPerformanceMode(this, modes[which])
+                dialog.dismiss()
+                recreate()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun themeLabel(): String = when (PhnxPreferences.themeMode(this)) {
         PhnxPreferences.THEME_LIGHT -> getString(R.string.theme_light)
         PhnxPreferences.THEME_DARK -> getString(R.string.theme_dark)
@@ -218,6 +241,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun historyRetentionLabel(): String = when (PhnxPreferences.historyRetention(this)) {
         PhnxPreferences.HISTORY_CLEAR_ON_CLOSE -> getString(R.string.history_clear_on_close)
         else -> getString(R.string.history_remember)
+    }
+
+    private fun performanceModeLabel(mode: PerformanceMode = PhnxPreferences.performanceMode(this)): String = when (mode) {
+        PerformanceMode.BALANCED -> getString(R.string.performance_mode_balanced)
+        PerformanceMode.BATTERY_SAVER -> getString(R.string.performance_mode_battery_saver)
+        PerformanceMode.MAXIMUM_PERFORMANCE -> getString(R.string.performance_mode_maximum)
     }
 
     private fun addSection(parent: LinearLayout, title: String, summary: String) {

@@ -51,6 +51,9 @@ interface HistoryDao {
     @Query("SELECT * FROM history_entries WHERE profileId = :profileId ORDER BY visitedAt DESC")
     fun getForProfile(profileId: String): List<HistoryEntryEntity>
 
+    @Query("SELECT * FROM history_entries WHERE profileId = :profileId ORDER BY visitedAt DESC LIMIT :limit")
+    fun getRecentForProfile(profileId: String, limit: Int): List<HistoryEntryEntity>
+
     @Query("SELECT * FROM history_entries WHERE profileId = :profileId AND (title LIKE '%' || :query || '%' OR url LIKE '%' || :query || '%') ORDER BY visitedAt DESC")
     fun search(profileId: String, query: String): List<HistoryEntryEntity>
 
@@ -100,6 +103,9 @@ class HistoryManager(context: Context) {
 
     fun getForProfile(profileId: String): List<HistoryEntry> =
         dao.getForProfile(profileId).map(HistoryEntryEntity::toDomain)
+
+    fun getRecentForProfile(profileId: String, limit: Int): List<HistoryEntry> =
+        dao.getRecentForProfile(profileId, limit.coerceAtLeast(0)).map(HistoryEntryEntity::toDomain)
 
     fun search(profileId: String, query: String): List<HistoryEntry> {
         val cleanQuery = query.trim()

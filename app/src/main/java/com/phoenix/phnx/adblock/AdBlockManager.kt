@@ -12,16 +12,19 @@ class AdBlockManager(context: Context) {
     private val preferences = context.applicationContext.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
     private val ruleEngine = AdBlockRuleEngine()
     private val counters = ConcurrentHashMap<String, Counters>()
+    private val settingsCache = ConcurrentHashMap<String, AdBlockSettings>()
     private val rulesCache = ConcurrentHashMap<String, List<AdBlockRule>>()
 
-    fun getSettings(profileId: String): AdBlockSettings = AdBlockSettings(
-        profileId = profileId,
-        enabled = preferences.getBoolean(key(profileId, ENABLED), true),
-        blockAds = preferences.getBoolean(key(profileId, BLOCK_ADS), true),
-        blockTrackers = preferences.getBoolean(key(profileId, BLOCK_TRACKERS), true),
-        blockMaliciousAds = preferences.getBoolean(key(profileId, BLOCK_MALICIOUS_ADS), true),
-        siteExceptions = preferences.getStringSet(key(profileId, SITE_EXCEPTIONS), emptySet()).orEmpty().toSet(),
-    )
+    fun getSettings(profileId: String): AdBlockSettings = settingsCache.getOrPut(profileId) {
+        AdBlockSettings(
+            profileId = profileId,
+            enabled = preferences.getBoolean(key(profileId, ENABLED), true),
+            blockAds = preferences.getBoolean(key(profileId, BLOCK_ADS), true),
+            blockTrackers = preferences.getBoolean(key(profileId, BLOCK_TRACKERS), true),
+            blockMaliciousAds = preferences.getBoolean(key(profileId, BLOCK_MALICIOUS_ADS), true),
+            siteExceptions = preferences.getStringSet(key(profileId, SITE_EXCEPTIONS), emptySet()).orEmpty().toSet(),
+        )
+    }
 
     fun saveSettings(settings: AdBlockSettings) {
         preferences.edit()
@@ -31,6 +34,7 @@ class AdBlockManager(context: Context) {
             .putBoolean(key(settings.profileId, BLOCK_MALICIOUS_ADS), settings.blockMaliciousAds)
             .putStringSet(key(settings.profileId, SITE_EXCEPTIONS), settings.siteExceptions)
             .apply()
+        settingsCache[settings.profileId] = settings
     }
 
     fun evaluate(profileId: String, url: String, firstPartyUrl: String): BlockDecision {
@@ -95,11 +99,16 @@ class AdBlockManager(context: Context) {
         return stats
     }
 
+    fun flushStats() {
+        counters.forEach { (profileId, counter) -> persistStats(profileId, counter.snapshot()) }
+    }
+
     fun clearProfile(profileId: String) {
         val editor = preferences.edit()
         KEYS.forEach { editor.remove(key(profileId, it)) }
         editor.apply()
         counters.remove(profileId)
+        settingsCache.remove(profileId)
         rulesCache.remove(profileId)
     }
 
@@ -156,7 +165,7 @@ class AdBlockManager(context: Context) {
         const val ADS = "ads"
         const val TRACKERS = "trackers"
         const val MALICIOUS_ADS = "malicious_ads"
-        const val PERSIST_STATS_EVERY = 25L
+        const val PERSIST_STATS_EVERY = 200L
         val KEYS = setOf(
             ENABLED,
             BLOCK_ADS,

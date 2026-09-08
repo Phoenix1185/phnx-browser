@@ -18,6 +18,7 @@ import com.phoenix.phnx.resources.AndroidResourceMonitor
 import com.phoenix.phnx.resources.CrashRecoveryManager
 import com.phoenix.phnx.resources.ResourceManager
 import com.phoenix.phnx.search.SearchEngineManager
+import com.phoenix.phnx.tabs.TabPreviewStore
 
 class PhnxApplication : Application() {
     lateinit var profileManager: ProfileManager
@@ -50,6 +51,8 @@ class PhnxApplication : Application() {
         private set
     lateinit var adBlockManager: AdBlockManager
         private set
+    lateinit var tabPreviewStore: TabPreviewStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -70,6 +73,7 @@ class PhnxApplication : Application() {
         searchEngineManager = SearchEngineManager(this)
         downloadManager = DownloadManager(this)
         adBlockManager = AdBlockManager(this)
+        tabPreviewStore = TabPreviewStore(this)
         deviceProfileManager = DeviceProfileManager(this)
         deviceProfileManager.getProfileConfiguration(activeProfile.id)
         resourceMonitor = AndroidResourceMonitor(this)

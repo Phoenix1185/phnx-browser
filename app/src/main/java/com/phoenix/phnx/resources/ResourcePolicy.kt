@@ -31,6 +31,8 @@ data class ResourceSnapshot(
     val thermalSupported: Boolean = false,
     val batteryPercent: Int = 100,
     val batterySaver: Boolean = false,
+    val performanceMode: PerformanceMode = PerformanceMode.BALANCED,
+    val appPssMb: Int? = null,
 )
 
 data class ProfileResourceDecision(
@@ -47,6 +49,7 @@ class ResourcePolicy {
             profile.foreground -> ProfileLifecycleState.ACTIVE
             pressure(snapshot) >= Pressure.CRITICAL -> ProfileLifecycleState.SUSPENDED
             pressure(snapshot) >= Pressure.HIGH -> ProfileLifecycleState.FROZEN
+            snapshot.performanceMode == PerformanceMode.BATTERY_SAVER -> ProfileLifecycleState.FROZEN
             pressure(snapshot) >= Pressure.MODERATE -> ProfileLifecycleState.IDLE
             else -> ProfileLifecycleState.IDLE
         }

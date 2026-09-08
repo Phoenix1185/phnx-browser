@@ -2,6 +2,7 @@ package com.phoenix.phnx
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
+import com.phoenix.phnx.resources.PerformanceMode
 
 object PhnxPreferences {
     const val STORE = "phnx_preferences"
@@ -16,6 +17,7 @@ object PhnxPreferences {
     const val HISTORY_RETENTION = "history_retention"
     const val HISTORY_REMEMBER = "remember"
     const val HISTORY_CLEAR_ON_CLOSE = "clear_on_close"
+    const val PERFORMANCE_MODE = "performance_mode"
 
     fun store(context: Context) = context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
 
@@ -66,6 +68,14 @@ object PhnxPreferences {
 
     fun historyRetention(context: Context): String =
         store(context).getString(HISTORY_RETENTION, HISTORY_REMEMBER) ?: HISTORY_REMEMBER
+
+    fun performanceMode(context: Context): PerformanceMode = runCatching {
+        PerformanceMode.valueOf(store(context).getString(PERFORMANCE_MODE, PerformanceMode.BALANCED.name).orEmpty())
+    }.getOrDefault(PerformanceMode.BALANCED)
+
+    fun setPerformanceMode(context: Context, mode: PerformanceMode) {
+        store(context).edit().putString(PERFORMANCE_MODE, mode.name).apply()
+    }
 
     private fun themeNightMode(mode: String): Int = when (mode) {
         THEME_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO

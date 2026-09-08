@@ -22,7 +22,15 @@ class TabManager {
         val removed = tabs.removeAt(index)
         if (!removed.isPrivate && removed.url.isNotBlank()) {
             val closed = recentlyClosed.getOrPut(removed.profileId) { ArrayDeque() }
-            closed.addFirst(removed.copy(id = UUID.randomUUID().toString(), isLoading = false))
+            closed.addFirst(
+                removed.copy(
+                    id = UUID.randomUUID().toString(),
+                    isLoading = false,
+                    lastActivatedAt = System.currentTimeMillis(),
+                    hasActiveMedia = false,
+                    hasPendingWebTask = false,
+                ),
+            )
             while (closed.size > MAX_RECENTLY_CLOSED) closed.removeLast()
         }
         if (removed.id == activeTabId) {
@@ -35,6 +43,7 @@ class TabManager {
         val tab = tabs.firstOrNull { it.id == tabId } ?: return false
         if (profileId != null && tab.profileId != profileId) return false
         activeTabId = tabId
+        tab.lastActivatedAt = System.currentTimeMillis()
         return true
     }
 
@@ -45,6 +54,7 @@ class TabManager {
         tabs += restoredTabs
         activeTabId = restoredActiveTabId?.takeIf { id -> tabs.any { it.id == id } }
             ?: tabs.lastOrNull()?.id
+        activeTabId?.let { id -> tabs.firstOrNull { it.id == id }?.lastActivatedAt = System.currentTimeMillis() }
     }
 
     fun activeTabId(): String? = activeTabId
@@ -112,7 +122,13 @@ class TabManager {
         val saved = closed.firstOrNull { it.id == tabId } ?: return null
         closed.remove(saved)
         if (closed.isEmpty()) recentlyClosed.remove(profileId)
-        val restored = saved.copy(id = UUID.randomUUID().toString(), isLoading = false)
+        val restored = saved.copy(
+            id = UUID.randomUUID().toString(),
+            isLoading = false,
+            hasActiveMedia = false,
+            hasPendingWebTask = false,
+        )
+        restored.lastActivatedAt = System.currentTimeMillis()
         tabs += restored
         activeTabId = restored.id
         return restored

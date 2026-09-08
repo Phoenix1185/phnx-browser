@@ -35,7 +35,6 @@ class WebViewIdentityAdapter : ChromiumIdentityAdapter {
             pageZoomPercent.toDouble()
         }
         webView.setInitialScale(initialScale.roundToInt().coerceIn(50, 400))
-        WebViewIdentityCompatibility.install(webView, config)
         val runtimeCheck = runtimeChecker.check(webView, config)
         if (!runtimeCheck.matchesSupportedSettings) {
             return IdentityApplyResult(

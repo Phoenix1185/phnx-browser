@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.PowerManager
+import android.os.Debug
+import com.phoenix.phnx.PhnxPreferences
 
 class AndroidResourceMonitor(context: Context) {
     private val appContext = context.applicationContext
@@ -21,6 +23,8 @@ class AndroidResourceMonitor(context: Context) {
         val scale = battery?.getIntExtra("scale", -1) ?: -1
         val batteryPercent = if (level >= 0 && scale > 0) (level * 100 / scale).coerceIn(0, 100) else 100
         val cpuPercent = cpuMonitor.samplePercent()
+        val processMemory = Debug.MemoryInfo()
+        Debug.getMemoryInfo(processMemory)
         return ResourceSnapshot(
             memoryPressure = memoryPressure(memoryInfo),
             cpuPressure = cpuPressure(cpuPercent),
@@ -29,6 +33,8 @@ class AndroidResourceMonitor(context: Context) {
             thermalSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q,
             batteryPercent = batteryPercent,
             batterySaver = powerManager.isPowerSaveMode,
+            performanceMode = PhnxPreferences.performanceMode(appContext),
+            appPssMb = processMemory.totalPss / 1024,
         )
     }
 

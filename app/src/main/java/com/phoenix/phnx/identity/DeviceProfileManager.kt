@@ -2,6 +2,7 @@ package com.phoenix.phnx.identity
 
 import android.content.Context
 import androidx.room.Room
+import java.util.concurrent.ConcurrentHashMap
 
 class DeviceProfileManager(context: Context) {
     private val appContext = context.applicationContext
@@ -11,6 +12,7 @@ class DeviceProfileManager(context: Context) {
         "profile_identities.db",
     ).allowMainThreadQueries().build()
     private val dao = database.identityDao()
+    private val profileCache = ConcurrentHashMap<String, BrowserIdentityConfig>()
 
     fun getAvailablePresets(): List<DevicePreset> = listOf(DevicePresets.systemDefault(appContext)) + DevicePresets.all()
 
@@ -18,17 +20,23 @@ class DeviceProfileManager(context: Context) {
         if (id == DevicePresets.SYSTEM_DEFAULT) DevicePresets.systemDefault(appContext) else DevicePresets.get(id)
 
     fun getProfileConfiguration(profileId: String): BrowserIdentityConfig {
-        return dao.get(profileId)?.toDomain() ?: DevicePresets.systemDefault(appContext).forProfile(profileId).also(::save)
+        return profileCache[profileId] ?: synchronized(this) {
+            profileCache[profileId] ?: (dao.get(profileId)?.toDomain()
+                ?: DevicePresets.systemDefault(appContext).forProfile(profileId).also(::save))
+                .also { profileCache[profileId] = it }
+        }
     }
 
     fun updateProfileConfiguration(config: BrowserIdentityConfig) {
         save(config)
+        profileCache[config.profileId] = config
     }
 
     fun applyPreset(profileId: String, presetId: String): BrowserIdentityConfig {
         val config = getPreset(presetId)?.forProfile(profileId)
             ?: throw IllegalArgumentException("Unknown device preset: $presetId")
         save(config)
+        profileCache[config.profileId] = config
         return config
     }
 
@@ -40,6 +48,7 @@ class DeviceProfileManager(context: Context) {
 
     fun clearProfileConfiguration(profileId: String) {
         dao.get(profileId)?.let(dao::delete)
+        profileCache.remove(profileId)
     }
 
     fun close() {

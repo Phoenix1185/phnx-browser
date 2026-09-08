@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import java.util.concurrent.ConcurrentHashMap
 
 enum class TrackingProtectionLevel {
     OFF,
@@ -102,16 +103,28 @@ class PrivacyManager(context: android.content.Context) {
         "privacy_settings.db",
     ).addMigrations(PrivacyDatabase.MIGRATION_1_2).allowMainThreadQueries().build()
     private val dao = database.privacyDao()
+    private val settingsCache = ConcurrentHashMap<String, PrivacySettings>()
 
-    fun getSettings(profileId: String): PrivacySettings =
-        dao.get(profileId)?.toDomain() ?: PrivacySettings(profileId).also { saveSettings(it) }
+    fun getSettings(profileId: String): PrivacySettings = settingsCache[profileId] ?: synchronized(this) {
+        settingsCache[profileId] ?: (dao.get(profileId)?.toDomain() ?: PrivacySettings(profileId).also { dao.upsert(it.toEntity()) })
+            .also { settingsCache[profileId] = it }
+    }
 
-    fun saveSettings(settings: PrivacySettings) = dao.upsert(settings.toEntity())
+    fun saveSettings(settings: PrivacySettings) {
+        dao.upsert(settings.toEntity())
+        settingsCache[settings.profileId] = settings
+    }
 
-    fun clearSettings(profileId: String) = dao.delete(profileId)
+    fun clearSettings(profileId: String) {
+        dao.delete(profileId)
+        settingsCache.remove(profileId)
+    }
 
-    fun applyTo(webView: WebView, profileId: String): PrivacyApplyResult {
-        val settings = getSettings(profileId)
+    fun applyTo(
+        webView: WebView,
+        profileId: String,
+        settings: PrivacySettings = getSettings(profileId),
+    ): PrivacyApplyResult {
         webView.settings.apply {
             javaScriptEnabled = settings.javascriptEnabled
             javaScriptCanOpenWindowsAutomatically = settings.popupsAllowed

@@ -2,6 +2,7 @@ package com.phoenix.phnx.network
 
 import android.content.Context
 import androidx.room.Room
+import java.util.concurrent.ConcurrentHashMap
 
 class NetworkManager(context: Context) {
     private val database = Room.databaseBuilder(
@@ -14,9 +15,12 @@ class NetworkManager(context: Context) {
     private val monitor = NetworkMonitor(context)
     private val connectionTester = ConnectionTester(credentials::getCredential)
     private val proxyManager = ProxyManager()
+    private val configCache = ConcurrentHashMap<String, ProfileNetworkConfig>()
 
-    fun getConfig(profileId: String): ProfileNetworkConfig {
-        return dao.getForProfile(profileId)?.toDomain() ?: directConfig(profileId).also { dao.upsert(it.toEntity()) }
+    fun getConfig(profileId: String): ProfileNetworkConfig = configCache[profileId] ?: synchronized(this) {
+        configCache[profileId] ?: (dao.getForProfile(profileId)?.toDomain()
+            ?: directConfig(profileId).also { dao.upsert(it.toEntity()) })
+            .also { configCache[profileId] = it }
     }
 
     fun saveConfig(config: ProfileNetworkConfig) {
@@ -27,6 +31,7 @@ class NetworkManager(context: Context) {
             previous?.credentialReference?.let(credentials::deleteCredential)
         }
         dao.upsert(config.toEntity())
+        configCache[config.profileId] = config
     }
 
     fun clearConfig(profileId: String) {
@@ -34,6 +39,7 @@ class NetworkManager(context: Context) {
             config.credentialReference?.let(credentials::deleteCredential)
             dao.delete(config)
         }
+        configCache.remove(profileId)
     }
 
     fun testConfig(profileId: String): ConnectionTestResult {

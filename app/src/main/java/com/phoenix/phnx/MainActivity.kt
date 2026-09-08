@@ -12,9 +12,11 @@ import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.Message
 import android.os.Environment
 import android.os.Process
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.GestureDetector
@@ -84,7 +86,6 @@ import com.phoenix.phnx.tabs.Tab
 import com.phoenix.phnx.tabs.TabManager
 import com.phoenix.phnx.tabs.TabOverviewDialog
 import com.phoenix.phnx.tabs.TabOverviewItem
-import com.phoenix.phnx.tabs.TabPreviewStore
 import com.phoenix.phnx.tabs.toOverviewItem
 import kotlin.math.abs
 import java.io.ByteArrayInputStream
@@ -100,7 +101,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val permissionManager by lazy { app.permissionManager }
     private val adBlockManager by lazy { app.adBlockManager }
     private val identityAdapter = WebViewIdentityAdapter()
-    private val previewStore by lazy { TabPreviewStore(this) }
+    private val previewStore by lazy { app.tabPreviewStore }
 
     private lateinit var browserContainer: FrameLayout
     private lateinit var addressBar: EditText
@@ -119,12 +120,17 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var appliedNetworkConfigHash: Int? = null
     private var customView: View? = null
     private var customViewCallback: CustomViewCallback? = null
+    private var customViewTabId: String? = null
     private var securityState = BrowserSecurityState.UNKNOWN
     private val downloadSecurityManager by lazy { DownloadSecurityManager() }
     private var findQuery = ""
     private var findDialogWebView: WebView? = null
     private var findCountView: TextView? = null
     private var tabOverview: TabOverviewDialog? = null
+    private val previewHandler = Handler(Looper.getMainLooper())
+    private val pendingPreviewCaptures = mutableMapOf<String, Runnable>()
+    private var bookmarkStateUrl: String? = null
+    private var bookmarkState = false
 
     private val swipeDetector by lazy {
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -161,6 +167,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var pendingPermissionResources: Array<String> = emptyArray()
     private var pendingGeolocationOrigin: String? = null
     private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
+    private var pendingWebTaskTabId: String? = null
     private var pendingDownload: PendingDownload? = null
     private var pendingFilePathCallback: ValueCallback<Array<Uri>>? = null
 
@@ -172,6 +179,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val resources = pendingPermissionResources
         pendingPermissionResources = emptyArray()
         if (results.values.all { it }) request.grant(resources) else request.deny()
+        clearPendingWebTask()
     }
 
     private val locationPermissionLauncher = registerForActivityResult(
@@ -184,6 +192,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         if (origin != null && callback != null) {
             callback.invoke(origin, results.values.any { it }, false)
         }
+        clearPendingWebTask()
     }
 
     private val downloadPermissionLauncher = registerForActivityResult(
@@ -208,6 +217,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val callback = pendingFilePathCallback
         pendingFilePathCallback = null
         callback?.onReceiveValue(uris.toTypedArray().takeIf { it.isNotEmpty() })
+        clearPendingWebTask()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -282,6 +292,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         reconcileResources()
         attachCurrentTab()
+        trimInactiveTabs()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -292,15 +303,19 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     override fun onStop() {
-        saveCurrentProfileSession()
+        app.adBlockManager.flushStats()
         activityVisible = false
         reconcileResources()
+        trimInactiveTabs()
         super.onStop()
     }
 
     override fun onTrimMemory(level: Int) {
         super.onTrimMemory(level)
         reconcileResources()
+        if (level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW) {
+            trimInactiveTabs(aggressive = level >= android.content.ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)
+        }
     }
 
     private fun saveCurrentProfileSession() {
@@ -437,6 +452,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val webView = browserController.getOrCreate(tab)
         val tabChanged = attachedTabId != tab.id
         configureWebView(webView, tab)
+        val restored = browserController.restoreStateIfNeeded(tab.id, webView)
         (webView.parent as? ViewGroup)?.removeView(webView)
         browserContainer.removeAllViews()
         browserContainer.addView(webView, FrameLayout.LayoutParams(-1, -1))
@@ -444,7 +460,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         updateTabChrome(tab, webView)
 
         attachedTabId = tab.id
-        if (tabChanged || webView.url == null) {
+        if (!restored && (tabChanged || webView.url == null)) {
             if (tab.url.isBlank()) {
                 webView.loadDataWithBaseURL(START_PAGE_BASE, startPageHtml(), "text/html", "UTF-8", null)
             } else if (webView.url != tab.url) {
@@ -454,6 +470,19 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun configureWebView(webView: BrowserView, tab: Tab) {
+        val config = WebViewConfiguration(
+            tabId = tab.id,
+            profileId = tab.profileId,
+            identity = effectiveIdentityConfig(tab.profileId),
+            privacy = privacyManager.getSettings(tab.profileId),
+        )
+        val previous = webView.tag as? WebViewConfiguration
+        if (previous?.matches(config) == true) {
+            applyBrowserModes(webView)
+            applyPageControls(webView)
+            return
+        }
+        webView.tag = config
         webView.setFindListener { activeMatchOrdinal, numberOfMatches, isDoneCounting ->
             if (findDialogWebView === webView) {
                 findCountView?.text = FindInPageResult(
@@ -463,18 +492,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 ).summary()
             }
         }
-        if (webView.tag == tab.id) {
-            applyBrowserModes(webView)
-            applyProfileIdentity(webView, tab.profileId)
-            applyPageControls(webView)
-            privacyManager.applyTo(webView, tab.profileId)
-            return
-        }
-        webView.tag = tab.id
         applyBrowserModes(webView)
-        applyProfileIdentity(webView, tab.profileId)
+        applyProfileIdentity(webView, config.identity)
         applyPageControls(webView)
-        privacyManager.applyTo(webView, tab.profileId)
+        privacyManager.applyTo(webView, tab.profileId, config.privacy)
         webView.setOnTouchListener { _, event ->
             swipeDetector.onTouchEvent(event)
             false
@@ -499,7 +520,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.isLoading = true
                 tab.url = url
                 tab.title = tabTitleForUrl(url)
-                applyProfileCompatibility(view, tab.profileId)
                 if (tabManager.currentTab()?.id == tab.id) updateSecurityState(SecurityStateResolver.fromUrl(url))
                 updateTabChrome(tab, view)
             }
@@ -510,7 +530,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 tab.title = view.title?.takeIf { it.isNotBlank() } ?: tabTitleForUrl(url)
                 if (tabManager.currentTab()?.id == tab.id) updateSecurityState(SecurityStateResolver.fromUrl(url))
                 applyProfileCompatibility(view, tab.profileId)
-                privacyManager.applyTo(view, tab.profileId)
                 app.historyManager.recordVisit(tab.profileId, url, tab.title, tab.isPrivate)
                 captureTabPreview(tab, view)
                 updateTabChrome(tab, view)
@@ -571,13 +590,14 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         webView.webChromeClient = object : WebChromeClient() {
             override fun onProgressChanged(view: WebView, newProgress: Int) {
+                if (tabManager.currentTab()?.id != tab.id) return
                 progressBar.progress = newProgress
                 progressBar.visibility = if (newProgress in 1..99) View.VISIBLE else View.GONE
             }
 
             override fun onReceivedTitle(view: WebView, title: String) {
                 tab.title = title.ifBlank { "New tab" }
-                updateTabChrome(tab, view)
+                if (tabManager.currentTab()?.id == tab.id) updateTabChrome(tab, view)
             }
 
             override fun onReceivedIcon(view: WebView, icon: android.graphics.Bitmap) {
@@ -591,6 +611,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 }
                 customView = view
                 customViewCallback = callback
+                customViewTabId = tab.id
+                tab.hasActiveMedia = true
                 browserContainer.addView(view, FrameLayout.LayoutParams(-1, -1))
                 WindowCompat.getInsetsController(window, window.decorView)
                     .hide(WindowInsetsCompat.Type.systemBars())
@@ -622,6 +644,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             ): Boolean {
                 pendingFilePathCallback?.onReceiveValue(null)
                 pendingFilePathCallback = filePathCallback
+                clearPendingWebTask()
+                pendingWebTaskTabId = tab.id
+                tab.hasPendingWebTask = true
                 val acceptTypes = fileChooserParams.acceptTypes
                     .filter { it.isNotBlank() }
                     .ifEmpty { listOf("*/*") }
@@ -631,13 +656,14 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             }
 
             override fun onPermissionRequest(request: PermissionRequest) {
-                runOnUiThread { handleWebPermissionRequest(request, tab.profileId) }
+                runOnUiThread { handleWebPermissionRequest(request, tab.profileId, tab.id) }
             }
 
             override fun onPermissionRequestCanceled(request: PermissionRequest) {
                 if (pendingPermissionRequest === request) {
                     pendingPermissionRequest = null
                     pendingPermissionResources = emptyArray()
+                    clearPendingWebTask()
                 }
             }
 
@@ -653,7 +679,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
     }
 
-    private fun handleWebPermissionRequest(request: PermissionRequest, profileId: String) {
+    private fun handleWebPermissionRequest(request: PermissionRequest, profileId: String, tabId: String) {
         val types = buildList {
             if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in request.resources) add(SitePermissionType.CAMERA)
             if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in request.resources) add(SitePermissionType.MICROPHONE)
@@ -672,12 +698,15 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             return
         }
         if (decisions.all { it == SitePermissionDecision.ALLOW }) {
-            requestAndroidPermissions(request, supportedResources)
+            requestAndroidPermissions(request, supportedResources, tabId)
             return
         }
         pendingPermissionRequest?.deny()
         pendingPermissionRequest = request
         pendingPermissionResources = supportedResources
+        clearPendingWebTask()
+        pendingWebTaskTabId = tabId
+        tabManager.getTabs().firstOrNull { it.id == tabId }?.hasPendingWebTask = true
         AlertDialog.Builder(this)
             .setTitle("Permission request")
             .setMessage("$origin wants to use ${types.joinToString { it.name.lowercase() }}.")
@@ -687,23 +716,25 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 }
                 pendingPermissionRequest = null
                 pendingPermissionResources = emptyArray()
+                clearPendingWebTask()
                 request.deny()
             }
             .setPositiveButton("Allow") { _, _ ->
                 types.forEach { type ->
                     permissionManager.save(SitePermission(profileId, origin, type, SitePermissionDecision.ALLOW))
                 }
-                requestAndroidPermissions(request, supportedResources)
+                requestAndroidPermissions(request, supportedResources, tabId)
             }
             .setOnCancelListener {
                 pendingPermissionRequest = null
                 pendingPermissionResources = emptyArray()
+                clearPendingWebTask()
                 request.deny()
             }
             .show()
     }
 
-    private fun requestAndroidPermissions(request: PermissionRequest, resources: Array<String>) {
+    private fun requestAndroidPermissions(request: PermissionRequest, resources: Array<String>, tabId: String? = pendingWebTaskTabId) {
         val androidPermissions = buildList {
             if (PermissionRequest.RESOURCE_VIDEO_CAPTURE in resources) add(Manifest.permission.CAMERA)
             if (PermissionRequest.RESOURCE_AUDIO_CAPTURE in resources) add(Manifest.permission.RECORD_AUDIO)
@@ -714,10 +745,12 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         if (missing.isEmpty()) {
             pendingPermissionRequest = null
             pendingPermissionResources = emptyArray()
+            clearPendingWebTask()
             request.grant(resources)
         } else {
             pendingPermissionRequest = request
             pendingPermissionResources = resources
+            pendingWebTaskTabId = tabId
             webPermissionLauncher.launch(missing.toTypedArray())
         }
     }
@@ -758,6 +791,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         pendingGeolocationOrigin = origin
         pendingGeolocationCallback = callback
+        clearPendingWebTask()
+        pendingWebTaskTabId = tabManager.currentTab()?.id
+        tabManager.currentTab()?.hasPendingWebTask = true
         locationPermissionLauncher.launch(
             arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
         )
@@ -844,13 +880,17 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun updateTabChrome(tab: Tab, view: WebView) {
-        if (tabManager.currentTab()?.id == tab.id) {
+        val isCurrent = tabManager.currentTab()?.id == tab.id
+        if (isCurrent) {
             if (addressBar.text.toString() != tab.url && !addressBar.hasFocus()) addressBar.setText(tab.url)
             progressBar.visibility = if (tab.isLoading) View.VISIBLE else View.GONE
             if (::bookmarkButton.isInitialized) {
-                val isBookmarked = app.bookmarkManager.getForProfile(tab.profileId).any { it.url == tab.url }
-                bookmarkButton.text = if (isBookmarked) "★" else "☆"
-                bookmarkButton.contentDescription = if (isBookmarked) "Remove bookmark" else "Bookmark current page"
+                if (bookmarkStateUrl != tab.url) {
+                    bookmarkStateUrl = tab.url
+                    bookmarkState = app.bookmarkManager.isBookmarked(tab.profileId, tab.url)
+                }
+                bookmarkButton.text = if (bookmarkState) "★" else "☆"
+                bookmarkButton.contentDescription = if (bookmarkState) "Remove bookmark" else "Bookmark current page"
             }
             if (::refreshButton.isInitialized) {
                 refreshButton.text = if (tab.isLoading) "×" else "↻"
@@ -859,6 +899,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         tab.canGoBack = view.canGoBack()
         tab.canGoForward = view.canGoForward()
+        if (!isCurrent) return
         val profileTabCount = tabManager.tabCount(tab.profileId)
         val profileGroupCount = tabManager.getGroups(tab.profileId).size
         val profileName = profileManager.getAllProfiles().firstOrNull { it.id == tab.profileId }?.name ?: "Profile"
@@ -952,10 +993,14 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     private fun captureTabPreview(tab: Tab, view: WebView) {
-        // Capture once after navigation settles. The cache, not the WebView, owns the preview.
-        view.postDelayed({
-            if (tabManager.getTabs().any { it.id == tab.id }) previewStore.capture(tab, view)
-        }, PREVIEW_CAPTURE_DELAY_MS)
+        if (tab.isPrivate || tabManager.currentTab()?.id != tab.id) return
+        pendingPreviewCaptures.remove(tab.id)?.let(previewHandler::removeCallbacks)
+        val task = Runnable {
+            pendingPreviewCaptures.remove(tab.id)
+            if (tabManager.currentTab()?.id == tab.id) previewStore.capture(tab, view)
+        }
+        pendingPreviewCaptures[tab.id] = task
+        previewHandler.postDelayed(task, PREVIEW_CAPTURE_DELAY_MS)
     }
 
     private fun showTabSwitcher() {
@@ -997,6 +1042,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val wasCurrent = tabManager.activeTabId() == item.id
         val closed = tabManager.closeTab(item.id) ?: return
         browserController.close(closed)
+        pendingPreviewCaptures.remove(closed.id)?.let(previewHandler::removeCallbacks)
         previewStore.remove(closed)
         if (tabManager.tabCount(activeProfileId) == 0) tabManager.createTab(profileId = activeProfileId)
         if (wasCurrent) attachCurrentTab()
@@ -1099,6 +1145,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             app.bookmarkManager.delete(tab.profileId, existing.id)
             Toast.makeText(this, "Bookmark removed", Toast.LENGTH_SHORT).show()
         }
+        bookmarkStateUrl = null
         updateTabChrome(tab, currentBrowserView() ?: return)
     }
 
@@ -1225,7 +1272,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 pageZoomPercent = levels[which]
                 PhnxPreferences.setProfilePageZoomPercent(this, profileManager.activeProfile().id, pageZoomPercent)
                 applyPageControls(view)
-                tabManager.currentTab()?.let { applyProfileIdentity(view, it.profileId) }
+                tabManager.currentTab()?.let { applyProfileIdentity(view, effectiveIdentityConfig(it.profileId)) }
                 view.reload()
                 dialog.dismiss()
             }
@@ -1344,11 +1391,23 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     override fun onDestroy() {
+        pendingPreviewCaptures.values.forEach(previewHandler::removeCallbacks)
+        pendingPreviewCaptures.clear()
+        previewHandler.removeCallbacksAndMessages(null)
+        pendingPermissionRequest?.deny()
+        pendingPermissionRequest = null
+        pendingPermissionResources = emptyArray()
+        pendingFilePathCallback?.onReceiveValue(null)
+        pendingFilePathCallback = null
+        pendingGeolocationCallback?.invoke(pendingGeolocationOrigin.orEmpty(), false, false)
+        pendingGeolocationCallback = null
+        pendingGeolocationOrigin = null
+        pendingDownload = null
+        clearPendingWebTask()
         if (::browserContainer.isInitialized) hideCustomView()
         tabOverview?.dismiss()
         if (isFinishing) clearHistoryOnClose()
         browserController.clear()
-        previewStore.shutdown()
         super.onDestroy()
     }
 
@@ -1372,7 +1431,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 ProfileLifecycleState.SUSPENDED -> ProfileStatus.SUSPENDED
                 ProfileLifecycleState.CLOSED -> ProfileStatus.CLOSED
             }
-            profileManager.updateStatus(decision.profileId, status)
+            if (profileManager.getAllProfiles().firstOrNull { it.id == decision.profileId }?.status != status) {
+                profileManager.updateStatus(decision.profileId, status)
+            }
         }
     }
 
@@ -1418,8 +1479,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         val muted = colorHex(R.color.phnx_muted)
         val blue = colorHex(R.color.phnx_blue)
         val profileId = profileManager.activeProfile().id
-        val bookmarks = app.bookmarkManager.getForProfile(profileId).take(6)
-        val history = app.historyManager.getForProfile(profileId).take(6)
+        val bookmarks = app.bookmarkManager.getRecentForProfile(profileId, 6)
+        val history = app.historyManager.getRecentForProfile(profileId, 6)
         val bookmarkLinks = bookmarks.joinToString("") { bookmark ->
             "<a href='${html(bookmark.url)}' style='display:block;color:$blue;padding:8px 0'>${html(bookmark.title.ifBlank { bookmark.url })}</a>"
         }.ifBlank { "<p style='color:$muted'>No bookmarks yet.</p>" }
@@ -1450,6 +1511,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         customView = null
         customViewCallback?.onCustomViewHidden()
         customViewCallback = null
+        customViewTabId?.let { id -> tabManager.getTabs().firstOrNull { it.id == id }?.hasActiveMedia = false }
+        customViewTabId = null
         WindowCompat.getInsetsController(window, window.decorView)
             .show(WindowInsetsCompat.Type.systemBars())
     }
@@ -1469,10 +1532,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         view.settings.textZoom = textScalePercent
     }
 
-    private fun applyProfileIdentity(view: WebView, profileId: String) {
-        val config = effectiveIdentityConfig(profileId)
+    private fun applyProfileIdentity(view: WebView, config: BrowserIdentityConfig) {
         identityAdapter.apply(view, config, pageZoomPercent)
-        WebViewIdentityCompatibility.install(view, config)
     }
 
     private fun applyProfileCompatibility(view: WebView, profileId: String) {
@@ -1489,5 +1550,30 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         // Desktop Site is a deliberate transient runtime override; it never replaces the
         // profile-owned device selection or its persisted configuration.
         return DevicePresets.get(DevicePresets.DESKTOP)?.forProfile(profileId) ?: selected
+    }
+
+    private fun trimInactiveTabs(aggressive: Boolean = false) {
+        val current = tabManager.currentTab() ?: return
+        browserController.trimInactiveTabs(
+            tabs = tabManager.getTabs(current.profileId),
+            activeTabId = current.id,
+            mode = PhnxPreferences.performanceMode(this),
+            aggressive = aggressive,
+        )
+    }
+
+    private fun clearPendingWebTask() {
+        pendingWebTaskTabId?.let { id -> tabManager.getTabs().firstOrNull { it.id == id }?.hasPendingWebTask = false }
+        pendingWebTaskTabId = null
+    }
+
+    private data class WebViewConfiguration(
+        val tabId: String,
+        val profileId: String,
+        val identity: BrowserIdentityConfig,
+        val privacy: com.phoenix.phnx.privacy.PrivacySettings,
+    ) {
+        fun matches(other: WebViewConfiguration): Boolean =
+            tabId == other.tabId && profileId == other.profileId && identity == other.identity && privacy == other.privacy
     }
 }

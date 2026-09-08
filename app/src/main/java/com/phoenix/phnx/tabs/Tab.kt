@@ -16,6 +16,9 @@ data class Tab(
     var groupId: String? = null,
     var groupTitle: String? = null,
     var groupCreatedAt: Long? = null,
+    var lastActivatedAt: Long = System.currentTimeMillis(),
+    var hasActiveMedia: Boolean = false,
+    var hasPendingWebTask: Boolean = false,
 )
 
 data class TabGroup(

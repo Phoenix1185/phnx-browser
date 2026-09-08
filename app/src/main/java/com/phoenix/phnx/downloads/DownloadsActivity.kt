@@ -24,8 +24,8 @@ class DownloadsActivity : AppCompatActivity() {
     private val refreshRunnable = object : Runnable {
         override fun run() {
             if (!isFinishing && !isDestroyed) {
-                refresh()
-                refreshHandler.postDelayed(this, REFRESH_INTERVAL_MILLIS)
+                val active = refresh()
+                refreshHandler.postDelayed(this, if (active) ACTIVE_REFRESH_INTERVAL_MILLIS else IDLE_REFRESH_INTERVAL_MILLIS)
             }
         }
     }
@@ -65,7 +65,7 @@ class DownloadsActivity : AppCompatActivity() {
         super.onPause()
     }
 
-    private fun refresh() {
+    private fun refresh(): Boolean {
         list.removeAllViews()
         val downloads = app.downloadManager.getForProfile(profileId)
         if (downloads.isEmpty()) {
@@ -76,9 +76,10 @@ class DownloadsActivity : AppCompatActivity() {
                 setTextColor(getColor(R.color.phnx_muted))
                 setPadding(0, dp(18), 0, 0)
             })
-            return
+            return false
         }
         progressSamples.keys.retainAll(downloads.mapTo(mutableSetOf()) { it.downloadId })
+        var activeDownload = false
         downloads.forEach { download ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -87,6 +88,9 @@ class DownloadsActivity : AppCompatActivity() {
             }
             val status = app.downloadManager.query(download.downloadId)
             val progress = app.downloadManager.progress(download.downloadId)
+            if (status == DownloadStatus.QUEUED || status == DownloadStatus.DOWNLOADING || status == DownloadStatus.PAUSED) {
+                activeDownload = true
+            }
             row.addView(TextView(this).apply {
                 text = buildDownloadLabel(download.downloadId, download.filename, status, progress)
                 textSize = 15f
@@ -124,6 +128,7 @@ class DownloadsActivity : AppCompatActivity() {
             })
             list.addView(row)
         }
+        return activeDownload
     }
 
     private fun statusLabel(status: DownloadStatus): String = when (status) {
@@ -212,6 +217,7 @@ class DownloadsActivity : AppCompatActivity() {
     }
 
     private companion object {
-        const val REFRESH_INTERVAL_MILLIS = 1000L
+        const val ACTIVE_REFRESH_INTERVAL_MILLIS = 1000L
+        const val IDLE_REFRESH_INTERVAL_MILLIS = 5000L
     }
 }

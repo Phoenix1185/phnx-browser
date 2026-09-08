@@ -4,6 +4,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import com.phoenix.phnx.tabs.Tab
+import com.phoenix.phnx.tabs.TabResourcePolicy
 
 class ResourcePolicyTest {
     @Test
@@ -62,6 +64,19 @@ class ResourcePolicyTest {
     }
 
     @Test
+    fun batterySaverFreezesBackgroundProfilesWithoutAffectingForeground() {
+        val foreground = profile("foreground", foreground = true, state = ProfileLifecycleState.ACTIVE)
+        val background = profile("background", state = ProfileLifecycleState.IDLE)
+        val decisions = ResourceManager().evaluate(
+            listOf(foreground, background),
+            ResourceSnapshot(performanceMode = PerformanceMode.BATTERY_SAVER),
+        )
+
+        assertEquals(ProfileLifecycleState.ACTIVE, decisions[0].to)
+        assertEquals(ProfileLifecycleState.FROZEN, decisions[1].to)
+    }
+
+    @Test
     fun reconcileAppliesDecisionsToLifecycleAdapter() {
         val applied = mutableListOf<ProfileResourceDecision>()
         val profile = profile("background", foreground = false, state = ProfileLifecycleState.IDLE)
@@ -106,6 +121,24 @@ class ResourcePolicyTest {
         val selected = ProfileScheduler().selectProfilesToSuspend(listOf(suspended, closed, idle), 3)
 
         assertEquals(listOf("idle"), selected.map { it.profileId })
+    }
+
+    @Test
+    fun tabPolicySkipsActiveMediaAndPendingWebTasks() {
+        val now = 1_000_000L
+        val active = Tab(id = "active", lastActivatedAt = now)
+        val media = Tab(id = "media", lastActivatedAt = now - 60 * 60_000L, hasActiveMedia = true)
+        val pending = Tab(id = "pending", lastActivatedAt = now - 60 * 60_000L, hasPendingWebTask = true)
+        val old = Tab(id = "old", lastActivatedAt = now - 60 * 60_000L)
+
+        val selected = TabResourcePolicy().selectForSuspension(
+            tabs = listOf(active, media, pending, old),
+            activeTabId = active.id,
+            mode = PerformanceMode.BALANCED,
+            nowMillis = now,
+        )
+
+        assertEquals(listOf("old"), selected)
     }
 
     @Test

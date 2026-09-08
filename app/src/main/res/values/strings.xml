@@ -193,6 +193,10 @@
     <string name="try_alternate_search">Try DuckDuckGo instead</string>
     <string name="performance">Performance</string>
     <string name="performance_summary">View resource pressure and profile lifecycle state.</string>
+    <string name="performance_mode">Performance mode</string>
+    <string name="performance_mode_balanced">Balanced (recommended)</string>
+    <string name="performance_mode_battery_saver">Battery Saver</string>
+    <string name="performance_mode_maximum">Maximum Performance</string>
     <string name="default_browser">Default browser</string>
     <string name="default_browser_summary">Choose whether PHNX handles web links through the Android browser role.</string>
     <string name="default_browser_status_default">Status: PHNX is your default browser.</string>
@@ -207,11 +211,13 @@
     <string name="resource_snapshot">Resource snapshot</string>
     <string name="resource_updated">Updated: %1$s</string>
     <string name="memory_pressure">Memory pressure: %1$s</string>
+    <string name="app_memory">PHNX memory (PSS): %1$d MB</string>
     <string name="thermal_status">Thermal status: %1$s</string>
     <string name="thermal_unsupported">Thermal status: unsupported on this Android version</string>
     <string name="battery_status">Battery: %1$d%%</string>
     <string name="battery_saver_on">Battery Saver: on</string>
     <string name="battery_saver_off">Battery Saver: off</string>
+    <string name="performance_mode_status">Performance mode: %1$s</string>
     <string name="cpu_status">CPU monitoring: unsupported by the current Android integration</string>
     <string name="cpu_usage">CPU usage: %1$s%% (PHNX process)</string>
     <string name="cpu_sampling">CPU usage: collecting a second sample; updates automatically</string>

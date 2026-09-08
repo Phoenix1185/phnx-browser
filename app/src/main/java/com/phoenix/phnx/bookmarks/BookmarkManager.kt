@@ -57,6 +57,9 @@ interface BookmarkDao {
     @Query("SELECT * FROM bookmarks WHERE profileId = :profileId ORDER BY createdAt DESC")
     fun getForProfile(profileId: String): List<BookmarkEntity>
 
+    @Query("SELECT * FROM bookmarks WHERE profileId = :profileId ORDER BY createdAt DESC LIMIT :limit")
+    fun getRecentForProfile(profileId: String, limit: Int): List<BookmarkEntity>
+
     @Query("SELECT * FROM bookmarks WHERE profileId = :profileId AND url = :url LIMIT 1")
     fun findByUrl(profileId: String, url: String): BookmarkEntity?
 
@@ -139,6 +142,11 @@ class BookmarkManager(context: Context) {
 
     fun getForProfile(profileId: String): List<BookmarkItem> =
         dao.getForProfile(profileId).map(BookmarkEntity::toDomain)
+
+    fun getRecentForProfile(profileId: String, limit: Int): List<BookmarkItem> =
+        dao.getRecentForProfile(profileId, limit.coerceAtLeast(0)).map(BookmarkEntity::toDomain)
+
+    fun isBookmarked(profileId: String, url: String): Boolean = dao.findByUrl(profileId, url) != null
 
     fun getFolders(profileId: String): List<BookmarkFolder> =
         dao.getFoldersForProfile(profileId).map(BookmarkFolderEntity::toDomain)

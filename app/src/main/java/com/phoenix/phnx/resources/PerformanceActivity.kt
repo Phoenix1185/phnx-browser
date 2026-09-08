@@ -16,16 +16,19 @@ import java.util.Date
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 class PerformanceActivity : AppCompatActivity() {
     private val app by lazy { application as PhnxApplication }
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
     private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshInFlight = AtomicBoolean(false)
+    private var started = false
     private val refreshTask = object : Runnable {
         override fun run() {
-            if (!isFinishing) {
+            if (started && !isFinishing) {
                 refreshAsync()
-                refreshHandler.postDelayed(this, 1000L)
+                refreshHandler.postDelayed(this, REFRESH_INTERVAL_MILLIS)
             }
         }
     }
@@ -43,46 +46,39 @@ class PerformanceActivity : AppCompatActivity() {
             setBackgroundColor(getColor(R.color.phnx_cream))
             addView(content)
         })
-        refreshAsync()
     }
 
     override fun onStart() {
         super.onStart()
+        started = true
         refreshHandler.post(refreshTask)
     }
 
     override fun onStop() {
+        started = false
         refreshHandler.removeCallbacks(refreshTask)
         super.onStop()
     }
 
     override fun onDestroy() {
+        started = false
+        refreshHandler.removeCallbacksAndMessages(null)
         executor.shutdownNow()
         super.onDestroy()
     }
 
     private fun refreshAsync() {
+        if (!refreshInFlight.compareAndSet(false, true)) return
         executor.execute {
-            val profiles = app.profileManager.getAllProfiles()
-            val activeProfileId = app.profileManager.activeProfile().id
-            val states = profiles.map { profile ->
-                ProfileResourceState(
-                    profileId = profile.id,
-                    lifecycleState = profile.status.toLifecycleState(),
-                    lastActiveTime = profile.lastUsedAt,
-                    activeTabCount = if (profile.id == activeProfileId) 1 else 0,
-                    foreground = profile.id == activeProfileId,
-                    userPinned = false,
-                )
-            }
-            val decisions = app.resourceManager.evaluate(states)
-            decisions.forEach { decision ->
-                app.profileManager.updateStatus(decision.profileId, decision.to.toProfileStatus())
-            }
-            val snapshot = app.resourceMonitor.currentSnapshot()
-            val profileStatuses = app.profileManager.getAllProfiles().map { it.name to it.status }
-            runOnUiThread {
-                if (!isFinishing) renderSnapshot(snapshot, profileStatuses)
+            try {
+                val profiles = app.profileManager.getAllProfiles()
+                val snapshot = app.resourceMonitor.currentSnapshot()
+                val profileStatuses = profiles.map { it.name to it.status }
+                runOnUiThread {
+                    if (started && !isFinishing) renderSnapshot(snapshot, profileStatuses)
+                }
+            } finally {
+                refreshInFlight.set(false)
             }
         }
     }
@@ -101,6 +97,7 @@ class PerformanceActivity : AppCompatActivity() {
         content.addView(metric(getString(R.string.resource_updated, DateFormat.getTimeInstance().format(Date()))))
 
         content.addView(metric(getString(R.string.memory_pressure, snapshot.memoryPressure)))
+        snapshot.appPssMb?.let { content.addView(metric(getString(R.string.app_memory, it))) }
         content.addView(metric(
             if (snapshot.thermalSupported) {
                 getString(R.string.thermal_status, snapshot.thermalLevel)
@@ -110,6 +107,7 @@ class PerformanceActivity : AppCompatActivity() {
         ))
         content.addView(metric(getString(R.string.battery_status, snapshot.batteryPercent)))
         content.addView(metric(if (snapshot.batterySaver) getString(R.string.battery_saver_on) else getString(R.string.battery_saver_off)))
+        content.addView(metric(getString(R.string.performance_mode_status, snapshot.performanceMode)))
         content.addView(metric(snapshot.cpuPercent?.let {
             getString(R.string.cpu_usage, String.format(Locale.US, "%.1f", it))
         } ?: getString(R.string.cpu_sampling)))
@@ -125,24 +123,6 @@ class PerformanceActivity : AppCompatActivity() {
         }
     }
 
-    private fun ProfileLifecycleState.toProfileStatus(): ProfileStatus = when (this) {
-        ProfileLifecycleState.ACTIVE -> ProfileStatus.ACTIVE
-        ProfileLifecycleState.IDLE -> ProfileStatus.IDLE
-        ProfileLifecycleState.FROZEN -> ProfileStatus.FROZEN
-        ProfileLifecycleState.SUSPENDED -> ProfileStatus.SUSPENDED
-        ProfileLifecycleState.RECREATING -> ProfileStatus.RECREATING
-        ProfileLifecycleState.CLOSED -> ProfileStatus.CLOSED
-    }
-
-    private fun ProfileStatus.toLifecycleState(): ProfileLifecycleState = when (this) {
-        ProfileStatus.ACTIVE -> ProfileLifecycleState.ACTIVE
-        ProfileStatus.IDLE -> ProfileLifecycleState.IDLE
-        ProfileStatus.FROZEN -> ProfileLifecycleState.FROZEN
-        ProfileStatus.SUSPENDED -> ProfileLifecycleState.SUSPENDED
-        ProfileStatus.RECREATING -> ProfileLifecycleState.RECREATING
-        ProfileStatus.CLOSED -> ProfileLifecycleState.CLOSED
-    }
-
     private fun metric(value: String): TextView = TextView(this).apply {
         text = value
         textSize = 16f
@@ -151,4 +131,8 @@ class PerformanceActivity : AppCompatActivity() {
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    private companion object {
+        const val REFRESH_INTERVAL_MILLIS = 2_500L
+    }
 }

@@ -172,6 +172,8 @@ class ProfilesActivity : AppCompatActivity() {
                     (application as PhnxApplication).bookmarkManager.clearProfile(profile.id)
                     (application as PhnxApplication).downloadManager.clearProfile(profile.id)
                     (application as PhnxApplication).adBlockManager.clearProfile(profile.id)
+                    (application as PhnxApplication).tabPreviewStore.clearProfile(profile.id)
+                    (application as PhnxApplication).profileViewPool.clearProfile(profile.id)
                     PhnxPreferences.clearProfilePageSettings(this, profile.id)
                 }
                 refreshProfiles()

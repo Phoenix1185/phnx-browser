@@ -8,6 +8,7 @@ import android.os.Looper
 import android.util.LruCache
 import android.webkit.WebView
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import kotlin.math.min
 
@@ -26,30 +27,40 @@ class TabPreviewStore(context: android.content.Context) {
     private val favicons = object : LruCache<String, Bitmap>(512) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount / 1024
     }
+    private val pendingWrites = ConcurrentHashMap.newKeySet<String>()
+    private val removedKeys = ConcurrentHashMap.newKeySet<String>()
 
     fun capture(tab: Tab, view: WebView) {
+        if (tab.isPrivate) return
         if (view.width <= 0 || view.height <= 0) return
 
         val scale = min(MAX_WIDTH.toFloat() / view.width, MAX_HEIGHT.toFloat() / view.height).coerceAtMost(1f)
         val width = (view.width * scale).toInt().coerceAtLeast(1)
         val height = (view.height * scale).toInt().coerceAtLeast(1)
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
         Canvas(bitmap).apply {
             scale(scale, scale)
             view.draw(this)
         }
         val key = key(tab.profileId, tab.id)
+        removedKeys.remove(key)
         previews.put(key, bitmap)
-        if (!tab.isPrivate) {
-            val file = previewFile(tab.profileId, tab.id)
-            io.execute {
-                file.parentFile?.mkdirs()
-                file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 82, it) }
+        if (!pendingWrites.add(key)) return
+        val file = previewFile(tab.profileId, tab.id)
+        io.execute {
+            try {
+                if (!removedKeys.contains(key)) {
+                    file.parentFile?.mkdirs()
+                    file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 82, it) }
+                }
+            } finally {
+                pendingWrites.remove(key)
             }
         }
     }
 
     fun setFavicon(tab: Tab, favicon: Bitmap?) {
+        if (tab.isPrivate) return
         if (favicon != null) favicons.put(key(tab.profileId, tab.id), favicon)
     }
 
@@ -78,9 +89,17 @@ class TabPreviewStore(context: android.content.Context) {
 
     fun remove(tab: Tab) {
         val cacheKey = key(tab.profileId, tab.id)
+        removedKeys.add(cacheKey)
         previews.remove(cacheKey)
         favicons.remove(cacheKey)
         if (!tab.isPrivate) io.execute { previewFile(tab.profileId, tab.id).delete() }
+    }
+
+    fun clearProfile(profileId: String) {
+        val prefix = "$profileId/"
+        previews.snapshot().keys.filter { it.startsWith(prefix) }.forEach(previews::remove)
+        favicons.snapshot().keys.filter { it.startsWith(prefix) }.forEach(favicons::remove)
+        io.execute { File(diskRoot, profileId).deleteRecursively() }
     }
 
     fun shutdown() {
