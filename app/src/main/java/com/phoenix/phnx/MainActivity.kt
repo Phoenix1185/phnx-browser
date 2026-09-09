@@ -84,6 +84,7 @@ import com.phoenix.phnx.profiles.TabSessionEntity
 import com.phoenix.phnx.profiles.ProfileStatus
 import com.phoenix.phnx.resources.ProfileLifecycleState
 import com.phoenix.phnx.resources.ProfileResourceState
+import com.phoenix.phnx.resources.TabDiagnostics
 import com.phoenix.phnx.security.BrowserSecurityState
 import com.phoenix.phnx.security.SecurityStateResolver
 import com.phoenix.phnx.settings.SettingsActivity
@@ -102,6 +103,7 @@ import java.util.concurrent.atomic.AtomicInteger
 
 class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val tabManager = TabManager()
+    private val tabDiagnosticsOwner = Any()
     private val app by lazy { application as PhnxApplication }
     private val browserController by lazy { BrowserController(app.profileViewPool) }
     private val profileManager by lazy { app.profileManager }
@@ -278,6 +280,14 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                     )
                 },
                 savedTabs.firstOrNull { it.isActive }?.tabId,
+            )
+        }
+        app.setTabDiagnosticsProvider(tabDiagnosticsOwner) {
+            val tabs = tabManager.getTabs()
+            TabDiagnostics(
+                openTabs = tabs.size,
+                loadedPages = tabs.count { it.url.isNotBlank() && !it.isLoading },
+                available = true,
             )
         }
         browserController.setSessionSaver(::saveProfileSession)
@@ -1632,6 +1642,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             return
         }
         unregisterThermalListener()
+        app.clearTabDiagnosticsProvider(tabDiagnosticsOwner)
         pendingPreviewCaptures.values.forEach(previewHandler::removeCallbacks)
         pendingPreviewCaptures.clear()
         longPressPoints.clear()

@@ -1,5 +1,7 @@
 package com.phoenix.phnx.resources
 
+import com.phoenix.phnx.network.NetworkState
+
 enum class MemoryPressure {
     NORMAL,
     LOW,
@@ -23,6 +25,38 @@ enum class ThermalLevel {
     THERMAL_CRITICAL,
 }
 
+enum class ProcessState {
+    FOREGROUND,
+    VISIBLE,
+    SERVICE,
+    CACHED,
+    UNKNOWN,
+}
+
+enum class ResourceWarningSeverity {
+    WARNING,
+    CRITICAL,
+}
+
+enum class ResourceWarningType {
+    HIGH_CPU,
+    HIGH_MEMORY,
+    MEMORY_PRESSURE,
+    THERMAL,
+    LOW_BATTERY,
+}
+
+data class ResourceWarning(
+    val type: ResourceWarningType,
+    val severity: ResourceWarningSeverity,
+)
+
+data class TabDiagnostics(
+    val openTabs: Int = 0,
+    val loadedPages: Int = 0,
+    val available: Boolean = false,
+)
+
 data class ResourceSnapshot(
     val memoryPressure: MemoryPressure = MemoryPressure.NORMAL,
     val cpuPressure: CpuPressure = CpuPressure.NORMAL,
@@ -33,6 +67,20 @@ data class ResourceSnapshot(
     val batterySaver: Boolean = false,
     val performanceMode: PerformanceMode = PerformanceMode.BALANCED,
     val appPssMb: Int? = null,
+    val peakAppPssMb: Int? = null,
+    val peakCpuPercent: Double? = null,
+    val sessionUptimeMillis: Long = 0L,
+    val availableRamMb: Long? = null,
+    val totalRamMb: Long? = null,
+    val appDalvikPssMb: Int? = null,
+    val appNativePssMb: Int? = null,
+    val appOtherPssMb: Int? = null,
+    val processState: ProcessState = ProcessState.UNKNOWN,
+    val processImportance: Int? = null,
+    val networkState: NetworkState? = null,
+    val networkRxBytes: Long? = null,
+    val networkTxBytes: Long? = null,
+    val warnings: List<ResourceWarning> = emptyList(),
 )
 
 data class ProfileResourceDecision(

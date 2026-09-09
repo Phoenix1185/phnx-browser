@@ -5,6 +5,7 @@
     <color name="phnx_text">#F7F8FC</color>
     <color name="phnx_muted">#AAB4C8</color>
     <color name="phnx_error">#FFB4AB</color>
+    <color name="phnx_warning">#F6C453</color>
     <color name="phnx_toolbar_content">#FFFFFF</color>
     <color name="phnx_toolbar_hint">#B8C2D9</color>
     <color name="phnx_card_surface">#172238</color>

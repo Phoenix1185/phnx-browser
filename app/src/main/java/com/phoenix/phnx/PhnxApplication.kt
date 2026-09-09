@@ -17,10 +17,16 @@ import com.phoenix.phnx.privacy.PrivacyManager
 import com.phoenix.phnx.resources.AndroidResourceMonitor
 import com.phoenix.phnx.resources.CrashRecoveryManager
 import com.phoenix.phnx.resources.ResourceManager
+import com.phoenix.phnx.resources.TabDiagnostics
 import com.phoenix.phnx.search.SearchEngineManager
 import com.phoenix.phnx.tabs.TabPreviewStore
 
 class PhnxApplication : Application() {
+    @Volatile
+    private var tabDiagnosticsProvider: (() -> TabDiagnostics)? = null
+    @Volatile
+    private var tabDiagnosticsOwner: Any? = null
+
     lateinit var profileManager: ProfileManager
         private set
     lateinit var networkManager: NetworkManager
@@ -53,6 +59,22 @@ class PhnxApplication : Application() {
         private set
     lateinit var tabPreviewStore: TabPreviewStore
         private set
+
+    @Synchronized
+    fun setTabDiagnosticsProvider(owner: Any, provider: () -> TabDiagnostics) {
+        tabDiagnosticsOwner = owner
+        tabDiagnosticsProvider = provider
+    }
+
+    @Synchronized
+    fun clearTabDiagnosticsProvider(owner: Any) {
+        if (tabDiagnosticsOwner === owner) {
+            tabDiagnosticsOwner = null
+            tabDiagnosticsProvider = null
+        }
+    }
+
+    fun currentTabDiagnostics(): TabDiagnostics = tabDiagnosticsProvider?.invoke() ?: TabDiagnostics()
 
     override fun onCreate() {
         super.onCreate()
