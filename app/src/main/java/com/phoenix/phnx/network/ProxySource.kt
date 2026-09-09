@@ -43,5 +43,40 @@ object ProxySources {
             name = "IPLocate SOCKS5 feed",
             endpoint = "https://raw.githubusercontent.com/iplocate/free-proxy-list/main/protocols/socks5.txt",
         ),
+        ProxySource(
+            id = "thespeedx_http",
+            name = "TheSpeedX HTTP feed",
+            endpoint = "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt",
+        ),
+        ProxySource(
+            id = "thespeedx_socks4",
+            name = "TheSpeedX SOCKS4 feed",
+            endpoint = "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks4.txt",
+        ),
+        ProxySource(
+            id = "thespeedx_socks5",
+            name = "TheSpeedX SOCKS5 feed",
+            endpoint = "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/socks5.txt",
+        ),
+        ProxySource(
+            id = "monosans_http",
+            name = "Monosans HTTP feed",
+            endpoint = "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt",
+        ),
+        ProxySource(
+            id = "monosans_socks4",
+            name = "Monosans SOCKS4 feed",
+            endpoint = "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks4.txt",
+        ),
+        ProxySource(
+            id = "monosans_socks5",
+            name = "Monosans SOCKS5 feed",
+            endpoint = "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/socks5.txt",
+        ),
+        ProxySource(
+            id = "openproxylist_https",
+            name = "OpenProxyList HTTPS feed",
+            endpoint = "https://raw.githubusercontent.com/roosterkid/openproxylist/main/HTTPS_RAW.txt",
+        ),
     )
 }

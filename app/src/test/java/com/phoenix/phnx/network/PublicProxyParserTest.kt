@@ -59,10 +59,25 @@ class PublicProxyParserTest {
     }
 
     @Test
+    fun parsesTypedPlainProviderFeeds() {
+        val source = ProxySource("monosans_socks5", "Monosans SOCKS5", "https://example.com/feed")
+        val proxies = PublicProxyParser.parse(source, "203.0.113.10:1080\n198.51.100.7:65536", limit = 5)
+
+        assertEquals(1, proxies.size)
+        assertEquals(ProxyType.SOCKS5, proxies.single().type)
+    }
+
+    @Test
     fun bundledSourcesAreHttpsAndCoverTheConfiguredPublicFeeds() {
         val ids = ProxySources.default.map(ProxySource::id)
 
-        assertTrue(ids.containsAll(listOf("hproxy", "proxyscrape", "geonode", "proxifly", "iplocate_http", "iplocate_https", "iplocate_socks5")))
+        assertTrue(ids.containsAll(listOf(
+            "hproxy", "proxyscrape", "geonode", "proxifly",
+            "iplocate_http", "iplocate_https", "iplocate_socks5",
+            "thespeedx_http", "thespeedx_socks4", "thespeedx_socks5",
+            "monosans_http", "monosans_socks4", "monosans_socks5",
+            "openproxylist_https",
+        )))
         assertTrue(ProxySources.default.all { it.endpoint.startsWith("https://") })
     }
 }

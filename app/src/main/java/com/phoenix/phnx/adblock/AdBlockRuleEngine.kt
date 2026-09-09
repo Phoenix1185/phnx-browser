@@ -1,6 +1,7 @@
 package com.phoenix.phnx.adblock
 
 import java.net.URI
+import java.util.concurrent.ConcurrentHashMap
 
 enum class BlockCategory {
     AD,
@@ -14,6 +15,8 @@ data class BlockDecision(
 )
 
 class AdBlockRuleEngine {
+    private val hostCache = ConcurrentHashMap<String, String>()
+
     fun evaluate(
         url: String,
         firstPartyUrl: String,
@@ -44,9 +47,13 @@ class AdBlockRuleEngine {
     fun canonicalHost(value: String): String? = host(value)
 
     private fun host(value: String): String? {
-        val uri = runCatching { URI(value.trim()) }.getOrNull() ?: return null
-        val host = uri.host?.lowercase()?.trim('.') ?: return null
-        return host.takeIf { it.isNotBlank() && !it.contains(' ') }
+        val normalized = value.trim()
+        hostCache[normalized]?.let { return it.ifBlank { null } }
+        val uri = runCatching { URI(normalized) }.getOrNull()
+        val host = uri?.host?.lowercase()?.trim('.')
+            ?.takeIf { it.isNotBlank() && !it.contains(' ') }
+        if (hostCache.size < HOST_CACHE_LIMIT) hostCache.putIfAbsent(normalized, host.orEmpty())
+        return host
     }
 
     private fun matchesAny(host: String, domains: Set<String>): Boolean = domains.any { matchesDomain(host, it) }
@@ -55,6 +62,7 @@ class AdBlockRuleEngine {
         host == domain || host.endsWith(".$domain")
 
     private companion object {
+        const val HOST_CACHE_LIMIT = 2_048
         val AD_DOMAINS = setOf(
             "adnxs.com",
             "adsrvr.org",

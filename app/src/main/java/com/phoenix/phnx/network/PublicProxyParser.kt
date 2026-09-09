@@ -10,6 +10,10 @@ object PublicProxyParser {
             "iplocate_http" -> parsePlainHttp(source, json, limit, ProxyType.HTTP)
             "iplocate_https" -> parsePlainHttp(source, json, limit, ProxyType.HTTPS)
             "iplocate_socks5" -> parsePlainHttp(source, json, limit, ProxyType.SOCKS5)
+            "thespeedx_http", "monosans_http" -> parsePlainHttp(source, json, limit, ProxyType.HTTP)
+            "thespeedx_socks4", "monosans_socks4" -> parsePlainHttp(source, json, limit, ProxyType.SOCKS4)
+            "thespeedx_socks5", "monosans_socks5" -> parsePlainHttp(source, json, limit, ProxyType.SOCKS5)
+            "openproxylist_https" -> parsePlainHttp(source, json, limit, ProxyType.HTTPS)
             else -> emptyList()
         }
     }

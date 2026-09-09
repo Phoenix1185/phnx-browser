@@ -13,6 +13,7 @@ import com.phoenix.phnx.tabs.TabResourcePolicy
 
 class ProfileViewPool(context: Context) {
     private val appContext = context.applicationContext
+    private var hostContext: Context = appContext
     private val tracker = ProfileLifecycleTracker()
     private val tabResourcePolicy = TabResourcePolicy()
     private val entries = mutableMapOf<String, Entry>()
@@ -20,6 +21,23 @@ class ProfileViewPool(context: Context) {
 
     fun setSessionSaver(saver: (String) -> Unit) {
         sessionSaver = saver
+    }
+
+    /** WebView native popups, including HTML select controls, need an Activity window token. */
+    fun attachHostContext(context: Context) {
+        if (hostContext === context) return
+        entries.values.forEach { entry ->
+            entry.view?.let {
+                saveState(entry)
+                destroy(it)
+                entry.view = null
+            }
+        }
+        hostContext = context
+    }
+
+    fun detachHostContext(context: Context) {
+        if (hostContext === context) hostContext = appContext
     }
 
     fun acquire(tab: Tab): BrowserView {
@@ -158,7 +176,7 @@ class ProfileViewPool(context: Context) {
             destroy(it)
         }
         tracker.transition(entry.profileId, ProfileLifecycleState.RECREATING)
-        return BrowserView(appContext, entry.isPrivate).also { entry.view = it }
+        return BrowserView(hostContext, entry.isPrivate).also { entry.view = it }
     }
 
     private fun entriesFor(profileId: String): List<Map.Entry<String, Entry>> =

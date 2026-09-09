@@ -211,9 +211,10 @@ jobs:
           printf 'tag=%s\ncommit=%s\n' "$RELEASE_TAG" "$GITHUB_SHA" > release/build-metadata.txt
           printf '%s\n' \
             "PHNX Browser ${RELEASE_TAG}" \
-            "Patch release improving network recovery after connectivity interruptions." \
+            "Patch release restoring native HTML select controls and improving browsing resilience." \
             "" \
             "Highlights:" \
+            "- Native HTML select/dropdown controls" \
             "- Fast Android browsing" \
             "- Privacy-focused browsing" \
             "- Tabs and navigation" \

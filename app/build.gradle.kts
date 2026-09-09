@@ -50,8 +50,8 @@ android {
         applicationId = "com.phoenix.phnx"
         minSdk = 28
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.0.0.2"
+        versionCode = 4
+        versionName = "1.0.0.3"
 
         buildConfigField("String", "EXPECTED_RELEASE_CERTIFICATE_SHA256", "\"$expectedReleaseCertificateSha256\"")
 

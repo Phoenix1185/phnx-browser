@@ -259,6 +259,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             return
         }
         if (restartForShortcutProfile(intent)) return
+        app.profileViewPool.attachHostContext(this)
         val activeProfileId = profileManager.activeProfile().id
         val preferences = PhnxPreferences.store(this)
         dataSaverEnabled = preferences.getBoolean(PhnxPreferences.DATA_SAVER_ENABLED, false)
@@ -416,6 +417,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 appliedNetworkConfigHash = app.networkManager
                     .getConfig(profileManager.activeProfile().id)
                     .hashCode()
+                browserController.forEachView { it.setNetworkAvailable(true) }
                 currentBrowserView()?.reload()
             } else {
                 retryNetworkRecovery(apply.message)
@@ -1749,6 +1751,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         tabOverview?.dismiss()
         if (isFinishing) clearHistoryOnClose()
         browserController.clear()
+        app.profileViewPool.detachHostContext(this)
         super.onDestroy()
     }
 
