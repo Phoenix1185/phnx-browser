@@ -75,6 +75,8 @@ import com.phoenix.phnx.identity.WebViewIdentityAdapter
 import com.phoenix.phnx.menu.BrowserMenu
 import com.phoenix.phnx.network.NetworkApplyStatus
 import com.phoenix.phnx.network.NetworkActivity
+import com.phoenix.phnx.network.NetworkState
+import com.phoenix.phnx.network.NetworkStateListener
 import com.phoenix.phnx.chromium.network.ChromiumProxyAdapter
 import com.phoenix.phnx.pages.FindInPageResult
 import com.phoenix.phnx.permissions.SitePermissionDecision
@@ -145,10 +147,21 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var findCountView: TextView? = null
     private var tabOverview: TabOverviewDialog? = null
     private val previewHandler = Handler(Looper.getMainLooper())
+    private val networkRecoveryHandler = Handler(Looper.getMainLooper())
     private val pendingPreviewCaptures = mutableMapOf<String, Runnable>()
     private val longPressPoints = WeakHashMap<WebView, PointF>()
     private var bookmarkStateUrl: String? = null
     private var bookmarkState = false
+    private var lastNetworkState: NetworkState? = null
+    private var networkRecoveryPending = false
+    private var networkRecoveryAttempt = 0
+    private var networkRecoveryInFlight = false
+    private var networkRecoveryRunnable: Runnable? = null
+    private val networkStateListener = NetworkStateListener { state ->
+        runOnUiThread { handleNetworkState(state) }
+    }
+
+    private val networkRecoveryDelaysMs = longArrayOf(250L, 1_000L, 3_000L)
 
     private val swipeDetector by lazy {
         GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -306,6 +319,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         })
     }
 
+    override fun onStart() {
+        super.onStart()
+        if (!integrityRejected) {
+            lastNetworkState = app.networkManager.observeConnection(networkStateListener)
+        }
+    }
+
     override fun onResume() {
         super.onResume()
         if (integrityRejected) return
@@ -323,6 +343,9 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             appliedNetworkConfigHash = networkConfig.hashCode()
             if (apply.status == NetworkApplyStatus.APPLIED) currentBrowserView()?.reload()
             else Toast.makeText(this, apply.message, Toast.LENGTH_LONG).show()
+        }
+        if (networkRecoveryPending && app.networkManager.reportConnectionState() == NetworkState.CONNECTED) {
+            scheduleNetworkRecovery()
         }
         reconcileResources()
         attachCurrentTab()
@@ -344,9 +367,72 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         app.adBlockManager.flushStats()
         activityVisible = false
+        networkRecoveryRunnable?.let(networkRecoveryHandler::removeCallbacks)
+        networkRecoveryRunnable = null
+        if (!integrityRejected) app.networkManager.stopObservingConnection(networkStateListener)
         trimInactiveTabs()
         reconcileResources()
         super.onStop()
+    }
+
+    private fun handleNetworkState(state: NetworkState) {
+        val previous = lastNetworkState
+        lastNetworkState = state
+        if (state != NetworkState.CONNECTED) {
+            networkRecoveryRunnable?.let(networkRecoveryHandler::removeCallbacks)
+            networkRecoveryRunnable = null
+            networkRecoveryAttempt = 0
+            if (previous == NetworkState.CONNECTED) networkRecoveryPending = true
+            return
+        }
+        if (previous != null && previous != NetworkState.CONNECTED) {
+            networkRecoveryPending = true
+            scheduleNetworkRecovery()
+        }
+    }
+
+    private fun scheduleNetworkRecovery() {
+        if (!activityVisible || !networkRecoveryPending || networkRecoveryInFlight || networkRecoveryRunnable != null) return
+        val delay = networkRecoveryDelaysMs[networkRecoveryAttempt.coerceAtMost(networkRecoveryDelaysMs.lastIndex)]
+        networkRecoveryRunnable = Runnable {
+            networkRecoveryRunnable = null
+            recoverNetwork()
+        }.also { networkRecoveryHandler.postDelayed(it, delay) }
+    }
+
+    private fun recoverNetwork() {
+        if (!activityVisible || !networkRecoveryPending ||
+            app.networkManager.reportConnectionState() != NetworkState.CONNECTED
+        ) return
+        networkRecoveryInFlight = true
+        val outcome = runCatching {
+            app.networkManager.applyConfig(profileManager.activeProfile().id, ChromiumProxyAdapter())
+        }
+        networkRecoveryInFlight = false
+        outcome.onSuccess { apply ->
+            if (apply.status == NetworkApplyStatus.APPLIED) {
+                networkRecoveryPending = false
+                networkRecoveryAttempt = 0
+                appliedNetworkConfigHash = app.networkManager
+                    .getConfig(profileManager.activeProfile().id)
+                    .hashCode()
+                currentBrowserView()?.reload()
+            } else {
+                retryNetworkRecovery(apply.message)
+            }
+        }.onFailure { error ->
+            retryNetworkRecovery(error.message ?: error.javaClass.simpleName)
+        }
+    }
+
+    private fun retryNetworkRecovery(message: String) {
+        if (networkRecoveryAttempt < networkRecoveryDelaysMs.lastIndex) {
+            networkRecoveryAttempt++
+            scheduleNetworkRecovery()
+        } else {
+            networkRecoveryPending = false
+            Toast.makeText(this, "Could not restore network routing. $message", Toast.LENGTH_LONG).show()
+        }
     }
 
     override fun onTrimMemory(level: Int) {
@@ -1657,6 +1743,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         pendingGeolocationOrigin = null
         pendingDownload = null
         clearPendingWebTask()
+        networkRecoveryHandler.removeCallbacksAndMessages(null)
+        app.networkManager.stopObservingConnection(networkStateListener)
         if (::browserContainer.isInitialized) hideCustomView()
         tabOverview?.dismiss()
         if (isFinishing) clearHistoryOnClose()

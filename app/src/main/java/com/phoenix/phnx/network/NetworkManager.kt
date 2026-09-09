@@ -119,6 +119,8 @@ class NetworkManager(context: Context) {
 
     fun stopObservingConnection() = monitor.stop()
 
+    fun stopObservingConnection(listener: NetworkStateListener) = monitor.stop(listener)
+
     fun saveProxyCredential(profileId: String, secret: String): String {
         val reference = "proxy_$profileId"
         require(credentials.saveCredential(reference, secret)) { "Could not save proxy credential securely." }

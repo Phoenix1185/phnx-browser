@@ -54,6 +54,9 @@ class NetworkActivity : AppCompatActivity() {
     private var loadedConfig: ProfileNetworkConfig? = null
     private var discoveredProxies: List<ProxyEndpoint> = emptyList()
     private var lastFailedProxy: ProxyEndpoint? = null
+    private val networkStateListener = NetworkStateListener { state ->
+        runOnUiThread { networkState.text = "Network state: ${state.name.lowercase()}" }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,13 +67,11 @@ class NetworkActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        app.networkManager.observeConnection { state ->
-            runOnUiThread { networkState.text = "Network state: ${state.name.lowercase()}" }
-        }
+        app.networkManager.observeConnection(networkStateListener)
     }
 
     override fun onStop() {
-        app.networkManager.stopObservingConnection()
+        app.networkManager.stopObservingConnection(networkStateListener)
         super.onStop()
     }
 

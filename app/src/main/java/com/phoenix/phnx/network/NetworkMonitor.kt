@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import java.util.concurrent.CopyOnWriteArraySet
 
 enum class NetworkState {
     CONNECTED,
@@ -19,13 +20,13 @@ class NetworkMonitor(context: Context) {
     private val connectivityManager = context.applicationContext
         .getSystemService(ConnectivityManager::class.java)
     private var callback: ConnectivityManager.NetworkCallback? = null
-    private var listener: NetworkStateListener? = null
+    private val listeners = CopyOnWriteArraySet<NetworkStateListener>()
 
     @Volatile
     private var state = NetworkState.DISCONNECTED
 
     fun observeConnection(listener: NetworkStateListener): NetworkState {
-        this.listener = listener
+        listeners += listener
         updateState(currentState(), notifyWhenUnchanged = true)
         if (callback == null) {
             callback = object : ConnectivityManager.NetworkCallback() {
@@ -54,6 +55,11 @@ class NetworkMonitor(context: Context) {
         return state
     }
 
+    fun stop(listener: NetworkStateListener) {
+        listeners.remove(listener)
+        if (listeners.isEmpty()) stop()
+    }
+
     fun detectNetworkChanges(): NetworkState {
         val current = currentState()
         updateState(current)
@@ -65,7 +71,7 @@ class NetworkMonitor(context: Context) {
     fun stop() {
         callback?.let { runCatching { connectivityManager.unregisterNetworkCallback(it) } }
         callback = null
-        listener = null
+        listeners.clear()
     }
 
     private fun currentState(): NetworkState {
@@ -89,6 +95,10 @@ class NetworkMonitor(context: Context) {
     private fun updateState(next: NetworkState, notifyWhenUnchanged: Boolean = false) {
         val changed = state != next
         state = next
-        if (changed || notifyWhenUnchanged) listener?.onStateChanged(next)
+        if (changed || notifyWhenUnchanged) {
+            listeners.forEach { listener ->
+                runCatching { listener.onStateChanged(next) }
+            }
+        }
     }
 }

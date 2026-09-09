@@ -211,7 +211,7 @@ jobs:
           printf 'tag=%s\ncommit=%s\n' "$RELEASE_TAG" "$GITHUB_SHA" > release/build-metadata.txt
           printf '%s\n' \
             "PHNX Browser ${RELEASE_TAG}" \
-            "Patch release restoring native text selection and improving long-press handling." \
+            "Patch release improving network recovery after connectivity interruptions." \
             "" \
             "Highlights:" \
             "- Fast Android browsing" \
