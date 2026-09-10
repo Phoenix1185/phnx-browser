@@ -986,8 +986,19 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 actions += WebContextAction(getString(R.string.context_open_new_tab)) {
                     openContextUrl(tab, linkUrl, background = false)
                 }
+                if (!tab.isPrivate) {
+                    actions += WebContextAction(getString(R.string.context_open_group_tab)) {
+                        openContextInGroup(tab, linkUrl)
+                    }
+                }
                 actions += WebContextAction(getString(R.string.context_open_background_tab)) {
                     openContextUrl(tab, linkUrl, background = true)
+                }
+                actions += WebContextAction(getString(R.string.context_open_private_tab)) {
+                    openContextPrivateTab(tab, linkUrl)
+                }
+                actions += WebContextAction(getString(R.string.context_preview_page)) {
+                    previewContextUrl(tab, linkUrl, target.linkText)
                 }
             }
             actions += WebContextAction(getString(R.string.context_copy_link)) {
@@ -996,13 +1007,16 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             actions += WebContextAction(getString(R.string.context_copy_link_text)) {
                 copyContextText(getString(R.string.context_copy_link_text), target.linkText.ifBlank { linkUrl })
             }
-            actions += WebContextAction(getString(R.string.context_share_link)) {
-                shareContextText(target.linkText, linkUrl)
-            }
             if (isHttpUrl(linkUrl)) {
                 actions += WebContextAction(getString(R.string.context_download_link)) {
                     downloadContextUrl(view, linkUrl)
                 }
+                actions += WebContextAction(getString(R.string.context_reading_list)) {
+                    addToReadingList(tab, linkUrl, target.linkText)
+                }
+            }
+            actions += WebContextAction(getString(R.string.context_share_link)) {
+                shareContextText(target.linkText, linkUrl)
             }
         }
         target.imageUrl?.let { imageUrl ->
@@ -1057,6 +1071,107 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         saveProfileSession(sourceTab.profileId)
         if (background) currentBrowserView()?.let { updateTabChrome(sourceTab, it) }
         refreshTabOverview()
+    }
+
+    private fun openContextInGroup(sourceTab: Tab, url: String) {
+        if (sourceTab.isPrivate || !isHttpUrl(url)) return
+        val newTab = tabManager.createTab(
+            profileId = sourceTab.profileId,
+            activate = true,
+        ).apply {
+            this.url = url
+            title = tabTitleForUrl(url)
+            isLoading = true
+        }
+        val groupId = sourceTab.groupId
+        if (groupId != null) {
+            tabManager.addToGroup(sourceTab.profileId, newTab.id, groupId)
+        } else {
+            tabManager.createGroup(
+                profileId = sourceTab.profileId,
+                title = getString(R.string.context_tab_group),
+                tabIds = listOf(sourceTab.id, newTab.id),
+            )
+        }
+        attachCurrentTab()
+        saveProfileSession(sourceTab.profileId)
+        refreshTabOverview()
+    }
+
+    private fun openContextPrivateTab(sourceTab: Tab, url: String) {
+        if (!isHttpUrl(url)) return
+        tabManager.createTab(
+            profileId = sourceTab.profileId,
+            isPrivate = true,
+            activate = true,
+        ).apply {
+            this.url = url
+            title = tabTitleForUrl(url)
+            isLoading = true
+        }
+        attachCurrentTab()
+        refreshTabOverview()
+        Toast.makeText(this, getString(R.string.context_private_tab_opened), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun previewContextUrl(sourceTab: Tab, url: String, linkText: String) {
+        if (!isHttpUrl(url)) return
+        val preview = BrowserView(this, sourceTab.isPrivate).apply {
+            settings.userAgentString = currentBrowserView()?.settings?.userAgentString
+                ?: settings.userAgentString
+            applyBrowserModes(this)
+            applyPageControls(this)
+            applyProfileIdentity(this, effectiveIdentityConfig(sourceTab.profileId))
+            privacyManager.applyTo(this, sourceTab.profileId)
+            webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(
+                    view: WebView,
+                    request: WebResourceRequest,
+                ): WebResourceResponse? {
+                    val decision = adBlockManager.evaluate(
+                        profileId = sourceTab.profileId,
+                        url = request.url.toString(),
+                        firstPartyUrl = url,
+                    )
+                    if (!decision.blocked) return super.shouldInterceptRequest(view, request)
+                    return WebResourceResponse(
+                        "text/plain",
+                        "UTF-8",
+                        ByteArrayInputStream(ByteArray(0)),
+                    )
+                }
+            }
+            webChromeClient = WebChromeClient()
+            loadUrl(url)
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(linkText.ifBlank { tabTitleForUrl(url) })
+            .setView(preview)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.context_open_new_tab) { _, _ ->
+                openContextUrl(sourceTab, url, background = false)
+            }
+            .create()
+        dialog.setOnDismissListener {
+            preview.stopLoading()
+            preview.destroy()
+        }
+        dialog.show()
+    }
+
+    private fun addToReadingList(sourceTab: Tab, url: String, linkText: String) {
+        val folder = app.bookmarkManager.getFolders(sourceTab.profileId)
+            .firstOrNull { it.name == getString(R.string.context_reading_list) }
+            ?: app.bookmarkManager.createFolder(sourceTab.profileId, getString(R.string.context_reading_list))
+        if (app.bookmarkManager.getForProfile(sourceTab.profileId).none { it.url == url }) {
+            app.bookmarkManager.add(
+                profileId = sourceTab.profileId,
+                title = linkText.ifBlank { tabTitleForUrl(url) },
+                url = url,
+                folderId = folder?.id,
+            )
+        }
+        Toast.makeText(this, getString(R.string.context_reading_list_saved), Toast.LENGTH_SHORT).show()
     }
 
     private fun copyContextText(label: String, value: String) {

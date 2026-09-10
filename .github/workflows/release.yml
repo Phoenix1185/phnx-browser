@@ -211,9 +211,10 @@ jobs:
           printf 'tag=%s\ncommit=%s\n' "$RELEASE_TAG" "$GITHUB_SHA" > release/build-metadata.txt
           printf '%s\n' \
             "PHNX Browser ${RELEASE_TAG}" \
-            "Patch release restoring native HTML select controls and improving browsing resilience." \
+            "Patch release adding a Chrome-style long-press link menu and restoring native HTML select controls." \
             "" \
             "Highlights:" \
+            "- Chrome-style link context actions" \
             "- Native HTML select/dropdown controls" \
             "- Fast Android browsing" \
             "- Privacy-focused browsing" \
