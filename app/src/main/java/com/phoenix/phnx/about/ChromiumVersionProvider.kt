@@ -9,7 +9,6 @@ object ChromiumVersionProvider {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return "Unavailable on this Android version"
         val packageInfo = WebView.getCurrentWebViewPackage()
             ?: return "Unavailable"
-        val version = packageInfo.versionName ?: "unknown version"
-        return "${packageInfo.packageName} $version"
+        return packageInfo.versionName ?: "Unknown"
     }
 }

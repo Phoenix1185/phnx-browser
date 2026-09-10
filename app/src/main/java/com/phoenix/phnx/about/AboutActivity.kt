@@ -23,56 +23,54 @@ class AboutActivity : AppCompatActivity() {
             setBackgroundColor(getColor(R.color.phnx_cream))
         }
         content.addView(backButton())
-        content.addView(text("PHNX Browser", 30f, true))
-        content.addView(text("A fast, private, and powerful Chromium-based browser built for modern browsing.", 16f, false))
+        content.addView(text(getString(R.string.about_phnx_title), 30f, true))
+        content.addView(text(getString(R.string.about_phnx_description), 16f, false))
         content.addView(text(getString(R.string.builder_attribution), 15f, false))
 
-        content.addView(sectionTitle("Version"))
-        content.addView(infoRow("PHNX Browser", BuildConfig.VERSION_NAME))
-        content.addView(infoRow("Build", BuildConfig.VERSION_CODE.toString()))
-        content.addView(infoRow("Channel", releaseChannel()))
-        content.addView(infoRow("Chromium runtime", ChromiumVersionProvider.get(this)))
+        content.addView(sectionTitle(getString(R.string.about_version)))
+        content.addView(infoRow(getString(R.string.about_browser), BuildConfig.VERSION_NAME))
+        content.addView(infoRow(getString(R.string.about_build), BuildConfig.VERSION_CODE.toString()))
+        content.addView(infoRow(getString(R.string.about_channel), releaseChannel()))
+        content.addView(infoRow(getString(R.string.about_chromium_webview), ChromiumVersionProvider.get(this)))
 
-        content.addView(sectionTitle("Features"))
+        content.addView(sectionTitle(getString(R.string.about_features)))
         listOf(
-            "Chromium-based browsing",
-            "Multiple isolated browser profiles",
-            "Profile-specific cookies, storage, permissions, history, and sessions",
-            "Per-profile network configuration",
-            "Privacy and security controls",
-            "Resource and profile lifecycle management",
-            "Download and bookmark management",
-            "Private browsing",
-            "Modern browser interface",
+            R.string.about_feature_chromium,
+            R.string.about_feature_profiles,
+            R.string.about_feature_profile_data,
+            R.string.about_feature_network,
+            R.string.about_feature_privacy,
+            R.string.about_feature_lifecycle,
+            R.string.about_feature_saved_pages,
+            R.string.about_feature_private,
+            R.string.about_feature_browser_tools,
         ).forEach { feature ->
-            content.addView(text("• $feature", 15f, false))
+            content.addView(text("• ${getString(feature)}", 15f, false))
         }
 
-        content.addView(sectionTitle("Updates"))
-        content.addView(text("Current version: ${BuildConfig.VERSION_NAME}\nPHNX checks the official Phoenix release feed and lets you review releases before opening them.", 15f, false))
-        content.addView(actionButton("Check for updates") {
+        content.addView(sectionTitle(getString(R.string.about_updates)))
+        content.addView(text(getString(R.string.about_updates_copy, BuildConfig.VERSION_NAME), 15f, false))
+        content.addView(actionButton(getString(R.string.about_check_for_updates)) {
             startActivity(Intent(this, UpdateActivity::class.java))
         })
 
-        content.addView(sectionTitle("Online resources"))
-        content.addView(websiteButton("Official PHNX website", PhnxWebsite.HOME))
-        content.addView(websiteButton("Features", PhnxWebsite.FEATURES))
-        content.addView(websiteButton("Documentation", PhnxWebsite.DOCS))
-        content.addView(websiteButton("Download status", PhnxWebsite.DOWNLOAD))
-        content.addView(websiteButton("Releases", PhnxWebsite.RELEASES))
-        content.addView(websiteButton("Changelog", PhnxWebsite.CHANGELOG))
-        content.addView(websiteButton("GitHub repository", PhnxWebsite.GITHUB))
-        content.addView(websiteButton("Online privacy policy", PhnxWebsite.PRIVACY))
-        content.addView(websiteButton("Security", PhnxWebsite.SECURITY))
+        content.addView(sectionTitle(getString(R.string.about_phnx_online)))
+        content.addView(websiteButton(getString(R.string.about_official_website), PhnxWebsite.HOME))
+        content.addView(websiteButton(getString(R.string.about_documentation), PhnxWebsite.DOCS))
+        content.addView(websiteButton(getString(R.string.about_releases), PhnxWebsite.RELEASES))
+        content.addView(websiteButton(getString(R.string.about_changelog), PhnxWebsite.CHANGELOG))
+        content.addView(websiteButton(getString(R.string.about_privacy_policy), PhnxWebsite.PRIVACY))
+        content.addView(websiteButton(getString(R.string.about_security), PhnxWebsite.SECURITY))
+        content.addView(websiteButton(getString(R.string.about_github), PhnxWebsite.GITHUB))
 
-        content.addView(sectionTitle("Legal and notices"))
-        content.addView(linkButton("Privacy Policy", LegalActivity.PRIVACY))
-        content.addView(linkButton("Terms of Use", LegalActivity.TERMS))
-        content.addView(linkButton("Open Source Licenses", LegalActivity.LICENSES))
-        content.addView(linkButton("Third-Party Notices", LegalActivity.NOTICES))
+        content.addView(sectionTitle(getString(R.string.about_legal_notices)))
+        content.addView(linkButton(getString(R.string.about_privacy_policy), LegalActivity.PRIVACY))
+        content.addView(linkButton(getString(R.string.about_terms), LegalActivity.TERMS))
+        content.addView(linkButton(getString(R.string.about_licenses), LegalActivity.LICENSES))
+        content.addView(linkButton(getString(R.string.about_third_party_notices), LegalActivity.NOTICES))
 
-        content.addView(sectionTitle("Developer"))
-        content.addView(text("PHOENIX\nBuilt & engineered with a focus on performance, privacy, and control.\n\n© 2026 Phoenix. All rights reserved.", 15f, false))
+        content.addView(sectionTitle(getString(R.string.about_developer)))
+        content.addView(text(getString(R.string.about_developer_copy), 15f, false))
 
         val scroll = ScrollView(this).apply {
             setBackgroundColor(getColor(R.color.phnx_cream))
@@ -88,14 +86,18 @@ class AboutActivity : AppCompatActivity() {
     private fun infoRow(label: String, value: String): View = LinearLayout(this).apply {
         orientation = LinearLayout.HORIZONTAL
         setPadding(0, dp(8), 0, dp(8))
-        addView(text(label, 15f, false), LinearLayout.LayoutParams(0, -2, 1f))
+        addView(text(label, 15f, false), LinearLayout.LayoutParams(0, -2, 0.55f))
         addView(text(value, 15f, false).apply {
             setTextColor(getColor(R.color.phnx_muted))
-        })
+            gravity = android.view.Gravity.END
+            maxLines = 2
+            setTextIsSelectable(true)
+        }, LinearLayout.LayoutParams(0, -2, 0.45f))
     }
 
     private fun actionButton(label: String, action: () -> Unit): Button = Button(this).apply {
         text = label
+        isAllCaps = false
         setOnClickListener { action() }
         setTextColor(getColor(R.color.phnx_blue))
     }
@@ -123,10 +125,14 @@ class AboutActivity : AppCompatActivity() {
     }
 
     private fun backButton(): Button = Button(this).apply {
-        text = "‹  Back"
+        text = getString(R.string.back)
         setOnClickListener { finish() }
         setTextColor(getColor(R.color.phnx_blue))
-        setPadding(0, 0, 0, dp(4))
+        isAllCaps = false
+        minWidth = 0
+        minimumWidth = 0
+        setPadding(0, 0, dp(16), dp(8))
+        layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT)
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

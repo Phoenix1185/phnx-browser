@@ -87,6 +87,45 @@
     <string name="autofill_current_service">Current service: %1$s</string>
     <string name="about_phnx">About PHNX</string>
     <string name="about_phnx_summary">Version, updates, privacy policy, licenses, and third-party notices.</string>
+    <string name="about_phnx_title">PHNX Browser</string>
+    <string name="about_phnx_description">A fast, private, and powerful Chromium-based browser built for modern browsing.</string>
+    <string name="about_version">Version</string>
+    <string name="about_browser">PHNX Browser</string>
+    <string name="about_build">Build</string>
+    <string name="about_channel">Channel</string>
+    <string name="about_chromium_webview">Chromium / WebView</string>
+    <string name="about_features">Features</string>
+    <string name="about_feature_chromium">Chromium-based browsing</string>
+    <string name="about_feature_profiles">Multiple isolated browser profiles</string>
+    <string name="about_feature_profile_data">Profile-specific cookies, storage, permissions, history, and sessions</string>
+    <string name="about_feature_network">Per-profile network configuration</string>
+    <string name="about_feature_privacy">Privacy and security controls</string>
+    <string name="about_feature_lifecycle">Resource and profile lifecycle management</string>
+    <string name="about_feature_saved_pages">Download, bookmark, and reading-list management</string>
+    <string name="about_feature_private">Private browsing</string>
+    <string name="about_feature_browser_tools">Tabs, tab groups, find-in-page, zoom, and desktop-site controls</string>
+    <string name="about_updates">Updates</string>
+    <string name="about_updates_copy">Current version: %1$s
+PHNX checks the official release feed for newer versions.
+You can review release information before updating.</string>
+    <string name="about_check_for_updates">Check for updates</string>
+    <string name="about_phnx_online">PHNX ONLINE</string>
+    <string name="about_official_website">Official Website</string>
+    <string name="about_documentation">Documentation</string>
+    <string name="about_releases">Releases</string>
+    <string name="about_changelog">Changelog</string>
+    <string name="about_privacy_policy">Privacy Policy</string>
+    <string name="about_security">Security</string>
+    <string name="about_github">GitHub</string>
+    <string name="about_legal_notices">Legal and notices</string>
+    <string name="about_terms">Terms of Use</string>
+    <string name="about_licenses">Open Source Licenses</string>
+    <string name="about_third_party_notices">Third-Party Notices</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_developer_copy">PHOENIX
+Built &amp; engineered with a focus on performance, privacy, and control.
+
+© 2026 Phoenix. All rights reserved.</string>
     <string name="address_hint">Search or enter address</string>
     <string name="retry">Retry</string>
     <string name="network">Network</string>
