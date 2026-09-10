@@ -201,6 +201,8 @@
     <string name="search_engine">Search engine</string>
     <string name="search_engine_summary">Choose where address-bar searches are sent.</string>
     <string name="search_engine_selected">Selected: %1$s</string>
+    <string name="search_engine_choose">Choose search engine</string>
+    <string name="search_engine_available">Available: %1$s</string>
     <string name="try_alternate_search">Try DuckDuckGo instead</string>
     <string name="performance">Performance</string>
     <string name="performance_summary">View resource pressure and profile lifecycle state.</string>
