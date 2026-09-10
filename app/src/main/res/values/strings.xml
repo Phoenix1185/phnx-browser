@@ -106,9 +106,34 @@
     <string name="about_feature_browser_tools">Tabs, tab groups, find-in-page, zoom, and desktop-site controls</string>
     <string name="about_updates">Updates</string>
     <string name="about_updates_copy">Current version: %1$s
-PHNX checks the official release feed for newer versions.
+PHNX checks the official release feed for newer versions. Automatic and manual update modes are available in Settings.
 You can review release information before updating.</string>
     <string name="about_check_for_updates">Check for updates</string>
+    <string name="update_mode">Update mode</string>
+    <string name="update_mode_automatic">Automatic (recommended)</string>
+    <string name="update_mode_manual">Manual</string>
+    <string name="update_title">PHNX Updates</string>
+    <string name="update_current_version">Current version: %1$s
+This checker reads signed release metadata from the official Phoenix repository. Android still asks for confirmation before installing.</string>
+    <string name="update_checking">Checking for updates...</string>
+    <string name="update_check_failed">Could not check for updates: %1$s</string>
+    <string name="update_open_release">Open official release page</string>
+    <string name="update_download_install">Download and install update</string>
+    <string name="update_downloading">Downloading and verifying update...</string>
+    <string name="update_ready">Update verified. Android will ask for installation confirmation.</string>
+    <string name="update_install_failed">The update could not be opened for installation.</string>
+    <string name="update_allow_installs">Allow PHNX to install updates in Android settings, then return and try again.</string>
+    <string name="update_download_failed">Could not download or verify the update: %1$s</string>
+    <string name="update_no_release">No published release is available yet. Check the official repository for project updates.</string>
+    <string name="update_no_manifest">The latest release has no valid signed update manifest.</string>
+    <string name="update_up_to_date">You are up to date (%1$s).</string>
+    <string name="update_available">Latest published release: %1$s
+A verified update is ready to download.</string>
+    <string name="update_available_title">PHNX update: %1$s</string>
+    <string name="update_automatic_ready">A verified update has been downloaded. Android will ask for confirmation before installing it.</string>
+    <string name="update_later">Later</string>
+    <string name="update_install_now">Install update</string>
+    <string name="update_only_trusted">Only download builds from a source you trust. Review Android installation and permission prompts before installing an update.</string>
     <string name="about_phnx_online">PHNX ONLINE</string>
     <string name="about_official_website">Official Website</string>
     <string name="about_documentation">Documentation</string>

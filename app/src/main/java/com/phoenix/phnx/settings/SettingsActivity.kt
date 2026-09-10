@@ -47,6 +47,7 @@ class SettingsActivity : AppCompatActivity() {
         addPerformanceModeSection(content)
         addPerformanceSection(content)
         addSystemSection(content)
+        addUpdateSection(content)
         addAboutSection(content)
 
         setContentView(ScrollView(this).apply {
@@ -88,6 +89,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addAboutSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.about_phnx), getString(R.string.about_phnx_summary))
         row.setOnClickListener { startActivity(Intent(this, AboutActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addUpdateSection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.update_mode), updateModeLabel())
+        row.setOnClickListener { showUpdateModeDialog() }
         parent.addView(row)
     }
 
@@ -240,6 +247,27 @@ class SettingsActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun showUpdateModeDialog() {
+        val labels = arrayOf(
+            getString(R.string.update_mode_automatic),
+            getString(R.string.update_mode_manual),
+        )
+        val values = arrayOf(
+            PhnxPreferences.UPDATE_MODE_AUTOMATIC,
+            PhnxPreferences.UPDATE_MODE_MANUAL,
+        )
+        val selected = values.indexOf(PhnxPreferences.updateMode(this)).coerceAtLeast(0)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.update_mode)
+            .setSingleChoiceItems(labels, selected) { dialog, which ->
+                PhnxPreferences.setUpdateMode(this, values[which])
+                dialog.dismiss()
+                recreate()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
     private fun themeLabel(): String = when (PhnxPreferences.themeMode(this)) {
         PhnxPreferences.THEME_LIGHT -> getString(R.string.theme_light)
         PhnxPreferences.THEME_DARK -> getString(R.string.theme_dark)
@@ -255,6 +283,11 @@ class SettingsActivity : AppCompatActivity() {
         PerformanceMode.BALANCED -> getString(R.string.performance_mode_balanced)
         PerformanceMode.BATTERY_SAVER -> getString(R.string.performance_mode_battery_saver)
         PerformanceMode.MAXIMUM_PERFORMANCE -> getString(R.string.performance_mode_maximum)
+    }
+
+    private fun updateModeLabel(): String = when (PhnxPreferences.updateMode(this)) {
+        PhnxPreferences.UPDATE_MODE_MANUAL -> getString(R.string.update_mode_manual)
+        else -> getString(R.string.update_mode_automatic)
     }
 
     private fun addSection(parent: LinearLayout, title: String, summary: String) {

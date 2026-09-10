@@ -22,6 +22,7 @@ import android.os.Environment
 import android.os.Process
 import android.os.Looper
 import android.os.PowerManager
+import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.GestureDetector
@@ -96,12 +97,18 @@ import com.phoenix.phnx.tabs.TabManager
 import com.phoenix.phnx.tabs.TabOverviewDialog
 import com.phoenix.phnx.tabs.TabOverviewItem
 import com.phoenix.phnx.tabs.toOverviewItem
+import com.phoenix.phnx.update.UpdateInstaller
+import com.phoenix.phnx.update.UpdateService
 import org.json.JSONArray
 import org.json.JSONTokener
+import java.io.File
 import kotlin.math.abs
 import java.io.ByteArrayInputStream
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private val tabManager = TabManager()
@@ -148,6 +155,8 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var tabOverview: TabOverviewDialog? = null
     private val previewHandler = Handler(Looper.getMainLooper())
     private val networkRecoveryHandler = Handler(Looper.getMainLooper())
+    private val updateExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private val updateCheckInFlight = AtomicBoolean(false)
     private val pendingPreviewCaptures = mutableMapOf<String, Runnable>()
     private val longPressPoints = WeakHashMap<WebView, PointF>()
     private var bookmarkStateUrl: String? = null
@@ -351,6 +360,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         reconcileResources()
         attachCurrentTab()
         trimInactiveTabs()
+        checkForAutomaticUpdate()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -1840,6 +1850,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     }
 
     override fun onDestroy() {
+        updateExecutor.shutdownNow()
         if (integrityRejected) {
             super.onDestroy()
             return
@@ -1879,6 +1890,64 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
             .show()
     }
 
+    private fun checkForAutomaticUpdate() {
+        if (!PhnxPreferences.automaticUpdates(this)) return
+        val preferences = PhnxPreferences.store(this)
+        val now = System.currentTimeMillis()
+        val lastCheck = preferences.getLong(PhnxPreferences.UPDATE_LAST_CHECK_MS, 0L)
+        if (now - lastCheck < AUTOMATIC_UPDATE_CHECK_INTERVAL_MS) return
+        if (!updateCheckInFlight.compareAndSet(false, true)) return
+        preferences.edit().putLong(PhnxPreferences.UPDATE_LAST_CHECK_MS, now).apply()
+        updateExecutor.execute {
+            val result = runCatching {
+                val release = UpdateService.fetchLatestRelease()
+                val manifest = release.manifest
+                if (!UpdateService.isNewer(release) || manifest == null) {
+                    null
+                } else {
+                    release to UpdateService.downloadAndVerify(this@MainActivity, manifest)
+                }
+            }
+            runOnUiThread {
+                updateCheckInFlight.set(false)
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                result.onSuccess { candidate ->
+                    candidate?.let { showAutomaticUpdate(it.first, it.second) }
+                }
+            }
+        }
+    }
+
+    private fun showAutomaticUpdate(release: UpdateService.ReleaseInfo, apk: File) {
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.update_available_title, release.name))
+            .setMessage(R.string.update_automatic_ready)
+            .setNegativeButton(R.string.update_later, null)
+            .setPositiveButton(R.string.update_install_now) { _, _ -> launchPreparedUpdate(apk) }
+            .show()
+    }
+
+    private fun launchPreparedUpdate(apk: File) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !packageManager.canRequestPackageInstalls()) {
+            startActivity(
+                Intent(
+                    Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                    Uri.parse("package:$packageName"),
+                ),
+            )
+            Toast.makeText(this, getString(R.string.update_allow_installs), Toast.LENGTH_LONG).show()
+            return
+        }
+        val intent = UpdateInstaller.installIntent(this, apk)
+        if (intent == null) {
+            Toast.makeText(this, getString(R.string.update_install_failed), Toast.LENGTH_LONG).show()
+            return
+        }
+        runCatching { startActivity(intent) }.onFailure {
+            Toast.makeText(this, getString(R.string.update_install_failed), Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun clearHistoryOnClose() {
         if (PhnxPreferences.historyRetention(this) == PhnxPreferences.HISTORY_CLEAR_ON_CLOSE) {
             app.historyManager.clearProfile(profileManager.activeProfile().id)
@@ -1899,6 +1968,10 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || !thermalListenerRegistered) return
         getSystemService(PowerManager::class.java).removeThermalStatusListener(thermalStatusListener)
         thermalListenerRegistered = false
+    }
+
+    private companion object {
+        const val AUTOMATIC_UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L
     }
 
     private fun updateThermalDisplayPolicy() {

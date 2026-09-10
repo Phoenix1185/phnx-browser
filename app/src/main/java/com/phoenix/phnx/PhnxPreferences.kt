@@ -18,6 +18,10 @@ object PhnxPreferences {
     const val HISTORY_REMEMBER = "remember"
     const val HISTORY_CLEAR_ON_CLOSE = "clear_on_close"
     const val PERFORMANCE_MODE = "performance_mode"
+    const val UPDATE_MODE = "update_mode"
+    const val UPDATE_MODE_AUTOMATIC = "automatic"
+    const val UPDATE_MODE_MANUAL = "manual"
+    const val UPDATE_LAST_CHECK_MS = "update_last_check_ms"
 
     fun store(context: Context) = context.getSharedPreferences(STORE, Context.MODE_PRIVATE)
 
@@ -75,6 +79,18 @@ object PhnxPreferences {
 
     fun setPerformanceMode(context: Context, mode: PerformanceMode) {
         store(context).edit().putString(PERFORMANCE_MODE, mode.name).apply()
+    }
+
+    fun updateMode(context: Context): String = store(context)
+        .getString(UPDATE_MODE, UPDATE_MODE_AUTOMATIC)
+        ?.takeIf { it == UPDATE_MODE_AUTOMATIC || it == UPDATE_MODE_MANUAL }
+        ?: UPDATE_MODE_AUTOMATIC
+
+    fun automaticUpdates(context: Context): Boolean = updateMode(context) == UPDATE_MODE_AUTOMATIC
+
+    fun setUpdateMode(context: Context, mode: String) {
+        val value = if (mode == UPDATE_MODE_MANUAL) UPDATE_MODE_MANUAL else UPDATE_MODE_AUTOMATIC
+        store(context).edit().putString(UPDATE_MODE, value).apply()
     }
 
     private fun themeNightMode(mode: String): Int = when (mode) {
