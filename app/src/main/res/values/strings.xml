@@ -76,9 +76,9 @@
     <string name="settings">Settings</string>
     <string name="back">Back</string>
     <string name="autofill">Autofill</string>
-    <string name="autofill_summary">Use Android&#39;s configured service for forms, passwords, and payment details.</string>
+    <string name="autofill_summary">Use Android's configured service for forms, passwords, and payment details.</string>
     <string name="autofill_settings">Autofill settings</string>
-    <string name="autofill_description">PHNX does not store passwords or payment details. Android&#39;s selected Autofill service can provide them to supported web forms.</string>
+    <string name="autofill_description">PHNX does not store passwords or payment details. Android's selected Autofill service can provide them to supported web forms.</string>
     <string name="autofill_android_service">Android Autofill service</string>
     <string name="autofill_android_service_summary">The service selected by Android handles saved information.</string>
     <string name="autofill_open_android_settings">Choose Autofill service</string>
