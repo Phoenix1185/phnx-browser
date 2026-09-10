@@ -74,6 +74,17 @@
     <string name="shortcut_unsupported">This launcher does not support pinned shortcuts.</string>
     <string name="shortcut_requested">Shortcut request sent to the launcher.</string>
     <string name="settings">Settings</string>
+    <string name="back">Back</string>
+    <string name="autofill">Autofill</string>
+    <string name="autofill_summary">Use Android&#39;s configured service for forms, passwords, and payment details.</string>
+    <string name="autofill_settings">Autofill settings</string>
+    <string name="autofill_description">PHNX does not store passwords or payment details. Android&#39;s selected Autofill service can provide them to supported web forms.</string>
+    <string name="autofill_android_service">Android Autofill service</string>
+    <string name="autofill_android_service_summary">The service selected by Android handles saved information.</string>
+    <string name="autofill_open_android_settings">Choose Autofill service</string>
+    <string name="autofill_open_android_settings_summary">Open Android settings to select or change the service.</string>
+    <string name="autofill_no_service">No Autofill service is currently enabled.</string>
+    <string name="autofill_current_service">Current service: %1$s</string>
     <string name="about_phnx">About PHNX</string>
     <string name="about_phnx_summary">Version, updates, privacy policy, licenses, and third-party notices.</string>
     <string name="address_hint">Search or enter address</string>

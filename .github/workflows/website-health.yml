@@ -1,0 +1,79 @@
+name: Website Health
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  check:
+    name: Check public Pages routes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check public routes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_url="https://phoenix1185.github.io/phnx-browser"
+          routes=(
+            ""
+            "features/"
+            "download/"
+            "releases/"
+            "docs/"
+            "privacy/"
+            "security/"
+            "about/"
+            "legal/"
+            "website/"
+          )
+
+          for route in "${routes[@]}"; do
+            page="${RUNNER_TEMP}/phnx-site-check.html"
+            status="$(curl \
+              --fail \
+              --silent \
+              --show-error \
+              --location \
+              --retry 5 \
+              --retry-all-errors \
+              --retry-delay 3 \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --output "${page}" \
+              --write-out '%{http_code}' \
+              "${base_url}/${route}")"
+
+            test "${status}" = "200" || {
+              printf 'Unexpected HTTP status %s for /%s\n' "${status}" "${route}"
+              exit 1
+            }
+            grep -q "PHNX Browser" "${page}" || {
+              printf 'PHNX Browser marker missing from /%s\n' "${route}"
+              exit 1
+            }
+          done
+
+      - name: Check static assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_url="https://phoenix1185.github.io/phnx-browser"
+          for asset in "assets/site.css" "assets/site.js" "assets/phnx-browser-app-icon.png"; do
+            curl \
+              --fail \
+              --silent \
+              --show-error \
+              --location \
+              --retry 5 \
+              --retry-all-errors \
+              --retry-delay 3 \
+              --connect-timeout 10 \
+              --max-time 30 \
+              --output /dev/null \
+              "${base_url}/${asset}"
+          done

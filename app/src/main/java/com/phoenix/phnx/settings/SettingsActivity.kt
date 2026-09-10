@@ -12,6 +12,7 @@ import androidx.appcompat.widget.SwitchCompat
 import com.phoenix.phnx.PhnxPreferences
 import com.phoenix.phnx.R
 import com.phoenix.phnx.about.AboutActivity
+import com.phoenix.phnx.autofill.AutofillActivity
 import com.phoenix.phnx.network.NetworkActivity
 import com.phoenix.phnx.privacy.PrivacyActivity
 import com.phoenix.phnx.permissions.PermissionActivity
@@ -40,6 +41,7 @@ class SettingsActivity : AppCompatActivity() {
         addHistorySection(content)
         addSection(content, "Downloads", "Downloads use Android's Downloads provider.")
         addSearchSection(content)
+        addAutofillSection(content)
         addProfileSection(content)
         addNetworkSection(content)
         addPerformanceModeSection(content)
@@ -116,6 +118,12 @@ class SettingsActivity : AppCompatActivity() {
     private fun addSearchSection(parent: LinearLayout) {
         val row = optionRow(getString(R.string.search_engine), getString(R.string.search_engine_summary))
         row.setOnClickListener { startActivity(Intent(this, SearchEngineActivity::class.java)) }
+        parent.addView(row)
+    }
+
+    private fun addAutofillSection(parent: LinearLayout) {
+        val row = optionRow(getString(R.string.autofill), getString(R.string.autofill_summary))
+        row.setOnClickListener { startActivity(Intent(this, AutofillActivity::class.java)) }
         parent.addView(row)
     }
 
