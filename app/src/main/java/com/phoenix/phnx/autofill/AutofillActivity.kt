@@ -12,6 +12,10 @@ import androidx.appcompat.app.AppCompatActivity
 import com.phoenix.phnx.R
 
 class AutofillActivity : AppCompatActivity() {
+    private companion object {
+        const val AUTOFILL_SETTINGS_ACTION = "android.settings.AUTOFILL_SETTINGS"
+    }
+
     private lateinit var serviceSummary: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -66,13 +70,13 @@ class AutofillActivity : AppCompatActivity() {
 
     private fun openAndroidAutofillSettings() {
         try {
-            startActivity(Intent(Settings.ACTION_AUTOFILL_SETTINGS))
+            startActivity(Intent(AUTOFILL_SETTINGS_ACTION))
         } catch (_: Exception) {
             startActivity(Intent(Settings.ACTION_SETTINGS))
         }
     }
 
-    private fun optionRow(title: String, summary: String): View = LinearLayout(this).apply {
+    private fun optionRow(title: String, summary: String): LinearLayout = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(0, dp(18), 0, dp(18))
         isClickable = true
