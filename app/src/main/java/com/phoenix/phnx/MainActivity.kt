@@ -1970,10 +1970,6 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         thermalListenerRegistered = false
     }
 
-    private companion object {
-        const val AUTOMATIC_UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L
-    }
-
     private fun updateThermalDisplayPolicy() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
         val powerManager = getSystemService(PowerManager::class.java)
@@ -2050,6 +2046,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     companion object {
         const val EXTRA_PROFILE_ID = "profile_id"
+        private const val AUTOMATIC_UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L
         private const val START_PAGE_BASE = "https://phnx.local/"
         private const val PREVIEW_CAPTURE_DELAY_MS = 120L
         private const val THERMAL_REFRESH_RATE_HZ = 60f
