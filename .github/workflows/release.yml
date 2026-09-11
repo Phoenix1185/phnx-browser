@@ -211,9 +211,10 @@ jobs:
           printf 'tag=%s\ncommit=%s\n' "$RELEASE_TAG" "$GITHUB_SHA" > release/build-metadata.txt
           printf '%s\n' \
             "PHNX Browser ${RELEASE_TAG}" \
-            "Patch release adding automatic or manual update delivery with verified APK downloads." \
+            "Patch release adding thermal-aware inactive WebView cleanup while preserving verified APK update delivery." \
             "" \
             "Highlights:" \
+            "- Thermal-status response that releases eligible inactive WebViews" \
             "- Automatic or manual update mode" \
             "- Verified update downloads with Android installer handoff" \
             "- Fast Android browsing" \

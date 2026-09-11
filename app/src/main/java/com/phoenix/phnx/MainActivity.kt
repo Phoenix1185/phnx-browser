@@ -142,7 +142,13 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
     private var mediaCheckInFlight = false
     private var thermalListenerRegistered = false
     @SuppressLint("NewApi")
-    private val thermalStatusListener = PowerManager.OnThermalStatusChangedListener { updateThermalDisplayPolicy() }
+    private val thermalStatusListener = PowerManager.OnThermalStatusChangedListener { status ->
+        updateThermalDisplayPolicy()
+        if (activityVisible && status >= PowerManager.THERMAL_STATUS_MODERATE) {
+            reconcileResources()
+            trimInactiveTabs(aggressive = true)
+        }
+    }
     private var integrityRejected = false
     private var attachedTabId: String? = null
     private var appliedNetworkConfigHash: Int? = null
