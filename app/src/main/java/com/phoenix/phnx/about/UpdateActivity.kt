@@ -15,6 +15,7 @@ import com.phoenix.phnx.R
 import com.phoenix.phnx.update.UpdateManifest
 import com.phoenix.phnx.update.UpdateInstaller
 import com.phoenix.phnx.update.UpdateService
+import com.phoenix.phnx.system.BrowserNavigationIntent
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -127,7 +128,7 @@ class UpdateActivity : AppCompatActivity() {
     }
 
     private fun openRelease(url: String) {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        BrowserNavigationIntent.forCurrentProfile(this, url)?.let(::startActivity)
     }
 
     private fun launchInstaller(apk: File): Boolean {

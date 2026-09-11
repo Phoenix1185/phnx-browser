@@ -3,6 +3,7 @@ package com.phoenix.phnx.system
 import android.app.role.RoleManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 
 enum class DefaultBrowserState {
@@ -14,7 +15,7 @@ enum class DefaultBrowserState {
 
 class DefaultBrowserManager(private val context: Context) {
     fun state(): DefaultBrowserState {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return DefaultBrowserState.UNKNOWN
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return legacyState()
         val roleManager = context.getSystemService(RoleManager::class.java)
             ?: return DefaultBrowserState.UNAVAILABLE
         if (!roleManager.isRoleAvailable(RoleManager.ROLE_BROWSER)) return DefaultBrowserState.UNAVAILABLE
@@ -30,5 +31,19 @@ class DefaultBrowserManager(private val context: Context) {
         val roleManager = context.getSystemService(RoleManager::class.java) ?: return null
         if (!roleManager.isRoleAvailable(RoleManager.ROLE_BROWSER)) return null
         return roleManager.createRequestRoleIntent(RoleManager.ROLE_BROWSER)
+    }
+
+    private fun legacyState(): DefaultBrowserState {
+        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://example.com")).apply {
+            addCategory(Intent.CATEGORY_DEFAULT)
+            addCategory(Intent.CATEGORY_BROWSABLE)
+        }
+        val resolved = browserIntent.resolveActivity(context.packageManager)
+            ?: return DefaultBrowserState.UNKNOWN
+        return if (resolved.packageName == context.packageName) {
+            DefaultBrowserState.DEFAULT
+        } else {
+            DefaultBrowserState.NOT_DEFAULT
+        }
     }
 }

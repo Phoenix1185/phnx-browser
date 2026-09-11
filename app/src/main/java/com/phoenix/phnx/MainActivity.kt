@@ -23,6 +23,7 @@ import android.os.Process
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.GestureDetector
@@ -91,6 +92,7 @@ import com.phoenix.phnx.resources.TabDiagnostics
 import com.phoenix.phnx.security.BrowserSecurityState
 import com.phoenix.phnx.security.SecurityStateResolver
 import com.phoenix.phnx.settings.SettingsActivity
+import com.phoenix.phnx.system.DefaultBrowserManager
 import com.phoenix.phnx.system.UrlIntentParser
 import com.phoenix.phnx.tabs.Tab
 import com.phoenix.phnx.tabs.TabManager
@@ -643,6 +645,18 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         }
         webView.setOnLongClickListener { handleWebViewLongPress(webView, tab) }
         webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                val inspection = UrlIntentParser.inspect(request.url.toString())
+                if (inspection.classification == UrlIntentParser.Classification.NORMAL_WEB) return false
+                if (inspection.classification != UrlIntentParser.Classification.ANDROID_APP_LINK) return true
+
+                val externalIntent = Intent(Intent.ACTION_VIEW, request.url)
+                if (externalIntent.resolveActivity(packageManager) != null) {
+                    runCatching { startActivity(externalIntent) }
+                }
+                return true
+            }
+
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
                 // WebView invokes this callback off the main thread; never read WebView state here.
                 val decision = adBlockManager.evaluate(
@@ -1840,7 +1854,16 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
                 return
             }
         }
-        val url = UrlIntentParser.parse(incomingIntent) ?: return
+        if (incomingIntent?.action != Intent.ACTION_VIEW) return
+        val inspection = UrlIntentParser.inspect(incomingIntent.dataString)
+        Log.d(
+            INTENT_LOG_TAG,
+            "Incoming URI ${UrlIntentParser.summary(incomingIntent.dataString)} " +
+                "phnxDefault=${DefaultBrowserManager(this).state() == com.phoenix.phnx.system.DefaultBrowserState.DEFAULT} " +
+                "action=${if (inspection.classification == UrlIntentParser.Classification.NORMAL_WEB) "OPEN_IN_PHNX" else "ANDROID_INTENT_RESOLUTION"}",
+        )
+        if (inspection.classification != UrlIntentParser.Classification.NORMAL_WEB) return
+        val url = inspection.normalizedUrl ?: return
         val tab = tabManager.currentTab() ?: return
         tab.url = url
         tab.title = url
@@ -2046,6 +2069,7 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
 
     companion object {
         const val EXTRA_PROFILE_ID = "profile_id"
+        private const val INTENT_LOG_TAG = "PhnxIntent"
         private const val AUTOMATIC_UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000L
         private const val START_PAGE_BASE = "https://phnx.local/"
         private const val PREVIEW_CAPTURE_DELAY_MS = 120L

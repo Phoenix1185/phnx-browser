@@ -7,6 +7,14 @@ import com.phoenix.phnx.MainActivity
 
 /** Builds the same validated browser intent used by external HTTP/HTTPS navigation. */
 object BrowserNavigationIntent {
+    fun forCurrentProfile(context: Context, rawUrl: String): Intent? {
+        val url = UrlIntentParser.parseUrl(rawUrl) ?: return null
+        return Intent(context, MainActivity::class.java).apply {
+            action = Intent.ACTION_VIEW
+            data = Uri.parse(url)
+        }
+    }
+
     fun forSavedUrl(context: Context, profileId: String, rawUrl: String): Intent? {
         val url = UrlIntentParser.parseUrl(rawUrl) ?: return null
         return Intent(context, MainActivity::class.java).apply {

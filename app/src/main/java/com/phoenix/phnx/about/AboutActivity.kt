@@ -1,7 +1,6 @@
 package com.phoenix.phnx.about
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -11,6 +10,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.phoenix.phnx.BuildConfig
 import com.phoenix.phnx.R
+import com.phoenix.phnx.system.BrowserNavigationIntent
 
 class AboutActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,7 +107,7 @@ class AboutActivity : AppCompatActivity() {
     }
 
     private fun websiteButton(label: String, url: String): Button = actionButton(label) {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        BrowserNavigationIntent.forCurrentProfile(this, url)?.let(::startActivity)
     }
 
     private fun text(value: String, size: Float, prominent: Boolean): TextView = TextView(this).apply {

@@ -1,7 +1,5 @@
 package com.phoenix.phnx.privacy
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -16,6 +14,7 @@ import com.phoenix.phnx.R
 import com.phoenix.phnx.adblock.AdBlockSettings
 import com.phoenix.phnx.about.PhnxWebsite
 import com.phoenix.phnx.permissions.PermissionActivity
+import com.phoenix.phnx.system.BrowserNavigationIntent
 
 class PrivacyActivity : AppCompatActivity() {
     private val app by lazy { application as PhnxApplication }
@@ -241,7 +240,7 @@ class PrivacyActivity : AppCompatActivity() {
     private fun save() = app.privacyManager.saveSettings(settings)
 
     private fun openWebsite(url: String) {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        BrowserNavigationIntent.forCurrentProfile(this, url)?.let(::startActivity)
     }
 
     private fun optionRow(title: String, summary: String): View = LinearLayout(this).apply {
