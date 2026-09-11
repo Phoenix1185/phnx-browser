@@ -652,13 +652,40 @@ class MainActivity : AppCompatActivity(), BrowserMenu.Callbacks {
         webView.setOnLongClickListener { handleWebViewLongPress(webView, tab) }
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-                val inspection = UrlIntentParser.inspect(request.url.toString())
+                return handleWebViewUrl(request.url.toString())
+            }
+
+            @Suppress("DEPRECATION")
+            override fun shouldOverrideUrlLoading(view: WebView, url: String): Boolean =
+                handleWebViewUrl(url)
+
+            private fun handleWebViewUrl(rawUrl: String): Boolean {
+                val inspection = UrlIntentParser.inspect(rawUrl)
                 if (inspection.classification == UrlIntentParser.Classification.NORMAL_WEB) return false
                 if (inspection.classification != UrlIntentParser.Classification.ANDROID_APP_LINK) return true
 
-                val externalIntent = Intent(Intent.ACTION_VIEW, request.url)
-                if (externalIntent.resolveActivity(packageManager) != null) {
-                    runCatching { startActivity(externalIntent) }
+                val uri = Uri.parse(rawUrl)
+                val externalIntent = when (uri.scheme?.lowercase()) {
+                    "mailto" -> Intent(Intent.ACTION_SENDTO, uri)
+                    "tel" -> Intent(Intent.ACTION_DIAL, uri)
+                    "intent" -> runCatching {
+                        Intent.parseUri(rawUrl, Intent.URI_INTENT_SCHEME)
+                    }.getOrNull()
+                    else -> Intent(Intent.ACTION_VIEW, uri)
+                }
+                val opened = externalIntent?.let { intent ->
+                    if (intent.resolveActivity(packageManager) == null) {
+                        false
+                    } else {
+                        runCatching { startActivity(intent) }.isSuccess
+                    }
+                } == true
+                if (!opened) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.external_link_unavailable),
+                        Toast.LENGTH_SHORT,
+                    ).show()
                 }
                 return true
             }

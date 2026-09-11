@@ -42,6 +42,18 @@ class UrlIntentParserTest {
     }
 
     @Test
+    fun classifiesExternalAndroidLinksWithoutLoadingThemAsWebPages() {
+        assertEquals(
+            UrlIntentParser.Classification.ANDROID_APP_LINK,
+            UrlIntentParser.inspect("mailto:mail@senseiphoenix.name.ng").classification,
+        )
+        assertEquals(
+            UrlIntentParser.Classification.ANDROID_APP_LINK,
+            UrlIntentParser.inspect("tel:+15551234567").classification,
+        )
+    }
+
+    @Test
     fun ignoresNonViewIntents() {
         assertNull(UrlIntentParser.parse(Intent(Intent.ACTION_SEND)))
     }

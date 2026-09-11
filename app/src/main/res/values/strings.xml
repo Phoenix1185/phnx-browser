@@ -363,6 +363,7 @@ Built &amp; engineered with a focus on performance, privacy, and control.
     <string name="context_private_tab_opened">Private tab opened</string>
     <string name="context_tab_group">Link group</string>
     <string name="context_share_link">Share link</string>
+    <string name="external_link_unavailable">No installed app can open this link.</string>
     <string name="context_open_image_new_tab">Open image in new tab</string>
     <string name="context_open_image_background_tab">Open image in background tab</string>
     <string name="context_copy_image_address">Copy image address</string>
